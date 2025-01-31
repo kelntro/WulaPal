@@ -1,8 +1,8 @@
 # WulaPal
 
-# Structure: 
+## Structure:
 
-web/
+### web/
 │── src/
 │   ├── components/      # Reusable UI components
 │   ├── pages/           # Pages (e.g., Home, Dashboard)
@@ -16,7 +16,7 @@ web/
 │── vite.config.js
 └── tailwind.config.js
 
-mobile/
+### mobile/
 │── lib/
 │   ├── screens/         # Screens (Home, Wallet, Transactions)
 │   ├── widgets/         # Reusable UI components
@@ -27,14 +27,15 @@ mobile/
 │── pubspec.yaml
 └── android/ios/        # Native folders
 
-blockchain/
+### blockchain/
 │── contracts/         # Smart contracts (Paluwagan.sol)
 │── scripts/           # Deployment scripts
 │── test/              # Smart contract tests
 │── hardhat.config.js
 └── package.json
 
-backend/
+### backend/
+
 │── routes/         # API routes
 │── controllers/    # Business logic
 │── models/         # Database models
@@ -42,3 +43,4 @@ backend/
 │── index.js        # Main server file
 │── .env
 └── package.json
+
