@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="72ed7d27-63e3-4bfc-9e29-cafd36c20ba5" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/WulaPal.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/.vscode/settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/android/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/android/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/android/app/src/main/java/com/mobile/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/android/app/src/main/java/com/mobile/MainActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/app.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/acorn" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/acorn" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/browserslist" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/browserslist" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/esparse" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/esparse" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/esvalidate" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/esvalidate" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/image-size" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/image-size" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/is-docker" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/is-docker" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/js-yaml" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/js-yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/jscodeshift" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/jscodeshift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/jsesc" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/jsesc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/json5" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/json5" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/loose-envify" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/loose-envify" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/metro" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/metro" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/metro-symbolicate" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/metro-symbolicate" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/mime" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/mime" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/mkdirp" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/mkdirp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/parser" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/parser" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/print-chrome-path" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/print-chrome-path" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/react-native" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/react-native" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/regjsparser" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/regjsparser" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/resolve" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/resolve" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/rimraf" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/rimraf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/semver" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/semver" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/terser" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/terser" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/.bin/update-browserslist-db" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/.bin/update-browserslist-db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/@istanbuljs/load-nyc-config/node_modules/.bin/js-yaml" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/@istanbuljs/load-nyc-config/node_modules/.bin/js-yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/@react-native/community-cli-plugin/node_modules/.bin/semver" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/@react-native/community-cli-plugin/node_modules/.bin/semver" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/caniuse-lite/data/agents.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/caniuse-lite/data/agents.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/caniuse-lite/data/features/cookie-store-api.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/caniuse-lite/data/features/cookie-store-api.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/caniuse-lite/data/features/input-inputmode.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/caniuse-lite/data/features/input-inputmode.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/caniuse-lite/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/caniuse-lite/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/electron-to-chromium/full-chromium-versions.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/electron-to-chromium/full-chromium-versions.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/electron-to-chromium/full-chromium-versions.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/electron-to-chromium/full-chromium-versions.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/electron-to-chromium/full-versions.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/electron-to-chromium/full-versions.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/electron-to-chromium/full-versions.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/electron-to-chromium/full-versions.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/electron-to-chromium/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/electron-to-chromium/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/LICENSE" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/LICENSE" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/dist/backoff.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/dist/backoff.d.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/dist/backoff.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/dist/backoff.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/dist/backoff.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/dist/backoff.js.map" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/dist/options.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/dist/options.d.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/dist/options.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/dist/options.js.map" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/exponential-backoff/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/istanbul-lib-instrument/node_modules/.bin/semver" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/istanbul-lib-instrument/node_modules/.bin/semver" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/make-dir/node_modules/.bin/semver" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/make-dir/node_modules/.bin/semver" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/react-native/node_modules/.bin/semver" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/react-native/node_modules/.bin/semver" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/regjsparser/node_modules/.bin/jsesc" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/regjsparser/node_modules/.bin/jsesc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/send/node_modules/.bin/mime" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/send/node_modules/.bin/mime" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/terser/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/terser/CHANGELOG.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/terser/dist/bundle.min.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/terser/dist/bundle.min.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/terser/lib/compress/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/terser/lib/compress/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/terser/lib/parse.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/terser/lib/parse.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/node_modules/terser/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/node_modules/terser/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/App.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/components/Button.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/components/Input.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/navigation/AppNavigator.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/screens/HomeScreen.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/screens/LoginScreen.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/services/api.js" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2seleJLDlTbfWS0xMFIQJoZupB1" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Administrator/WulaPal&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;AndroidSdkUpdater&quot;,
+    &quot;settings.editor.splitter.proportion&quot;: &quot;0.25917685&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
+  }
+}</component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="72ed7d27-63e3-4bfc-9e29-cafd36c20ba5" name="Changes" comment="" />
+      <created>1738824016863</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1738824016863</updated>
+    </task>
+    <servers />
+  </component>
+</project>
