@@ -1,0 +1,61 @@
+{
+  "buildFiles": [
+    "C:\\Users\\Administrator\\WulaPal\\mobile\\node_modules\\react-native\\ReactAndroid\\cmake-utils\\default-app-setup\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\Users\\Administrator\\WulaPal\\mobile\\android\\app\\.cxx\\Debug\\3q33136q\\arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\Users\\Administrator\\WulaPal\\mobile\\android\\app\\.cxx\\Debug\\3q33136q\\arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "appmodules::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "arm64-v8a",
+      "artifactName": "appmodules",
+      "output": "C:\\Users\\Administrator\\WulaPal\\mobile\\android\\app\\build\\intermediates\\cxx\\Debug\\3q33136q\\obj\\arm64-v8a\\libappmodules.so",
+      "runtimeFiles": [
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\fabricjni\\libs\\android.arm64-v8a\\libfabricjni.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\fac93946b7857a5ee69c9949e092f107\\transformed\\jetified-fbjni-0.5.1\\prefab\\modules\\fbjni\\libs\\android.arm64-v8a\\libfbjni.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\folly_runtime\\libs\\android.arm64-v8a\\libfolly_runtime.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\glog\\libs\\android.arm64-v8a\\libglog.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\jsi\\libs\\android.arm64-v8a\\libjsi.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_codegen_rncore\\libs\\android.arm64-v8a\\libreact_codegen_rncore.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_debug\\libs\\android.arm64-v8a\\libreact_debug.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_utils\\libs\\android.arm64-v8a\\libreact_utils.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_nativemodule_core\\libs\\android.arm64-v8a\\libreact_nativemodule_core.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_newarchdefaults\\libs\\android.arm64-v8a\\libreact_newarchdefaults.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_render_componentregistry\\libs\\android.arm64-v8a\\libreact_render_componentregistry.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_render_core\\libs\\android.arm64-v8a\\libreact_render_core.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_render_debug\\libs\\android.arm64-v8a\\libreact_render_debug.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_render_graphics\\libs\\android.arm64-v8a\\libreact_render_graphics.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_render_imagemanager\\libs\\android.arm64-v8a\\libreact_render_imagemanager.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\react_render_mapbuffer\\libs\\android.arm64-v8a\\libreact_render_mapbuffer.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\rrc_image\\libs\\android.arm64-v8a\\librrc_image.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\rrc_view\\libs\\android.arm64-v8a\\librrc_view.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\rrc_legacyviewmanagerinterop\\libs\\android.arm64-v8a\\librrc_legacyviewmanagerinterop.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\runtimeexecutor\\libs\\android.arm64-v8a\\libruntimeexecutor.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\turbomodulejsijni\\libs\\android.arm64-v8a\\libturbomodulejsijni.so",
+        "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\prefab\\modules\\yoga\\libs\\android.arm64-v8a\\libyoga.so"
+      ]
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang.exe",
+      "cppCompilerExecutable": "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}
