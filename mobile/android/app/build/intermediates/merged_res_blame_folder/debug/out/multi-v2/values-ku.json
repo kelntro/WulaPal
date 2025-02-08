@@ -4,7 +4,7 @@
             "outputFile": "com.mobile.app-mergeDebugResources-26:/values-ku/values-ku.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\4349cb3cf2768933684b313805df74f1\\transformed\\jetified-react-android-0.73.3-debug\\res\\values-ku\\values-ku.xml",
+                    "source": "C:\\Users\\Administrator\\.gradle\\caches\\transforms-3\\90e3501360836da2bd36fccf8ac561b0\\transformed\\jetified-react-android-0.73.3-debug\\res\\values-ku\\values-ku.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7",
                         "startColumns": "4,4,4,4,4,4",

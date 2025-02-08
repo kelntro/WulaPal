@@ -3,8 +3,8 @@
 cmake_minimum_required(VERSION 3.13)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
-
+add_subdirectory(C:/Users/Administrator/WulaPal/mobile/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/ rngesturehandler_codegen_autolinked_build)
 
 set(AUTOLINKED_LIBRARIES
-  
+  react_codegen_rngesturehandler_codegen
 )

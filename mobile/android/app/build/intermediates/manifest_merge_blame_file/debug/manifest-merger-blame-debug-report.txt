@@ -16,22 +16,22 @@
 14    for React Native Apps.
 15    -->
 16    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-16-->[com.facebook.react:react-android:0.73.3] C:\Users\Administrator\.gradle\caches\transforms-3\4349cb3cf2768933684b313805df74f1\transformed\jetified-react-android-0.73.3-debug\AndroidManifest.xml:16:5-78
-16-->[com.facebook.react:react-android:0.73.3] C:\Users\Administrator\.gradle\caches\transforms-3\4349cb3cf2768933684b313805df74f1\transformed\jetified-react-android-0.73.3-debug\AndroidManifest.xml:16:22-75
+16-->[com.facebook.react:react-android:0.73.3] C:\Users\Administrator\.gradle\caches\transforms-3\90e3501360836da2bd36fccf8ac561b0\transformed\jetified-react-android-0.73.3-debug\AndroidManifest.xml:16:5-78
+16-->[com.facebook.react:react-android:0.73.3] C:\Users\Administrator\.gradle\caches\transforms-3\90e3501360836da2bd36fccf8ac561b0\transformed\jetified-react-android-0.73.3-debug\AndroidManifest.xml:16:22-75
 17    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-17-->[com.facebook.flipper:flipper:0.201.0] C:\Users\Administrator\.gradle\caches\transforms-3\db49d2fc08794d5aa1c8bbb5a7b67ac5\transformed\jetified-flipper-0.201.0\AndroidManifest.xml:14:5-76
-17-->[com.facebook.flipper:flipper:0.201.0] C:\Users\Administrator\.gradle\caches\transforms-3\db49d2fc08794d5aa1c8bbb5a7b67ac5\transformed\jetified-flipper-0.201.0\AndroidManifest.xml:14:22-73
+17-->[com.facebook.flipper:flipper:0.201.0] C:\Users\Administrator\.gradle\caches\transforms-3\8cc0d5ffbcb002ebe60fd8cc5ec3e7cd\transformed\jetified-flipper-0.201.0\AndroidManifest.xml:14:5-76
+17-->[com.facebook.flipper:flipper:0.201.0] C:\Users\Administrator\.gradle\caches\transforms-3\8cc0d5ffbcb002ebe60fd8cc5ec3e7cd\transformed\jetified-flipper-0.201.0\AndroidManifest.xml:14:22-73
 18
 19    <permission
-19-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\ea65eb96ceabfa0f7a4335eda025ea86\transformed\core-1.9.0\AndroidManifest.xml:22:5-24:47
+19-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\a2832b3ab88fe71fedf3ae97ddfe6c65\transformed\core-1.9.0\AndroidManifest.xml:22:5-24:47
 20        android:name="com.mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-20-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\ea65eb96ceabfa0f7a4335eda025ea86\transformed\core-1.9.0\AndroidManifest.xml:23:9-81
+20-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\a2832b3ab88fe71fedf3ae97ddfe6c65\transformed\core-1.9.0\AndroidManifest.xml:23:9-81
 21        android:protectionLevel="signature" />
-21-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\ea65eb96ceabfa0f7a4335eda025ea86\transformed\core-1.9.0\AndroidManifest.xml:24:9-44
+21-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\a2832b3ab88fe71fedf3ae97ddfe6c65\transformed\core-1.9.0\AndroidManifest.xml:24:9-44
 22
 23    <uses-permission android:name="com.mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
-23-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\ea65eb96ceabfa0f7a4335eda025ea86\transformed\core-1.9.0\AndroidManifest.xml:26:5-97
-23-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\ea65eb96ceabfa0f7a4335eda025ea86\transformed\core-1.9.0\AndroidManifest.xml:26:22-94
+23-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\a2832b3ab88fe71fedf3ae97ddfe6c65\transformed\core-1.9.0\AndroidManifest.xml:26:5-97
+23-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\a2832b3ab88fe71fedf3ae97ddfe6c65\transformed\core-1.9.0\AndroidManifest.xml:26:22-94
 24
 25    <application
 25-->C:\Users\Administrator\WulaPal\mobile\android\app\src\main\AndroidManifest.xml:5:5-24:19
@@ -40,7 +40,7 @@
 27        android:allowBackup="false"
 27-->C:\Users\Administrator\WulaPal\mobile\android\app\src\main\AndroidManifest.xml:10:7-34
 28        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-28-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\ea65eb96ceabfa0f7a4335eda025ea86\transformed\core-1.9.0\AndroidManifest.xml:28:18-86
+28-->[androidx.core:core:1.9.0] C:\Users\Administrator\.gradle\caches\transforms-3\a2832b3ab88fe71fedf3ae97ddfe6c65\transformed\core-1.9.0\AndroidManifest.xml:28:18-86
 29        android:debuggable="true"
 30        android:extractNativeLibs="true"
 31        android:icon="@mipmap/ic_launcher"
@@ -79,40 +79,40 @@
 47            </intent-filter>
 48        </activity>
 49        <activity
-49-->[com.facebook.react:react-android:0.73.3] C:\Users\Administrator\.gradle\caches\transforms-3\4349cb3cf2768933684b313805df74f1\transformed\jetified-react-android-0.73.3-debug\AndroidManifest.xml:19:9-21:40
+49-->[com.facebook.react:react-android:0.73.3] C:\Users\Administrator\.gradle\caches\transforms-3\90e3501360836da2bd36fccf8ac561b0\transformed\jetified-react-android-0.73.3-debug\AndroidManifest.xml:19:9-21:40
 50            android:name="com.facebook.react.devsupport.DevSettingsActivity"
-50-->[com.facebook.react:react-android:0.73.3] C:\Users\Administrator\.gradle\caches\transforms-3\4349cb3cf2768933684b313805df74f1\transformed\jetified-react-android-0.73.3-debug\AndroidManifest.xml:20:13-77
+50-->[com.facebook.react:react-android:0.73.3] C:\Users\Administrator\.gradle\caches\transforms-3\90e3501360836da2bd36fccf8ac561b0\transformed\jetified-react-android-0.73.3-debug\AndroidManifest.xml:20:13-77
 51            android:exported="false" />
-51-->[com.facebook.react:react-android:0.73.3] C:\Users\Administrator\.gradle\caches\transforms-3\4349cb3cf2768933684b313805df74f1\transformed\jetified-react-android-0.73.3-debug\AndroidManifest.xml:21:13-37
+51-->[com.facebook.react:react-android:0.73.3] C:\Users\Administrator\.gradle\caches\transforms-3\90e3501360836da2bd36fccf8ac561b0\transformed\jetified-react-android-0.73.3-debug\AndroidManifest.xml:21:13-37
 52
 53        <provider
-53-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\1077df3ce3e3d48e91cfdfc7b80a5726\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
+53-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\18eb784a757df52c21d08ba4a957abbd\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
 54            android:name="androidx.startup.InitializationProvider"
-54-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\1077df3ce3e3d48e91cfdfc7b80a5726\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:25:13-67
+54-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\18eb784a757df52c21d08ba4a957abbd\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:25:13-67
 55            android:authorities="com.mobile.androidx-startup"
-55-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\1077df3ce3e3d48e91cfdfc7b80a5726\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:26:13-68
+55-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\18eb784a757df52c21d08ba4a957abbd\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:26:13-68
 56            android:exported="false" >
-56-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\1077df3ce3e3d48e91cfdfc7b80a5726\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:27:13-37
+56-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\18eb784a757df52c21d08ba4a957abbd\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:27:13-37
 57            <meta-data
-57-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\1077df3ce3e3d48e91cfdfc7b80a5726\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
+57-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\18eb784a757df52c21d08ba4a957abbd\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
 58                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-58-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\1077df3ce3e3d48e91cfdfc7b80a5726\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:30:17-75
+58-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\18eb784a757df52c21d08ba4a957abbd\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:30:17-75
 59                android:value="androidx.startup" />
-59-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\1077df3ce3e3d48e91cfdfc7b80a5726\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:31:17-49
+59-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Administrator\.gradle\caches\transforms-3\18eb784a757df52c21d08ba4a957abbd\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:31:17-49
 60            <meta-data
-60-->[androidx.lifecycle:lifecycle-process:2.4.1] C:\Users\Administrator\.gradle\caches\transforms-3\4838cda84cfd40a86b15682a48d70bf3\transformed\jetified-lifecycle-process-2.4.1\AndroidManifest.xml:31:13-33:52
+60-->[androidx.lifecycle:lifecycle-process:2.4.1] C:\Users\Administrator\.gradle\caches\transforms-3\d3a57652273a6a16f47d448b07e6157d\transformed\jetified-lifecycle-process-2.4.1\AndroidManifest.xml:31:13-33:52
 61                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-61-->[androidx.lifecycle:lifecycle-process:2.4.1] C:\Users\Administrator\.gradle\caches\transforms-3\4838cda84cfd40a86b15682a48d70bf3\transformed\jetified-lifecycle-process-2.4.1\AndroidManifest.xml:32:17-78
+61-->[androidx.lifecycle:lifecycle-process:2.4.1] C:\Users\Administrator\.gradle\caches\transforms-3\d3a57652273a6a16f47d448b07e6157d\transformed\jetified-lifecycle-process-2.4.1\AndroidManifest.xml:32:17-78
 62                android:value="androidx.startup" />
-62-->[androidx.lifecycle:lifecycle-process:2.4.1] C:\Users\Administrator\.gradle\caches\transforms-3\4838cda84cfd40a86b15682a48d70bf3\transformed\jetified-lifecycle-process-2.4.1\AndroidManifest.xml:33:17-49
+62-->[androidx.lifecycle:lifecycle-process:2.4.1] C:\Users\Administrator\.gradle\caches\transforms-3\d3a57652273a6a16f47d448b07e6157d\transformed\jetified-lifecycle-process-2.4.1\AndroidManifest.xml:33:17-49
 63        </provider>
 64
 65        <meta-data
-65-->[com.facebook.soloader:soloader:0.10.5] C:\Users\Administrator\.gradle\caches\transforms-3\6448e1f24ec0cd2a9b4074687fd76e27\transformed\jetified-soloader-0.10.5\AndroidManifest.xml:12:9-14:37
+65-->[com.facebook.soloader:soloader:0.10.5] C:\Users\Administrator\.gradle\caches\transforms-3\56a97d65dd71cb140c241a10c3950373\transformed\jetified-soloader-0.10.5\AndroidManifest.xml:12:9-14:37
 66            android:name="com.facebook.soloader.enabled"
-66-->[com.facebook.soloader:soloader:0.10.5] C:\Users\Administrator\.gradle\caches\transforms-3\6448e1f24ec0cd2a9b4074687fd76e27\transformed\jetified-soloader-0.10.5\AndroidManifest.xml:13:13-57
+66-->[com.facebook.soloader:soloader:0.10.5] C:\Users\Administrator\.gradle\caches\transforms-3\56a97d65dd71cb140c241a10c3950373\transformed\jetified-soloader-0.10.5\AndroidManifest.xml:13:13-57
 67            android:value="false" />
-67-->[com.facebook.soloader:soloader:0.10.5] C:\Users\Administrator\.gradle\caches\transforms-3\6448e1f24ec0cd2a9b4074687fd76e27\transformed\jetified-soloader-0.10.5\AndroidManifest.xml:14:13-34
+67-->[com.facebook.soloader:soloader:0.10.5] C:\Users\Administrator\.gradle\caches\transforms-3\56a97d65dd71cb140c241a10c3950373\transformed\jetified-soloader-0.10.5\AndroidManifest.xml:14:13-34
 68    </application>
 69
 70</manifest>

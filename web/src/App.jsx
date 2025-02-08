@@ -1,35 +1,57 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "./styles/global.css"; 
 
-function App() {
-  const [count, setCount] = useState(0)
+// Import Pages
+import Home from "./pages/Home.jsx";
+import Login from "./pages/Login.jsx";
+import Signup from "./pages/Signup.jsx";
+import Analytics from "./pages/analytics/Analytics.jsx";
+import Dashboard from "./pages/dashboard/Dashboard.jsx";
+import HelpCenter from "./pages/help-center/Help-center.jsx";
+import CreateGroup from "./pages/manage-group/Create-group.jsx";
+import GroupChat from "./pages/manage-group/Group-chat.jsx";
+import GroupMembers from "./pages/manage-group/Group-members.jsx";
+import GroupTransactions from "./pages/manage-group/Group-transactions.jsx";
+import PaluwaganGroups from "./pages/manage-group/Paluwagan-groups.jsx";
+import Notifications from "./pages/notifications/Notifications.jsx";
+import PaymentOption from "./pages/purchase/Payment-option.jsx";
+import Subscription from "./pages/purchase/Subscription.jsx";
+import SuccessSubscription from "./pages/purchase/Success-subscription.jsx";
+import Settings from "./pages/settings/Settings.jsx";
+import Transactions from "./pages/transactions/Transactions.jsx";
+import Wallet from "./pages/wallet/Wulapal.jsx";
+import Layout from "./components/Layout.jsx";  // Import Layout
 
+const App = () => {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Router>
+      <Routes>
+        {/* Auth Routes (No Sidebar) */}
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
-export default App
+        {/* Routes with Sidebar */}
+        <Route element={<Layout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/manage-group/create" element={<CreateGroup />} />
+          <Route path="/manage-group/chat" element={<GroupChat />} />
+          <Route path="/manage-group/members" element={<GroupMembers />} />
+          <Route path="/manage-group/transactions" element={<GroupTransactions />} />
+          <Route path="/manage-group/paluwagan-groups" element={<PaluwaganGroups />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/purchase/payment-option" element={<PaymentOption />} />
+          <Route path="/purchase/subscription" element={<Subscription />} />
+          <Route path="/purchase/success" element={<SuccessSubscription />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/wallet" element={<Wallet />} />
+        </Route>
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;
