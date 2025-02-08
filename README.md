@@ -74,7 +74,3 @@ Ensure that the necessary environment variables are configured:
 1. Set up `ANDROID_HOME` and add the SDK paths.
 2. Configure Node.js and React Native dependencies.
 
-
-
-
-You can view the project structure here: [Project Structure](https://docs.google.com/document/d/12DnbbxJcT9sUX2L0ZjYYpNZj0cSG13GaEYiKG7Rs3W4/edit?usp=sharing)
