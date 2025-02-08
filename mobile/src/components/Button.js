@@ -9,6 +9,7 @@ const Button = ({ title, onPress }) => {
   );
 };
 
+
 const styles = StyleSheet.create({
   button: {
     backgroundColor: '#007bff',
