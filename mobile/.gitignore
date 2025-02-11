@@ -64,3 +64,18 @@ yarn-error.log
 
 # testing
 /coverage
+
+# Ignore APKs and other build artifacts
+mobile/android/app/build/
+mobile/android/app/src/main/assets/index.android.bundle
+mobile/android/.cxx/
+mobile/android/.gradle/
+mobile/android/.idea/
+mobile/android/local.properties
+mobile/android/*.keystore
+mobile/android/app/release/
+mobile/android/app/debug/
+mobile/android/app/intermediates/
+mobile/android/app/outputs/
+mobile/android/app/generated/
+
