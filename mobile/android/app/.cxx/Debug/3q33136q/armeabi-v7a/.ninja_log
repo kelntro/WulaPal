@@ -1,5 +1,0 @@
-# ninja log v5
-8	90	0	C:/Users/Administrator/WulaPal/mobile/android/app/.cxx/Debug/3q33136q/armeabi-v7a/CMakeFiles/cmake.verify_globs	8b62ae5f40b06198
-5	8119	7606380201183321	CMakeFiles/appmodules.dir/C_/Users/Administrator/WulaPal/mobile/android/app/build/generated/rncli/src/main/jni/rncli.cpp.o	926666d85af4dd33
-12	9406	7606380214044305	CMakeFiles/appmodules.dir/OnLoad.cpp.o	c31731b7f2652def
-9409	9901	7606380219104027	C:/Users/Administrator/WulaPal/mobile/android/app/build/intermediates/cxx/Debug/3q33136q/obj/armeabi-v7a/libappmodules.so	dcfce7a50bcc5750
