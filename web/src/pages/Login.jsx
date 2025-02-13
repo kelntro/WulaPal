@@ -9,7 +9,6 @@ const Login = () => {
   const navigate = useNavigate(); // Initialize useNavigate
 
   const handleLogin = () => {
-    // Add authentication logic here (if needed)
     navigate("/dashboard"); // Navigate to Dashboard
   };
 
@@ -35,16 +34,25 @@ const Login = () => {
             />
           </div>
 
-          {/* Password Input */}
+          {/* Password Input with Toggle */}
           <div className="mb-6 relative">
             <label className="block text-gray-700 text-sm font-semibold mb-2">
               Password
             </label>
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
+              >
+                {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+              </button>
+            </div>
           </div>
 
           {/* Login Button */}
@@ -77,11 +85,12 @@ const Login = () => {
         </div>
 
         {/* Right Section - Image */}
-        <div className="w-1/2 h-full">
+        <div className="w-1/2 h-auto relative">
           <img
             src="/assets/login-image.png"
             alt="Login Illustration"
             className="w-full h-full object-cover rounded-r-lg"
+            style={{ opacity: 0.85 }} // Adjust image transparency
           />
         </div>
       </div>

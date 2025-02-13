@@ -1,0 +1,70 @@
+# 💾 OS & Editor Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.swn
+*.log
+*.lock
+
+# 🚀 Node.js Dependencies (For All Projects)
+node_modules/
+npm-debug.log
+yarn-error.log
+.pnpm-debug.log
+.yarn/*
+.yarnrc.yml
+
+# ⚙️ Build & Cache Files (For All Projects)
+dist/
+out/
+build/
+.cache/
+tmp/
+logs/
+.vscode/
+.idea/
+.nyc_output/
+coverage/
+
+# 🔧 Environment Variables (Security Reasons)
+.env
+.env.local
+.env.*.local
+
+# 🔗 Git Submodules (if applicable)
+.gitmodules
+.git/
+
+# 🛠 Web App Specific (`WulaPal/web/`)
+web/.next/
+web/.vercel/
+web/.nuxt/
+web/.expo/
+
+# 📱 Mobile App Specific (`WulaPal/mobile/`)
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/app/outputs/
+mobile/android/.cxx/
+mobile/android/local.properties
+mobile/ios/Pods/
+mobile/ios/build/
+mobile/ios/*.xcworkspace
+mobile/.expo/
+
+# 🖥️ Backend Specific (`WulaPal/backend/`)
+backend/logs/
+backend/tmp/
+backend/.env
+
+# ⛓️ Blockchain Specific (`WulaPal/blockchain/`)
+blockchain/node_modules/
+blockchain/artifacts/
+blockchain/cache/
+blockchain/deployments/
+blockchain/.openzeppelin/
+
+# ⏳ Temporary Files
+*.bak
+*.tmp
