@@ -48,9 +48,9 @@ const Sidebar = () => {
         </li>
         <li>
           <Link 
-            to="/paluwagan-groups" 
+            to="/manage-group/paluwagan-groups" 
             className={`flex items-center px-4 py-2 rounded-md transition duration-200 
-            ${isActive("/paluwagan-groups") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+            ${isActive("/manage-group/paluwagan-groups") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
           >
             <MdGroups className="mr-3" /> Paluwagan Groups
           </Link>
