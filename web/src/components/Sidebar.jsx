@@ -1,44 +1,126 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { FaQuestionCircle } from "react-icons/fa";
+import { RxDashboard } from "react-icons/rx";
+import { IoAnalyticsOutline, IoWalletOutline, IoSettingsSharp } from "react-icons/io5";
+import { GrTransaction } from "react-icons/gr";
+import { MdGroups, MdOutlineSubscriptions } from "react-icons/md";
+import { VscBellDot } from "react-icons/vsc";
+import { HiChevronRight } from "react-icons/hi2";
 
 const Sidebar = () => {
+  const location = useLocation();
+
+  // Function to check if a link is active
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <div className="w-64 bg-green-900 text-white h-screen p-4 fixed">
-      <h1 className="text-xl font-bold mb-4">WulaPal</h1>
-      <ul>
-        <li className="mb-2">
-          <Link to="/dashboard" className="block px-4 py-2 hover:bg-green-700">Dashboard</Link>
+    <div className="w-64 bg-green-900 text-white h-screen p-4 fixed flex flex-col justify-between rounded-r-[15px]">
+      
+      {/* Logo (Perfectly Positioned) */}
+      <div className="flex justify-center items-center mt-6 mb-1">
+        <img 
+          src="assets/WulaPal_sidebar.png" 
+          alt="WulaPal Logo" 
+          className="fixed w-[200px] h-[60px] top-8 left-5 object-cover"
+        />
+      </div>
+
+      {/* Navigation Menu */}
+      <ul className="space-y-3">
+        <li>
+          <Link 
+            to="/dashboard" 
+            className={`flex items-center px-4 py-2 rounded-md transition duration-200 
+            ${isActive("/dashboard") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          >
+            <RxDashboard className="mr-3" /> Dashboard
+          </Link>
         </li>
-        <li className="mb-2">
-          <Link to="/analytics" className="block px-4 py-2 hover:bg-green-700">Analytics</Link>
+        <li>
+          <Link 
+            to="/analytics" 
+            className={`flex items-center px-4 py-2 rounded-md transition duration-200 
+            ${isActive("/analytics") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          >
+            <IoAnalyticsOutline className="mr-3" /> Analytics
+          </Link>
         </li>
-        <li className="mb-2">
-          <Link to="/manage-group/paluwagan-groups" className="block px-4 py-2 hover:bg-green-700">Groups</Link>
+        <li>
+          <Link 
+            to="/paluwagan-groups" 
+            className={`flex items-center px-4 py-2 rounded-md transition duration-200 
+            ${isActive("/paluwagan-groups") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          >
+            <MdGroups className="mr-3" /> Paluwagan Groups
+          </Link>
         </li>
-        <li className="mb-2">
-          <Link to="/wallet" className="block px-4 py-2 hover:bg-green-700">My Wallet</Link>
+        <li>
+          <Link 
+            to="/wallet" 
+            className={`flex items-center px-4 py-2 rounded-md transition duration-200 
+            ${isActive("/wallet") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          >
+            <IoWalletOutline className="mr-3" /> My Wallet
+          </Link>
         </li>
-        <li className="mb-2">
-          <Link to="/notifications" className="block px-4 py-2 hover:bg-green-700">Notifications</Link>
+        <li>
+          <Link 
+            to="/notifications" 
+            className={`flex items-center px-4 py-2 rounded-md transition duration-200 
+            ${isActive("/notifications") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          >
+            <VscBellDot className="mr-3" /> Notifications
+          </Link>
         </li>
-        <li className="mb-2">
-          <Link to="/transactions" className="block px-4 py-2 hover:bg-green-700">Transactions</Link>
+        <li>
+          <Link 
+            to="/transactions" 
+            className={`flex items-center px-4 py-2 rounded-md transition duration-200 
+            ${isActive("/transactions") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          >
+            <GrTransaction className="mr-3" /> Transactions
+          </Link>
         </li>
-        <li className="mb-2">
-          <Link to="/settings" className="block px-4 py-2 hover:bg-green-700">Settings</Link>
+        <li>
+          <Link 
+            to="/settings" 
+            className={`flex items-center px-4 py-2 rounded-md transition duration-200 
+            ${isActive("/settings") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          >
+            <IoSettingsSharp className="mr-3" /> Settings
+          </Link>
         </li>
-        <li className="mb-2">
-          <Link to="/help-center" className="block px-4 py-2 hover:bg-green-700">Help Center</Link>
+        <li>
+          <Link 
+            to="/help-center" 
+            className={`flex items-center px-4 py-2 rounded-md transition duration-200 
+            ${isActive("/help-center") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          >
+            <FaQuestionCircle className="mr-3" /> Help Center
+          </Link>
+        </li>
+        <li>
+          <Link 
+            to="/get-plan" 
+            className={`flex items-center px-4 py-2 rounded-md transition duration-200 
+            ${isActive("/get-plan") ? "bg-[#6A8C73] border-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          >
+            <MdOutlineSubscriptions className="mr-3" /> Get Plan
+          </Link>
         </li>
       </ul>
 
-      <div className="absolute bottom-4 left-4 flex items-center space-x-2">
-        <img src="https://via.placeholder.com/40" alt="User Avatar" className="rounded-full w-10 h-10" />
-        <div>
-          <p className="text-sm font-semibold">Ali Riaz</p>
-          <p className="text-xs text-gray-300">Travel Investor</p>
+      {/* User Profile (Styled to Match the Image) */}
+      <div className="flex items-center p-3 mt-6 rounded-lg cursor-pointer hover:bg-[#6A8C73] transition duration-200">
+        <img src="assets/Profile.jpg" alt="User Avatar" className="rounded-full w-12 h-12" />
+        <div className="ml-3 flex-1">
+          <p className="text-base font-semibold">Ali Riaz</p>
+          <p className="text-xs text-gray-300">Travel Handler</p>
         </div>
+        <HiChevronRight className="text-gray-300" />
       </div>
+
     </div>
   );
 };
