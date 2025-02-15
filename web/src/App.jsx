@@ -8,6 +8,7 @@ import Signup from "./pages/Signup.jsx";
 import Analytics from "./pages/analytics/Analytics.jsx";
 import Dashboard from "./pages/dashboard/Dashboard.jsx";
 import HelpCenter from "./pages/help-center/Help-center.jsx";
+import ContactUs from "./pages/help-center/Contact-us";
 import CreateGroup from "./pages/manage-group/Create-group.jsx";
 import GroupChat from "./pages/manage-group/Group-chat.jsx";
 import GroupMembers from "./pages/manage-group/Group-members.jsx";
@@ -35,7 +36,11 @@ const App = () => {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/analytics" element={<Analytics />} />
+
+          {/* Help Center Routes */}
           <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/contact-us" element={<ContactUs />} />
+
           <Route path="/manage-group/create" element={<CreateGroup />} />
           <Route path="/manage-group/chat" element={<GroupChat />} />
           <Route path="/manage-group/members" element={<GroupMembers />} />
