@@ -15,7 +15,7 @@ const Sidebar = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="w-64 bg-green-900 text-white h-screen p-4 fixed flex flex-col justify-between rounded-r-[15px]">
+    <div className="w-64 bg-[#3A6953] text-white h-screen p-4 fixed flex flex-col justify-between rounded-r-[15px]">
       
       {/* Logo (Perfectly Positioned) */}
       <div className="flex justify-center items-center mt-6 mb-1">
@@ -126,3 +126,8 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
+
+
+
+
