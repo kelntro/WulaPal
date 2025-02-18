@@ -116,23 +116,27 @@ const Sidebar = () => {
 
       {/* User Profile Section */}
       <Link to="/profile/profile-information" className="block">
-        <div className="flex items-center p-1 mt-6 mb-3 rounded-lg cursor-pointer hover:bg-[#6A8C73] transition duration-200">
-          <img
-            src="assets/Profile.jpg"
-            alt="User Avatar"
-            className={`transition-all object-cover rounded-full ${
-              isOpen ? "w-[40px] h-[40px]" : "w-[40px] h-[40px] object-cover"
-            }`}
-          />
-          {isOpen && (
-            <div className="ml-3 flex-1">
-              <p className="text-base font-semibold">Ali Riaz</p>
-              <p className="text-xs text-gray-300">Travel Handler</p>
-            </div>
-          )}
-          {isOpen && <HiChevronRight className="text-gray-300" />}
-        </div>
-      </Link>
+      <div
+        className={`flex items-center p-1 mt-6 mb-3 rounded-lg cursor-pointer transition duration-200 
+          ${isActive("/profile/profile-information") ? "bg-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+      >
+        <img
+          src="assets/Profile.jpg"
+          alt="User Avatar"
+          className={`transition-all object-cover rounded-full 
+            ${isOpen ? "w-[40px] h-[40px]" : "w-[40px] h-[40px]"}`}
+        />
+        
+        {isOpen && (
+          <div className="ml-3 flex-1">
+            <p className="text-base font-semibold">Ali Riaz</p>
+            <p className="text-xs text-gray-300">Travel Handler</p>
+          </div>
+        )}
+        
+        {isOpen && <HiChevronRight className="text-gray-300" />}
+      </div>
+    </Link>
     </div>
   );
 };
