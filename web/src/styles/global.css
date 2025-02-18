@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+    font-family: 'TT Octosquares Trl';
+    src: url('/assets/fonts/TT Octosquares Trial Bold.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}

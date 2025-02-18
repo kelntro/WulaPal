@@ -10,7 +10,12 @@ export default {
     "./src/styles/**/*.css" // ✅ Scans global styles in styles/ folder
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        octosquares: ["TT Octosquares Trl", "sans-serif"], // ✅ Custom Font
+      },
+    },
   },
-  plugins: [],
+  plugins: [], // ✅ Keep plugins empty or add plugins here
 };
+

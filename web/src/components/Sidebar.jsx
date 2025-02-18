@@ -27,14 +27,24 @@ const Sidebar = () => {
     >
       {/* Logo & Sidebar Toggle */}
       <div
-        className="flex justify-between items-center mt-1 mb-4 cursor-pointer"
+        className="flex items-center space-x-[-15px] cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
+        {/* Logo (Always Visible) */}
         <img
           src="assets/2.png"
           alt="WulaPal Logo"
-          className="w-[80px] h-[80px] object-cover"
+          className={`object-cover transition-all duration-300 ${
+            isOpen ? "w-[80px] h-[80px]" : "w-[70px] h-[70px]"
+          }`}
         />
+
+        {/* Text (Only Visible When Sidebar is Open) */}
+        {isOpen && (
+          <span className="text-white text-2xl font-octosquares font-bold transition-all duration-300">
+            ulaPal
+          </span>
+        )}
       </div>
 
       {/* Navigation Menu */}
