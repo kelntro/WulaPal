@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiFilter, FiSearch } from "react-icons/fi";
 import { HiChevronDown, HiChevronUp } from "react-icons/hi";
-import { FiSettings } from "react-icons/fi";
+
 
 const HelpCenter = () => {
   const [activeQuestion, setActiveQuestion] = useState(null);
