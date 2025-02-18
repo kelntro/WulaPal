@@ -22,6 +22,7 @@ import Settings from "./pages/settings/Settings.jsx";
 import Transactions from "./pages/transactions/Transactions.jsx";
 import Wallet from "./pages/wallet/Wulapal.jsx";
 import Layout from "./components/Layout.jsx";  // Import Layout
+import ProfileInformation from "./pages/profile/Profile-information.jsx";
 
 const App = () => {
   return (
@@ -53,6 +54,9 @@ const App = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/wallet" element={<Wallet />} />
+
+          {/* User Profile */}
+          <Route path="/profile/profile-information" element={<ProfileInformation />} />
         </Route>
       </Routes>
     </Router>
