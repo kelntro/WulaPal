@@ -20,6 +20,8 @@ import PaymentOption from "./pages/purchase/Payment-option.jsx";
 import Subscription from "./pages/purchase/Subscription.jsx";
 import SuccessSubscription from "./pages/purchase/Success-subscription.jsx";
 import Settings from "./pages/settings/Settings.jsx";
+import TermsandConditions from "./pages/settings/Terms-and-conditions.jsx";
+import PrivacyPolicy from "./pages/settings/Privacy-policy.jsx";
 import Transactions from "./pages/transactions/Transactions.jsx";
 import Wallet from "./pages/wallet/Wulapal.jsx";
 import Layout from "./components/Layout.jsx";  // Import Layout
@@ -52,7 +54,13 @@ const App = () => {
           <Route path="/purchase/payment-option" element={<PaymentOption />} />
           <Route path="/purchase/subscription" element={<Subscription />} />
           <Route path="/purchase/success" element={<SuccessSubscription />} />
+
+          {/* Settings */}
           <Route path="/settings" element={<Settings />} />
+          <Route path="/terms-and-conditions" element={<TermsandConditions />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+
+          {/* Transactions */}
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/wallet" element={<Wallet />} />
 
