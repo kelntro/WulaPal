@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaQuestionCircle } from "react-icons/fa";
 import { RxDashboard } from "react-icons/rx";
@@ -12,9 +12,8 @@ import { MdGroups, MdOutlineSubscriptions } from "react-icons/md";
 import { VscBellDot } from "react-icons/vsc";
 import { HiChevronRight } from "react-icons/hi";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
 
   // Function to check if a link is active
   const isActive = (path) => location.pathname === path;
@@ -116,27 +115,27 @@ const Sidebar = () => {
 
       {/* User Profile Section */}
       <Link to="/profile/profile-information" className="block">
-      <div
-        className={`flex items-center p-1 mt-6 mb-3 rounded-lg cursor-pointer transition duration-200 
+        <div
+          className={`flex items-center p-1 mt-6 mb-3 rounded-lg cursor-pointer transition duration-200 
           ${isActive("/profile/profile-information") ? "bg-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
-      >
-        <img
-          src="assets/Profile.jpg"
-          alt="User Avatar"
-          className={`transition-all object-cover rounded-full 
+        >
+          <img
+            src="assets/Profile.jpg"
+            alt="User Avatar"
+            className={`transition-all object-cover rounded-full 
             ${isOpen ? "w-[40px] h-[40px]" : "w-[40px] h-[40px]"}`}
-        />
-        
-        {isOpen && (
-          <div className="ml-3 flex-1">
-            <p className="text-base font-semibold">Ali Riaz</p>
-            <p className="text-xs text-gray-300">Travel Handler</p>
-          </div>
-        )}
-        
-        {isOpen && <HiChevronRight className="text-gray-300" />}
-      </div>
-    </Link>
+          />
+          
+          {isOpen && (
+            <div className="ml-3 flex-1">
+              <p className="text-base font-semibold">Ali Riaz</p>
+              <p className="text-xs text-gray-300">Travel Handler</p>
+            </div>
+          )}
+          
+          {isOpen && <HiChevronRight className="text-gray-300" />}
+        </div>
+      </Link>
     </div>
   );
 };
