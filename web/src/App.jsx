@@ -24,6 +24,7 @@ const App = () => {
         <Route path="/purchase/payment-option" element={<PaymentOption />} />
         <Route path="/purchase/subscription" element={<Subscription />} />
         <Route path="/purchase/success" element={<SuccessSubscription />} />
+        
 
         {/* Routes that include Sidebar */}
         <Route path="/*" element={<MainLayout />} />

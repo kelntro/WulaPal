@@ -4,7 +4,7 @@ import { FaRegCopy } from "react-icons/fa";
 
 const ProfileInformation = () => {
   return (
-    <div className="p-2 min-h-screen flex flex-col items-start ml-[110px] : ml-[60px]">
+    <div className="p-2 min-h-screen flex flex-col items-start ml-[100px] : ml-[60px]">
       <h1 className="text-4xl font-bold text-[#285236]">Profile Information</h1>
       <p className="text-[#6A8C73] mb-4">Here’s your settings for security.</p>
       <div className="w-[calc(100%-0.1rem)] max-w-7xl bg-white shadow-md rounded-lg p-6">
@@ -12,7 +12,7 @@ const ProfileInformation = () => {
           <div className="flex items-center space-x-4">
             <div className="w-24 h-24 rounded-full border-2 border-[#285236] bg-white p-1">
               <img
-                src="/assets/info.png"
+                src="/assets/Profile.jpg"
                 alt="Profile"
                 className="w-full h-full rounded-full"
               />
