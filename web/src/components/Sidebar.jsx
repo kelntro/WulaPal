@@ -105,11 +105,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           isActive={isActive("/help-center")}
         />
         <SidebarItem
-          to="/get-plan"
+          to="purchase/subscription"
           icon={<MdOutlineSubscriptions />}
           label="Subscriptions"
           isOpen={isOpen}
-          isActive={isActive("/get-plan")}
+          isActive={isActive("purchase/subscription")}
         />
       </ul>
 

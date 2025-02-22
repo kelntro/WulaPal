@@ -14,10 +14,9 @@ import GroupMembers from "../pages/manage-group/Group-members.jsx";
 import GroupTransactions from "../pages/manage-group/Group-transactions.jsx";
 import PaluwaganGroups from "../pages/manage-group/Paluwagan-groups.jsx";
 import Notifications from "../pages/notifications/Notifications.jsx";
-import PaymentOption from "../pages/purchase/Payment-option.jsx";
-import Subscription from "../pages/purchase/Subscription.jsx";
-import SuccessSubscription from "../pages/purchase/Success-subscription.jsx";
 import Settings from "../pages/settings/Settings.jsx";
+import TermsandConditions from "../pages/settings/Terms-and-conditions.jsx";
+import PrivacyPolicy from "../pages/settings/Privacy-policy.jsx";
 import Transactions from "../pages/transactions/Transactions.jsx";
 import Wallet from "../pages/wallet/Wulapal.jsx";
 import ProfileInformation from "../pages/profile/Profile-information.jsx";
@@ -58,12 +57,14 @@ const MainLayout = () => {
             <Route path="/manage-group/transactions" element={<GroupTransactions />} />
             <Route path="/manage-group/paluwagan-groups" element={<PaluwaganGroups />} />
 
+            {/* Settings */}
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/terms-and-conditions" element={<TermsandConditions />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+
+
             {/* Other Routes */}
             <Route path="/notifications" element={<Notifications />} />
-            <Route path="/purchase/payment-option" element={<PaymentOption />} />
-            <Route path="/purchase/subscription" element={<Subscription />} />
-            <Route path="/purchase/success" element={<SuccessSubscription />} />
-            <Route path="/settings" element={<Settings />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/wallet" element={<Wallet />} />
 

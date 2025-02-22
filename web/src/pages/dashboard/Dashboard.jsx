@@ -67,21 +67,21 @@ const GroupSlotsCard = () => {
             <span className="w-3 h-3 bg-[#285236] rounded-full" />
             <span className="text-sm">Unavailable Slots</span>
           </div>
-          <p className="text-lg font-medium">55%</p>
+          <p className="text-lg font-medium">55</p>
         </div>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 bg-[#99c6a9] rounded-full" />
             <span className="text-sm">Available Slots</span>
           </div>
-          <p className="text-lg font-medium">35%</p>
+          <p className="text-lg font-medium">35</p>
         </div>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 bg-[#BFFFE4] rounded-full" />
             <span className="text-sm">Empty Slots</span>
           </div>
-          <p className="text-lg font-medium">15%</p>
+          <p className="text-lg font-medium">15</p>
         </div>
       </div>
       <button className="w-full mt-6 py-3 bg-[#D4E8DB] text-[#3A6953] border border-[#6a8c73] rounded-xl text-base font-medium">
@@ -113,12 +113,12 @@ const AnalyticsChart = () => {
         <h2 className="text-[#3A6953] text-[26px] font-bold">Analytics</h2>
         <div className="relative">
           <select className="appearance-none border border-[#99C6A9] pl-4 pr-10 py-2 rounded-full text-[15px] font-medium focus:outline-none">
-            <option>2020</option>
-            <option>2021</option>
-            <option>2022</option>
-            <option>2023</option>
-            <option>2024</option>
             <option>2025</option>
+            <option>2026</option>
+            <option>2027</option>
+            <option>2028</option>
+            <option>2029</option>
+            <option>2030</option>
           </select>
           <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
             <svg className="w-4 h-4 text-[#3a6953]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
