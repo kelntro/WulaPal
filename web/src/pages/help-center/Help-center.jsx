@@ -51,7 +51,7 @@ const HelpCenter = () => {
   };
 
   return (
-    <div className="p-8 min-h-screen flex flex-col items-start ml-64">
+    <div className="p-2 min-h-screen flex flex-col items-start ml-[110px]">
       <div className="w-[calc(100%-0.1rem)] max-w-7xl">
         <h1 className="text-4xl font-bold text-[#285236] mb-2">Help Center</h1>
         <p className="text-[#6A8C73] font-normal mb-6">Here’s your settings for security.</p>
