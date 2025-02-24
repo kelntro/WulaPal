@@ -10,11 +10,19 @@ import logo from "/assets/WulaPal_sidebar.png"; // Replace with the actual path 
 const Subscription = () => {
   const [billingCycle, setBillingCycle] = useState("annually");
   const navigate = useNavigate(); // Initialize navigate
+  
+    const handleGetStarted = (plan) => {
+      if (billingCycle === "monthly") {
+        navigate("/purchase/payment-option", { state: { plan } });
+      }
+    };
+  
 
   const plans = [
     {
       name: "Free",
-      price: "₱0",
+      monthlyPrice: "₱0",
+      annualPrice: "₱0",
       description: "For Small Teams",
       features: [
         "Real-time contact syncing",
@@ -25,7 +33,8 @@ const Subscription = () => {
     },
     {
       name: "Basic",
-      price: "₱250",
+      monthlyPrice: "₱300", // Price when Monthly is selected
+      annualPrice: "₱250", // Discounted price for annual
       discount: "15%",
       description: "For Growing Teams",
       features: [
@@ -38,7 +47,8 @@ const Subscription = () => {
     },
     {
       name: "Pro",
-      price: "₱350",
+      monthlyPrice: "₱400",
+      annualPrice: "₱350",
       discount: "15%",
       description: "For Scaling Businesses",
       features: [
@@ -51,7 +61,8 @@ const Subscription = () => {
     },
     {
       name: "Enterprise",
-      price: "₱450",
+      monthlyPrice: "₱450",
+      annualPrice: "₱500",
       description: "For Big Corporation",
       features: [
         "Unlimited reporting",
@@ -65,7 +76,10 @@ const Subscription = () => {
 
   return (
     <div className="relative flex flex-col items-center p-8 bg-gray-100 min-h-screen">
-      <button onClick={() => navigate("/dashboard")} className="absolute top-4 right-4 bg-[#3A6953] text-white px-6 py-2 rounded-lg">
+      <button
+        onClick={() => navigate("/dashboard")}
+        className="absolute top-4 right-4 bg-[#3A6953] text-white px-6 py-2 rounded-lg"
+      >
         Go Back
       </button>
 
@@ -75,47 +89,68 @@ const Subscription = () => {
       <p className="text-gray-600 text-center mt-2">
         Perfectly tailored for every stage of your growth. Get started today, no credit card needed.
       </p>
-      
+
+      {/* Billing Cycle Switch */}
       <div className="mt-6 flex gap-2 p-2 rounded-lg border border-[#E4E4E4]">
-        <button 
-          className={`px-4 py-2 rounded ${billingCycle === "monthly" ? "bg-[#3A6953] text-white" : "bg-gray-100 text-[#3A6953]"}`}
+        <button
+          className={`px-4 py-2 rounded ${
+            billingCycle === "monthly"
+              ? "bg-[#3A6953] text-white"
+              : "bg-gray-100 text-[#3A6953]"
+          }`}
           onClick={() => setBillingCycle("monthly")}
         >
           Monthly
         </button>
-        <button 
-          className={`px-4 py-2 rounded ${billingCycle === "annually" ? "bg-[#3A6953] text-white" : "bg-gray-100 text-[#3A6953]"}`}
+        <button
+          className={`px-4 py-2 rounded ${
+            billingCycle === "annually"
+              ? "bg-[#3A6953] text-white"
+              : "bg-gray-100 text-[#3A6953]"
+          }`}
           onClick={() => setBillingCycle("annually")}
         >
           Annually
         </button>
       </div>
-      
+
+      {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
         {plans.map((plan, index) => (
           <div
             key={index}
-            className="p-6 rounded-lg border border-[#E4E4E4] text-left text-[#3A6953]"
+            className="p-6 rounded-lg border border-[#E4E4E4] text-left text-[#3A6953] flex flex-col justify-between min-h-[350px]"
           >
-            <h2 className="text-2xl font-bold">{plan.name}</h2>
-            <p className="text-3xl font-semibold mt-2 text-[#3A6953]">
-              {plan.price} {plan.discount && <span className="text-[12px] bg-[#99C6A9] text-white px-1 py-1 rounded-md">{plan.discount}</span>}
-            </p>
-            <p className="mt-2 text-sm text-[#6A8C73]">{plan.description}</p>
-            <ul className="mt-4 text-sm text-[#6A8C73]">
-              {plan.features.map((feature, i) => (
-                <li key={i} className="flex items-center gap-2"><IoCheckmarkCircle /> {feature}</li>
-              ))}
-            </ul>
+            <div>
+              <h2 className="text-2xl font-bold">{plan.name}</h2>
+              <p className="text-3xl font-semibold mt-2 text-[#3A6953]">
+                {billingCycle === "monthly" ? plan.monthlyPrice : plan.annualPrice}{" "}
+                {billingCycle === "annually" && plan.discount && (
+                  <span className="text-[12px] bg-[#99C6A9] text-white px-1 py-1 rounded-md">
+                    {plan.discount}
+                  </span>
+                )}
+              </p>
+              <p className="mt-2 text-sm text-[#6A8C73]">{plan.description}</p>
+              <ul className="mt-4 text-sm text-[#6A8C73] flex-grow">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <IoCheckmarkCircle /> {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
             <button
-              className="mt-6 px-6 py-2 w-full rounded-lg font-semibold bg-gray-100 text-[#3A6953] border border-[#3A6953]"
-            >
-              {plan.buttonText}
-            </button>
+            className="mt-6 px-6 py-2 w-full rounded-lg font-semibold bg-gray-100 text-[#3A6953] border border-[#3A6953]"
+            onClick={() => handleGetStarted(plan)}
+          >
+            {plan.buttonText}
+          </button>
           </div>
         ))}
       </div>
-      
+
       <div className="mt-12 w-full max-w-6xl">
         <h2 className="text-3xl font-bold text-green-900">Paluwagan Plan Comparison</h2>
 

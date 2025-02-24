@@ -207,7 +207,7 @@ const RecentTransactions = () => {
                 <td className="py-3">{transaction.date}</td>
                 <td className="py-3">{transaction.amount}</td>
                 <td className="py-3">
-                  <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-sm">
+                  <span className="bg-[#EAE8C3] text-[#85830F] px-3 py-1 rounded-full text-sm">
                     {transaction.status}
                   </span>
                 </td>

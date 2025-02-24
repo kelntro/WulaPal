@@ -84,7 +84,7 @@ const Transactions = () => {
                     <span
                       className={`px-3 py-1 rounded-lg text-sm ${
                         txn.status === "Deposit"
-                          ? "bg-[#FFE5EE] text-[#AA0000]"
+                          ? "bg-[#EAE8C3] text-[#85830F]"
                           : txn.status === "Withdrawal"
                           ? "bg-[#D4E8DB] text-[#3A6953]"
                           : "bg-[#E6EFFC] text-[#0764E6]"
