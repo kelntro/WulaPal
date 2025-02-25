@@ -59,7 +59,8 @@ export default function PaymentOption() {
               Cancel
             </button>
 
-            <button className="w-full bg-[#3A6953] text-white p-2 rounded-md">Confirm Payment</button>
+            <button className="w-full bg-[#3A6953] text-white p-2 rounded-md"
+                    onClick={() => navigate("/purchase/success")}>Confirm Payment</button>
           </div>
         </div>
 
