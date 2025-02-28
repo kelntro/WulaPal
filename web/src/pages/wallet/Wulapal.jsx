@@ -4,6 +4,7 @@ import { GoArrowDownLeft, GoArrowUpRight } from "react-icons/go";
 import { PiHandDepositBold } from "react-icons/pi";
 import { FaMoneyBillTransfer } from "react-icons/fa6";
 import { PiHandWithdrawBold } from "react-icons/pi";
+import { IoIosArrowDown } from "react-icons/io";
 import {
   BarChart,
   Bar,
@@ -159,7 +160,7 @@ const AnalyticsChart = () => {
     <div className="w-[1158px] bg-white rounded-[20px] shadow-md p-6 mt-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-[#3A6953] text-[26px] font-bold">Statistical Overview</h2>
-        <div className="relative">
+        <div className="relative mr-4">
           <select className="appearance-none border border-[#99C6A9] pl-4 pr-10 py-2 rounded-full text-[15px] font-medium focus:outline-none">
             <option>2025</option>
             <option>2026</option>
@@ -217,7 +218,7 @@ const CashActivityChart = () => {
   const data = generateData(selectedYear, selectedMonth);
 
   return (
-    <div className=" w-[1158px] bg-white rounded-[20px] shadow-md p-[20px] mt-6">
+    <div className="w-[1158px] bg-white rounded-[20px] shadow-md p-[20px] mt-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-[#3A6953] text-[22px] font-bold">Cash Activity</h2>
@@ -225,36 +226,42 @@ const CashActivityChart = () => {
         {/* Dropdowns */}
         <div className="flex gap-4 mr-4">
           {/* Year Dropdown */}
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="appearance-none border border-[#99C6A9] pl-4 pr-10 py-2 rounded-full text-[15px] font-medium focus:outline-none"
-          >
-            {["2025", "2026", "2027", "2028", "2029"].map((year) => (
-              <option key={year} value={year}>{year}</option>
-            ))}
-          </select>
-          
+          <div className="relative">
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="appearance-none border border-[#99C6A9] pl-4 pr-10 py-2 rounded-full text-[15px] font-medium focus:outline-none"
+            >
+              {["2025", "2026", "2027", "2028", "2029"].map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+            <IoIosArrowDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#3A6953] pointer-events-none" />
+          </div>
+
           {/* Month Dropdown */}
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="appearance-none border border-[#99C6A9] pl-4 pr-4 py-2 rounded-full text-[15px] font-medium focus:outline-none"
-          >
-            {[...Array(12).keys()].map((month) => {
-              const monthNumber = String(month + 1).padStart(2, "0");
-              return (
-                <option key={monthNumber} value={monthNumber}>
-                  {dayjs(`${selectedYear}-${monthNumber}-01`).format("MMMM")}
-                </option>
-              );
-            })}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="appearance-none border border-[#99C6A9] pl-4 pr-10 py-2 rounded-full text-[15px] font-medium focus:outline-none"
+            >
+              {[...Array(12).keys()].map((month) => {
+                const monthNumber = String(month + 1).padStart(2, "0");
+                return (
+                  <option key={monthNumber} value={monthNumber}>
+                    {dayjs(`${selectedYear}-${monthNumber}-01`).format("MMMM")}
+                  </option>
+                );
+              })}
+            </select>
+            <IoIosArrowDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#3A6953] pointer-events-none" />
+          </div>
         </div>
       </div>
 
       {/* Chart */}
-      <ResponsiveContainer width="100%" height={350}>
+      <ResponsiveContainer width="100%" height={450}>
         <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" tickFormatter={(date) => dayjs(date).format("MMM DD")} />

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { PieChart } from "@mui/x-charts/PieChart";
 import { GoArrowDownLeft, GoArrowUpRight } from "react-icons/go";
 import { HiChevronRight } from "react-icons/hi";
@@ -16,6 +17,8 @@ import {
 } from "recharts";
 
 const AccountBalanceCard = () => {
+  const navigate = useNavigate(); // Move useNavigate inside the component
+
   return (
     <div className="w-[375px] bg-white rounded-[20px] shadow-md p-6">
       <h2 className="text-[#3a6953] text-[22px] font-bold">Account Balance</h2>
@@ -24,7 +27,10 @@ const AccountBalanceCard = () => {
         <span className="text-white text-sm">Current Balance</span>
         <span className="text-white text-3xl font-semibold">₱15,750.20</span>
       </div>
-      <button className="w-full mt-4 h-10 rounded-[10px] border border-[#6a8c73] text-[#3a6953] text-xs font-normal">
+      <button 
+        className="w-full mt-4 h-10 rounded-[10px] border border-[#6a8c73] text-[#3a6953] text-xs font-normal"
+        onClick={() => navigate("/wallet")} // Ensure the correct route
+        >
         View more
       </button>
     </div>
@@ -32,11 +38,16 @@ const AccountBalanceCard = () => {
 };
 
 const GroupSlotsCard = () => {
+  const navigate = useNavigate(); // Move useNavigate inside the component
+
   return (
     <div className="w-[375px] bg-white rounded-3xl shadow-md p-6 mt-6">
       <div className="flex justify-between items-center">
         <h1 className="text-[#3a6953] text-[22px] font-bold">Group Slots</h1>
-        <button className="flex gap-1 px-2 py-2 text-xs text-white rounded-xl bg-[#89A598]">
+        <button 
+          className="flex gap-1 px-2 py-2 text-xs text-white rounded-xl bg-[#89A598]"
+          onClick={() => navigate("/purchase/subscription")} // Ensure the correct route
+          >
           Get more slots <HiChevronRight className=" w-4 h-4 text-white" />
         </button>
       </div>
@@ -84,7 +95,10 @@ const GroupSlotsCard = () => {
           <p className="text-lg font-medium">15</p>
         </div>
       </div>
-      <button className="w-full mt-6 py-3 bg-[#D4E8DB] text-[#3A6953] border border-[#6a8c73] rounded-xl text-base font-medium">
+      <button 
+        className="w-full mt-6 py-3 bg-[#D4E8DB] text-[#3A6953] border border-[#6a8c73] rounded-xl text-base font-medium"
+        onClick={() => navigate("/manage-group/paluwagan-groups")} // Ensure the correct route
+        >
         View all Paluwagan groups
       </button>  
     </div>
@@ -182,11 +196,16 @@ const transactions = [
 ];
 
 const RecentTransactions = () => {
+  const navigate = useNavigate(); // Move useNavigate inside the component
+
   return (
     <div className=" w-[758px] bg-white rounded-[20px] shadow-md p-6 mt-6 relative">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-[#3A6953] text-[26px] font-bold">Recent Transactions</h2>
-        <button className="bg-[#89A598] text-white px-4 py-2 rounded-lg hover:bg-[#D4E8DB] transition">
+        <button 
+          className="bg-[#89A598] text-white px-4 py-2 rounded-lg hover:bg-[#D4E8DB] transition"
+          onClick={() => navigate("/transactions")} // Ensure the correct route
+          >
           View More
         </button>
       </div>
