@@ -9,6 +9,7 @@ import Dashboard from "../pages/dashboard/Dashboard.jsx";
 import HelpCenter from "../pages/help-center/Help-center.jsx";
 import ContactUs from "../pages/help-center/Contact-us";
 import CreateGroupModal from "../pages/manage-group/CreateGroupModal.jsx";
+import AddMember from "../pages/manage-group/AddMemberModal.jsx";
 import GroupChat from "../pages/manage-group/Group-chat.jsx";
 import GroupMembers from "../pages/manage-group/Group-members.jsx";
 import GroupTransactions from "../pages/manage-group/Group-transactions.jsx";
@@ -52,6 +53,7 @@ const MainLayout = () => {
 
             {/* Manage Group Routes */}
             <Route path="/manage-group/create" element={<CreateGroupModal />} />
+            <Route path="/manage-group/add-member" element={<AddMember />} />
             <Route path="/manage-group/chat" element={<GroupChat />} />
             <Route path="/manage-group/members" element={<GroupMembers />} />
             <Route path="/manage-group/transactions" element={<GroupTransactions />} />

@@ -77,7 +77,7 @@ const Subscription = () => {
   return (
     <div className="relative flex flex-col items-center p-8 bg-gray-100 min-h-screen">
       <button
-        onClick={() => navigate("/dashboard")}
+        onClick={() => navigate(-1)}
         className="absolute top-4 right-4 bg-[#3A6953] text-white px-6 py-2 rounded-lg"
       >
         Go Back

@@ -9,7 +9,7 @@ const CreateGroupModal = ({ onClose }) => {
   const [endDate, setEndDate] = useState(null);
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm z-50">
       <div className="bg-white p-8 rounded-lg shadow-lg w-[600px] border border-gray-300">
         <div className="flex items-center mb-4 border-b pb-3">
           <span className="text-[#3A6953] text-2xl mr-3"><HiUserGroup /></span>
