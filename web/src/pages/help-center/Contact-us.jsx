@@ -30,7 +30,7 @@ const ContactUs = () => {
           {/* Contact Section */}
           <div className="flex justify-between items-center">
             {/* Left - Contact Form */}
-            <div className="w-1/2">
+            <div className="w-1/2 mt-[-80px]">
               <h2 className="text-2xl font-semibold text-[#3A6953] mb-4">Get in touch</h2>
               <p className="text-[#6A8C73] font-normal mb-6">
                 We are here for you! How can we help?
@@ -70,7 +70,7 @@ const ContactUs = () => {
             {/* Right - Contact Information */}
             <div className="w-1/2 flex justify-end">
               <div className="w-2/3 space-y-4 text-[#6A8C73]">
-                <img src="/assets/contact-us.png" alt="Contact Us Illustration" className="w-full mb-6" />
+                <img src="/assets/contact-us.png" alt="Contact Us Illustration" className="w-full mb-6 ml-[-80px]" />
                 <div className="flex items-center space-x-3">
                   <FiMapPin className="text-[#3A6953] text-xl" />
                   <p>Mapagmahal Street, Barangay ILY</p>

@@ -4,13 +4,13 @@ import { FaRegCopy } from "react-icons/fa";
 
 const ProfileInformation = () => {
   return (
-    <div className="p-2 min-h-screen flex flex-col items-start ml-[100px] : ml-[60px]">
+    <div className="p-2 min-h-screen flex flex-col items-start ml-[115px] : ml-[60px]">
       <h1 className="text-4xl font-bold text-[#285236]">Profile Information</h1>
       <p className="text-[#6A8C73] mb-4">Here’s your settings for security.</p>
       <div className="w-[calc(100%-0.1rem)] max-w-7xl bg-white shadow-md rounded-lg p-6">
         <div className="flex justify-between items-start relative pb-6">
           <div className="flex items-center space-x-4">
-            <div className="w-24 h-24 rounded-full border-2 border-[#285236] bg-white p-1">
+            <div className="w-24 h-24 rounded-full border-2 border-[#6A8C73]">
               <img
                 src="/assets/Profile.jpg"
                 alt="Profile"
@@ -32,10 +32,10 @@ const ProfileInformation = () => {
 
         <div className="flex justify-between mt-6">
           <div className="w-3/5">
-            <h3 className="text-xl font-semibold text-[#285236]">
+            <h3 className="text-xl font-semibold text-[#3a6953]">
               Account Information
             </h3>
-            <div className="mt-2 flex items-center bg-[#F4F4F4] p-2 rounded-2xl border-2 border-[#3A6953] text-[#285236] justify-between">
+            <div className="mt-2 flex items-center bg-[#F4F4F4] p-3 rounded-2xl border border-[#6a8c73] text-[#285236] justify-between">
               <span>Account Number</span>
               <div className="flex items-center space-x-2">
                 <span className="text-[#285236] opacity-60 font-medium">
@@ -45,7 +45,7 @@ const ProfileInformation = () => {
               </div>
             </div>
 
-            <h3 className="text-xl font-semibold text-[#285236] mt-6">
+            <h3 className="text-xl font-semibold text-[#3a6953] mt-6">
               Personal Information
             </h3>
             <div className="mt-2 space-y-3">
@@ -64,7 +64,7 @@ const ProfileInformation = () => {
               ].map((item, index) => (
                 <div
                   key={index}
-                  className="flex justify-between bg-[#F4F4F4] p-2 rounded-2xl border-2 border-[#3A6953] text-[#285236]"
+                  className="flex justify-between bg-[#F4F4F4] p-3 rounded-2xl border border-[#6a8c73] text-[#285236]"
                 >
                   <span>{item.label}</span>
                   <span className="text-[#285236] opacity-60">

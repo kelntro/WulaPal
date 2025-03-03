@@ -79,7 +79,7 @@ const HelpCenter = () => {
               {Object.keys(faqs).map((tab) => (
                 <button
                   key={tab}
-                  className={`px-6 py-2 rounded-full border-2 text-[#3A6953] font-medium transition duration-200 ${
+                  className={`px-6 py-2 rounded-full border border-[#3A6953] text-[#3A6953] font-medium transition duration-200 ${
                     activeTab === tab
                       ? "bg-[#99C6A9] text-white border-[#3A6953]"
                       : "bg-white border-[#3A6953]"
@@ -90,7 +90,7 @@ const HelpCenter = () => {
                 </button>
               ))}
             </div>
-            <div className="relative flex items-center border-2 border-[#3A6953] rounded-full px-4 py-2 w-[300px]">
+            <div className="relative flex items-center border border-[#3A6953] rounded-full px-4 py-2 w-[300px]">
               <FiSearch className="text-[#3A6953] mr-2" />
               <input
                 type="text"
