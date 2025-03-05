@@ -6,8 +6,9 @@ import LoginScreen from './screens/LoginScreen';
 import OnboardingOne from './screens/onboarding/onboarding-one';
 import OnboardingTwo from './screens/onboarding/onboarding-two';
 import OnboardingThree from './screens/onboarding/onboarding-three';
-import GroupsScreen from './screens/GroupsScreen';
-import GroupDetailsScreen from './screens/GroupDetailsScreen';
+import BottomTabNavigator from './navigation/BottomTabNavigator'; // Main App after onboarding
+import GroupDetailsScreen from './screens/groups/GroupDetailsScreen';
+import TransactionDetailsScreen from './screens/transactions/TransactionDetailsScreen';
 
 const Stack = createStackNavigator();
 
@@ -15,13 +16,21 @@ const App = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
+        {/* Authentication Screens */}
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
+        <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
+
+        {/* Onboarding Screens */}
         <Stack.Screen name="OnboardingOne" component={OnboardingOne} />
         <Stack.Screen name="OnboardingTwo" component={OnboardingTwo} />
         <Stack.Screen name="OnboardingThree" component={OnboardingThree} />
-        <Stack.Screen name="Groups" component={GroupsScreen} />
+
         <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
+
+        <Stack.Screen name="TransactionDetails" component={TransactionDetailsScreen} />
+
+        {/* Main App with Bottom Tabs after Onboarding */}
+        <Stack.Screen name="MainApp" component={BottomTabNavigator} options={{ gestureEnabled: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

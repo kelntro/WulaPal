@@ -1,15 +1,51 @@
-import { useState } from "react";
+import { useState } from "react"; 
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { Link } from "react-router-dom";
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    navigate("/dashboard");
+  const handleLogin = async () => {
+    setError(null); // Clear previous errors
+    setLoading(true); // Disable button while processing
+
+    if (!email || !password) {
+      setError("Please enter both email and password.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5050/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role: "organizer" }), // Ensure only organizers log in
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+
+      if (data.user.role !== "organizer") {
+        throw new Error("Only organizers can log in here.");
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -22,6 +58,9 @@ const Login = () => {
             Welcome Back, Ka-Wula!
           </h2>
 
+          {/* Error Message */}
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
           {/* Email Input */}
           <div className="mb-6">
             <label className="block text-gray-500 text-sm font-semibold mb-2">
@@ -29,8 +68,10 @@ const Login = () => {
             </label>
             <input
               type="email"
-              placeholder=""
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
+              required
             />
           </div>
 
@@ -42,8 +83,10 @@ const Login = () => {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder=""
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
+                required
               />
               <button
                 type="button"
@@ -58,9 +101,12 @@ const Login = () => {
           {/* Login Button */}
           <button
             onClick={handleLogin}
-            className="w-full bg-[#3A6953] text-white py-3 rounded-lg text-lg font-semibold hover:bg-[#2F5442] transition"
+            disabled={loading}
+            className={`w-full bg-[#3A6953] text-white py-3 rounded-lg text-lg font-semibold transition ${
+              loading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#2F5442]"
+            }`}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
 
           {/* OR Section */}
@@ -77,7 +123,7 @@ const Login = () => {
 
           {/* Sign Up Link */}
           <p className="mt-6 text-sm text-gray-600 text-center">
-            Don’t have an account? {" "}
+            Don’t have an account?{" "}
             <Link to="/signup" className="text-green-700 font-semibold hover:underline">
               Sign Up
             </Link>

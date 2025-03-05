@@ -31,7 +31,7 @@ const OnboardingThree = ({ navigation }) => {
       {/* Get Started Button */}
       <StyledTouchableOpacity 
         className="w-4/5 bg-green-700 rounded-full py-3 items-center"
-        onPress={() => navigation.replace('Groups')}
+        onPress={() => navigation.replace('Home')}
       >
         <StyledText className="text-white font-bold">Get Started</StyledText>
       </StyledTouchableOpacity>

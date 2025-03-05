@@ -1,11 +1,69 @@
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Signup = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSignup = async () => {
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+
+    if (!name || !email || !password || !confirmPassword) {
+      setError("All fields are required.");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+
+    if (!agreeTerms) {
+      setError("You must agree to the Terms and Conditions.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5050/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role: "organizer" }), // Ensure only organizers register
+      });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Invalid server response. Please check backend.");
+      }
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Registration failed.");
+      }
+
+      setSuccess("Organizer account created successfully! Redirecting...");
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="bg-gray-100 flex justify-center items-center min-h-screen px-4">
@@ -17,6 +75,26 @@ const Signup = () => {
             Let’s Get Started
           </h2>
 
+          {/* Success Message */}
+          {success && <p className="text-green-500 text-sm mb-4">{success}</p>}
+
+          {/* Error Message */}
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+          {/* Name Input */}
+          <div className="mb-6">
+            <label className="block text-gray-500 text-sm font-semibold mb-2">
+              Full Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
+              required
+            />
+          </div>
+
           {/* Email Input */}
           <div className="mb-6">
             <label className="block text-gray-500 text-sm font-semibold mb-2">
@@ -24,8 +102,10 @@ const Signup = () => {
             </label>
             <input
               type="email"
-              placeholder=""
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
+              required
             />
           </div>
 
@@ -37,8 +117,10 @@ const Signup = () => {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder=""
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
+                required
               />
               <button
                 type="button"
@@ -58,8 +140,10 @@ const Signup = () => {
             <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
-                placeholder=""
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
+                required
               />
               <button
                 type="button"
@@ -73,9 +157,14 @@ const Signup = () => {
 
           {/* Terms & Conditions Checkbox */}
           <div className="flex items-center mb-6">
-            <input type="checkbox" className="mr-2" />
+            <input
+              type="checkbox"
+              checked={agreeTerms}
+              onChange={() => setAgreeTerms(!agreeTerms)}
+              className="mr-2"
+            />
             <span className="text-sm text-gray-600">
-              I agree with the {" "}
+              I agree with the{" "}
               <a href="#" className="text-green-700 font-semibold hover:underline">
                 Terms and Conditions
               </a>
@@ -83,25 +172,19 @@ const Signup = () => {
           </div>
 
           {/* Signup Button */}
-          <button className="w-full bg-[#3A6953] text-white py-3 rounded-lg text-lg font-semibold hover:bg-[#2F5442] transition">
-            Create Account
-          </button>
-
-          {/* OR Section */}
-          <div className="flex items-center my-6">
-            <div className="flex-grow h-px bg-gray-300"></div>
-            <span className="px-4 text-gray-500 text-sm">Or sign up with</span>
-            <div className="flex-grow h-px bg-gray-300"></div>
-          </div>
-
-          {/* Google Sign-In Button */}
-          <button className="w-full flex items-center justify-center border py-3 rounded-lg hover:bg-gray-100 transition">
-            <FcGoogle className="mr-2" size={22} /> Sign up with Google
+          <button
+            onClick={handleSignup}
+            disabled={loading}
+            className={`w-full bg-[#3A6953] text-white py-3 rounded-lg text-lg font-semibold transition ${
+              loading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#2F5442]"
+            }`}
+          >
+            {loading ? "Signing up..." : "Create Account"}
           </button>
 
           {/* Already have an account? Login */}
           <p className="mt-6 text-sm text-gray-600 text-center">
-            Already have an account? {" "}
+            Already have an account?{" "}
             <Link to="/login" className="text-green-700 font-semibold hover:underline">
               Login
             </Link>

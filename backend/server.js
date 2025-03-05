@@ -1,10 +1,16 @@
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 const { createGroup, contribute, getContractBalance } = require("./services/wulapalService");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// ✅ Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("✅ MongoDB Connected"))
+    .catch(err => console.error("❌ MongoDB Connection Error:", err));
 
 let groups = [];
 
@@ -64,3 +70,6 @@ app.get("/api/groups", (req, res) => {
 
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
+
+const authRoutes = require("./routes/authRoutes");
+app.use("/api/auth", authRoutes);

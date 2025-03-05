@@ -2,7 +2,8 @@ const { ethers } = require("ethers");
 const WulaPalABI = require("../../blockchain/artifacts/contracts/WulaPal.sol/WulaPal.json");
 require("dotenv").config();
 
-const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+//const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+const provider = new ethers.JsonRpcProvider(process.env.INFURA_AMOY_URL);
 const privateKey = process.env.PRIVATE_KEY;
 const wallet = new ethers.Wallet(privateKey, provider);
 

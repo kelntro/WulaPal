@@ -4,6 +4,7 @@ import "./styles/global.css";
 
 // Import Pages
 import Login from "./pages/Login.jsx";
+import Loginn from "./pages/ManageGroup.jsx";
 import Signup from "./pages/Signup.jsx";
 import PaymentOption from "./pages/purchase/Payment-option.jsx";
 import Subscription from "./pages/purchase/Subscription.jsx";
