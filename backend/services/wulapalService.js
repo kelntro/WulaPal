@@ -10,45 +10,36 @@ const wallet = new ethers.Wallet(privateKey, provider);
 const WulaPalFactory = new ethers.ContractFactory(WulaPalABI.abi, WulaPalABI.bytecode, wallet);
 
 async function createGroup(contributionAmount, frequency, requiredMembers) {
-    console.log(`🔹 Checking deployer balance...`);
-    
-    // ✅ FIXED: Use provider to check balance
-    const balance = await provider.getBalance(wallet.address);
-    console.log(`💰 Deployer balance: ${ethers.formatEther(balance)} ETH`);
-
-    if (balance < ethers.parseEther("0.1")) {  // Ensure at least 0.1 ETH
-        console.error("❌ Error: Not enough funds to deploy contract!");
-        return { success: false, error: "Not enough funds to deploy contract" };
-    }
-
-    console.log(`🔹 Deploying new WulaPal contract for group with ${requiredMembers} members`);
-
     try {
+        console.log(`🔹 Checking deployer balance...`);
+        const balance = await provider.getBalance(wallet.address);
+        console.log(`💰 Deployer balance: ${ethers.formatEther(balance)} ETH`);
+
+        if (!contributionAmount || !frequency || !requiredMembers) {
+            console.error("❌ Error: Invalid contract parameters");
+            return { success: false, error: "Invalid contract parameters" };
+        }
+
+        console.log(`🚀 Deploying contract with ${requiredMembers} members...`);
+
         const wulapal = await WulaPalFactory.deploy(
-            ethers.parseEther(contributionAmount.toString()), 
-            frequency, 
+            ethers.parseUnits(contributionAmount.toString(), "ether"), // Convert to wei
+            frequency,
             requiredMembers
         );
+
         await wulapal.waitForDeployment();
         const contractAddress = await wulapal.getAddress();
 
-        console.log(`✅ Group contract deployed at: ${contractAddress}`);
+        console.log(`✅ Smart Contract Deployed at: ${contractAddress}`);
         return { success: true, contractAddress };
+
     } catch (error) {
-        console.error("❌ Deployment failed!");
-
-        // Extract useful error message
-        let cleanError = "Unknown error";
-        if (error.reason) {
-            cleanError = error.reason;  // Catch readable Hardhat error
-        } else if (error.message) {
-            cleanError = error.message.split("\n")[0]; // Remove long hash values
-        }
-
-        console.error(`❌ Error: ${cleanError}`);
-        return { success: false, error: cleanError };
+        console.error("❌ Deployment Error:", error);
+        return { success: false, error: error.reason || error.message };
     }
 }
+
 
 // Function to allow users to contribute to the contract
 async function contribute(userAddress, amount) {

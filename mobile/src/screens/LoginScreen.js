@@ -16,7 +16,7 @@ const LoginScreen = ({ navigation }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE_URL = "http://192.168.1.5:5050"; // Replace with your local network IP
+  const API_BASE_URL = "http://192.168.56.1:5050"; // Replace with your local network IP
 
   const handleLogin = async () => {
     setLoading(true);
@@ -51,8 +51,14 @@ const LoginScreen = ({ navigation }) => {
   
       // Store token & user data in AsyncStorage for persistence
       await AsyncStorage.setItem("token", data.token);
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
-  
+      if (!data.user || !data.user._id) {
+        console.error("Received user data:", data.user); // Log for debugging
+        throw new Error("Invalid user data received. Please try again.");
+    }
+    
+    
+    await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      
       Alert.alert("Success", "Login successful!", [
         { text: "OK", onPress: () => navigation.reset({
             index: 0,

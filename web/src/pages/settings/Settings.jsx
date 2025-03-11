@@ -6,6 +6,15 @@ import { HiChevronRight } from "react-icons/hi";
 const Settings = () => {
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    // ✅ Clear authentication data
+    localStorage.removeItem("token"); // Remove stored token
+    localStorage.removeItem("user"); // Remove stored user data
+
+    // ✅ Redirect to login page
+    navigate("/login", { replace: true });
+  };
+
   return (
     <div className="p-2 min-h-screen flex flex-col items-start ml-[90px]">
       <div className="w-[calc(100%-0.1rem)] max-w-7xl">
@@ -37,7 +46,7 @@ const Settings = () => {
           
           <button 
             className="bg-[#6A8C73] hover:bg-[#285236] text-white font-medium py-4 px-6 rounded-2xl flex items-center justify-between"
-            onClick={() => navigate("/logout")}
+            onClick={handleLogout} // ✅ Call logout function
           >
             Log out
             <FiLogOut className="text-xl" />

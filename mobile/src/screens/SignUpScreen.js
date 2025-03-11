@@ -19,7 +19,7 @@ const SignUpScreen = ({ navigation }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
-  const API_BASE_URL = "http://192.168.1.5:5050"; // Replace with your local network IP
+  const API_BASE_URL = "http://192.168.56.1:5050"; // Replace with your local network IP
 
 const handleSignup = async () => {
   if (!name || !email || !password || !confirmPassword) {
