@@ -3,5 +3,8 @@ node_modules/
 logs/
 *.log
 .env
-
 uploads/
+
+#Json Package
+*package.json
+*package-lock.json

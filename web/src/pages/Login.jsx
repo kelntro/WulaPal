@@ -1,4 +1,4 @@
-import { useState } from "react"; 
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
@@ -10,11 +10,32 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [resendMessage, setResendMessage] = useState(null);
+  const [countdown, setCountdown] = useState(60);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    let timer;
+    if (resendDisabled) {
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev === 1) {
+            clearInterval(timer);
+            setResendDisabled(false);
+            return 60;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendDisabled]);
+
   const handleLogin = async () => {
-    setError(null); // Clear previous errors
-    setLoading(true); // Disable button while processing
+    setError(null);
+    setResendMessage(null);
+    setLoading(true);
 
     if (!email || !password) {
       setError("Please enter both email and password.");
@@ -26,7 +47,7 @@ const Login = () => {
       const response = await fetch("http://localhost:5050/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role: "organizer" }), // Ensure only organizers log in
+        body: JSON.stringify({ email, password, role: "organizer" }),
       });
 
       const data = await response.json();
@@ -34,13 +55,10 @@ const Login = () => {
         throw new Error(data.error || "Login failed");
       }
 
-      if (data.user.role !== "organizer") {
-        throw new Error("Only organizers can log in here.");
+      // If OTP has been sent, navigate to OTP verification page
+      if (data.otpSent) {
+        navigate("/otp", { state: { email } });
       }
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/dashboard");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -48,18 +66,48 @@ const Login = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    setError(null);
+    setResendMessage(null);
+    setResendDisabled(true);
+    setCountdown(60);
+
+    if (!email) {
+      setError("Please enter your email before resending verification.");
+      setResendDisabled(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "http://localhost:5050/api/auth/resend-verification",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to resend verification email.");
+      }
+
+      setResendMessage("Verification email resent. Check your inbox.");
+    } catch (err) {
+      setError(err.message);
+      setResendDisabled(false);
+    }
+  };
+
   return (
     <div className="bg-gray-100 flex justify-center items-center min-h-screen px-4">
       <div className="w-full max-w-[1000px] flex flex-row bg-white shadow-lg rounded-lg overflow-hidden">
-        
         {/* Left Section - Login Form */}
         <div className="w-3/5 flex flex-col justify-center p-12">
           <h2 className="text-3xl font-bold text-green-900 mb-6">
             Welcome Back, Ka-Wula!
           </h2>
-
-          {/* Error Message */}
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
           {/* Email Input */}
           <div className="mb-6">
@@ -109,6 +157,32 @@ const Login = () => {
             {loading ? "Logging in..." : "Login"}
           </button>
 
+          {/* Error Message */}
+          {error && (
+            <div className="flex flex-col items-center justify-center">
+              <p className="text-red-500 text-sm mb-4">{error}</p>
+
+              {/* Show Resend Verification Button if the error is related to verification */}
+              {error.includes("verify your email") && (
+                <button
+                  onClick={handleResendVerification}
+                  disabled={resendDisabled}
+                  className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                >
+                  {resendDisabled
+                    ? `Resend in ${countdown}s...`
+                    : "Resend Verification Email"}
+                </button>
+              )}
+            </div>
+          )}
+
+          {resendMessage && (
+            <div className="flex flex-col items-center justify-center">
+              <p className="text-green-500 text-sm mb-4">{resendMessage}</p>
+            </div>
+          )}
+
           {/* OR Section */}
           <div className="flex items-center my-6">
             <div className="flex-grow h-px bg-gray-300"></div>
@@ -124,7 +198,10 @@ const Login = () => {
           {/* Sign Up Link */}
           <p className="mt-6 text-sm text-gray-600 text-center">
             Don’t have an account?{" "}
-            <Link to="/signup" className="text-green-700 font-semibold hover:underline">
+            <Link
+              to="/signup"
+              className="text-green-700 font-semibold hover:underline"
+            >
               Sign Up
             </Link>
           </p>

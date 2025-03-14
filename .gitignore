@@ -68,3 +68,7 @@ blockchain/.openzeppelin/
 # ⏳ Temporary Files
 *.bak
 *.tmp
+
+#Json Package
+*package.json
+*package-lock.json

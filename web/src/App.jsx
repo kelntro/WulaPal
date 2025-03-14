@@ -4,6 +4,7 @@ import "./styles/global.css";
 
 // Import Pages
 import Login from "./pages/Login.jsx";
+import OtpVerification from "./pages/OtpVerification.jsx";
 import Loginn from "./pages/ManageGroup.jsx";
 import Signup from "./pages/Signup.jsx";
 import PaymentOption from "./pages/purchase/Payment-option.jsx";
@@ -16,7 +17,6 @@ import SuccessTransfer from "./pages/wallet/Success-transfer.jsx";
 import Withdraw from "./pages/wallet/Withdraw.jsx";
 import SuccessWithdraw from "./pages/wallet/Success-withdraw.jsx";
 
-
 // Import Main Layout Component
 import MainLayout from "./components/MainLayout";
 
@@ -28,12 +28,13 @@ const App = () => {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/otp" element={<OtpVerification />} />
 
         {/* Purchase Routes */}
         <Route path="/purchase/payment-option" element={<PaymentOption />} />
         <Route path="/purchase/subscription" element={<Subscription />} />
         <Route path="/purchase/success" element={<SuccessSubscription />} />
-        
+
         {/* Wallet Routes */}
         <Route path="/wallet/deposit" element={<Deposit />} />
         <Route path="/wallet/success-deposit" element={<SuccessDeposit />} />

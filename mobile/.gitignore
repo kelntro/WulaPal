@@ -86,3 +86,7 @@ mobile/android/app/debug/
 mobile/android/app/intermediates/
 mobile/android/app/outputs/
 mobile/android/app/generated/
+
+#Json Package
+*package.json
+*package-lock.json
