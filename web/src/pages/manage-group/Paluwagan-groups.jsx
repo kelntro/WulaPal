@@ -112,11 +112,19 @@ useEffect(() => {
                   <FaCheckCircle className="mr-2 text-[#3A6953]" /> {group.status}
                 </div>
                 <button
-                  className="bg-[#6A8C73] text-white w-full px-4 py-2 rounded-[20px] shadow-md hover:bg-[#3A6953] transition"
-                  onClick={() => navigate(`/manage-group/${group._id}`)}
-                >
-                  View Group
-                </button>
+                className="bg-[#6A8C73] text-white w-full px-4 py-2 rounded-[20px] shadow-md hover:bg-[#3A6953] transition"
+                onClick={() => {
+                  if (!group._id) {
+                    console.error("❌ Group ID is undefined. Cannot navigate.");
+                    return;
+                  }
+                  console.log("🔗 Navigating to Group Members:", group._id);
+                  navigate(`/group-members/${group._id}`);
+                }}
+              >
+                View Group
+              </button>
+
               </div>
             </div>
           ))

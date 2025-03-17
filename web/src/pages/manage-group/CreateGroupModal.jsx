@@ -68,7 +68,8 @@ const handleImageUpload = (event) => {
             throw new Error("Image upload failed. Please try again.");
         }
 
-        const organizerName = localStorage.getItem("userName");
+        const user = JSON.parse(localStorage.getItem("user"));
+        const organizerName = user?.name || "Unknown Organizer";
         if (!organizerName) {
             throw new Error("Organizer name not found. Please log in again.");
         }

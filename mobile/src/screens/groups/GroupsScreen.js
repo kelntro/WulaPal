@@ -98,7 +98,7 @@ const GroupsScreen = () => {
           onPress={() => setSelectedTab("your")}
         >
           <Text style={[styles.toggleText, selectedTab === "your" && styles.activeText]}>
-            👥 Your
+            👥 Your Groups
           </Text>
         </TouchableOpacity>
         <TouchableOpacity

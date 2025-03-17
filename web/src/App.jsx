@@ -5,7 +5,7 @@ import "./styles/global.css";
 // Import Pages
 import Login from "./pages/Login.jsx";
 import OtpVerification from "./pages/OtpVerification.jsx";
-import Loginn from "./pages/ManageGroup.jsx";
+import GroupMembers from "./pages/manage-group/Group-members.jsx";
 import Signup from "./pages/Signup.jsx";
 import PaymentOption from "./pages/purchase/Payment-option.jsx";
 import Subscription from "./pages/purchase/Subscription.jsx";
@@ -43,6 +43,9 @@ const App = () => {
         <Route path="/wallet/withdraw" element={<Withdraw />} />
         <Route path="/wallet/success-withdraw" element={<SuccessWithdraw />} />
 
+        {/* Group Members Route */}
+        <Route path="/group-members/:groupId" element={<GroupMembers />} />
+        
         {/* Routes that include Sidebar */}
         <Route path="/*" element={<MainLayout />} />
       </Routes>

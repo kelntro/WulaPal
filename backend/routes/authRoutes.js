@@ -8,6 +8,19 @@ require("dotenv").config();
 
 const router = express.Router();
 
+const generateUserId = async () => {
+    let userId;
+    let exists = true;
+    
+    // Ensure userId is unique
+    while (exists) {
+        userId = Math.random().toString(36).substr(2, 8).toUpperCase(); // Example: "A1B2C3D4"
+        exists = await User.exists({ userId });
+    }
+
+    return userId;
+};
+
 // ✅ Configure Nodemailer with Gmail SMTP
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -87,6 +100,7 @@ router.post("/register", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = crypto.randomBytes(32).toString("hex");
+    const userId = await generateUserId();
 
     // ✅ Send Verification Email Before Saving User
     if (!(await sendVerificationEmail(email, verificationToken))) {
@@ -97,6 +111,7 @@ router.post("/register", async (req, res) => {
 
     // ✅ Save User Only If Email Was Sent Successfully
     const newUser = new User({
+      userId,
       name,
       email,
       password: hashedPassword,
