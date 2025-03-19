@@ -82,54 +82,88 @@ const sendOTPEmail = async (email, otp) => {
   }
 };
 
-// ✅ Register Route
+// ✅ Register Route (With OTP for Members, Email Verification for Organizers)
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, otp, platform } = req.body; // ✅ Add `platform` to detect web vs. mobile
 
     if (!role || !["organizer", "member"].includes(role)) {
-      return res
-        .status(400)
-        .json({ error: "Invalid role. Must be 'organizer' or 'member'." });
+      return res.status(400).json({ error: "Invalid role. Must be 'organizer' or 'member'." });
     }
 
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    if (existingUser && existingUser.isVerified) {
       return res.status(400).json({ error: "Email already registered." });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const userId = await generateUserId();
+    // ✅ Organizers Use Email Verification Instead (No OTP required)
+    if (role === "organizer" || platform === "web") {
+      const verificationToken = crypto.randomBytes(32).toString("hex");
 
-    // ✅ Send Verification Email Before Saving User
-    if (!(await sendVerificationEmail(email, verificationToken))) {
-      return res
-        .status(500)
-        .json({ error: "Email service error. Please try again later." });
+      if (!(await sendVerificationEmail(email, verificationToken))) {
+        return res.status(500).json({ error: "Email service error. Please try again later." });
+      }
+
+      // ✅ Save Organizer with Verification Token
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const userId = await generateUserId();
+
+      const newUser = new User({
+        userId,
+        name,
+        email,
+        password: hashedPassword,
+        role: "organizer",
+        isVerified: false,
+        verificationToken,
+      });
+
+      await newUser.save();
+
+      return res.status(201).json({
+        success: true,
+        message: "Check your email to verify your account.",
+      });
     }
 
-    // ✅ Save User Only If Email Was Sent Successfully
-    const newUser = new User({
-      userId,
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      isVerified: false,
-      verificationToken,
-    });
+    // ✅ Members Must Verify OTP Before Registration
+    if (role === "member" || platform === "mobile") {
+      if (!otp) {
+        return res.status(400).json({ error: "OTP is required for member registration." });
+      }
 
-    await newUser.save();
-    res.status(201).json({
-      success: true,
-      message: "Check your email to verify your account.",
-    });
+      const userOTP = await User.findOne({ email });
+      if (!userOTP || userOTP.otp !== otp || new Date() > userOTP.otpExpires) {
+        return res.status(400).json({ error: "Invalid or expired OTP." });
+      }
+
+      // Clear OTP after successful verification
+      userOTP.otp = null;
+      userOTP.otpExpires = null;
+
+      // Hash password and generate userId
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const userId = await generateUserId();
+
+      userOTP.userId = userId;
+      userOTP.name = name;
+      userOTP.password = hashedPassword;
+      userOTP.role = "member"; // Ensure role is stored
+      userOTP.isVerified = true;
+
+      await userOTP.save();
+
+      return res.status(201).json({ success: true, message: "Member registered successfully!" });
+    }
+
+    return res.status(400).json({ error: "Invalid registration request." });
   } catch (error) {
     console.error("❌ Registration error:", error);
-    res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: "Server error." });
   }
 });
+
+
 
 // ✅ Verify Email Route
 router.get("/verify-email/:token", async (req, res) => {
@@ -189,14 +223,13 @@ router.post("/resend-verification", async (req, res) => {
 });
 
 // ✅ Login Route (BLOCKS Unverified Users and Initiates OTP for Verified Users)
+// ✅ Login Route (No OTP for Members, Email Verification for Organizers)
 router.post("/login", async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
     if (!role || !["organizer", "member"].includes(role)) {
-      return res
-        .status(400)
-        .json({ error: "Invalid role. Must be 'organizer' or 'member'." });
+      return res.status(400).json({ error: "Invalid role. Must be 'organizer' or 'member'." });
     }
 
     const user = await User.findOne({ email, role });
@@ -205,9 +238,7 @@ router.post("/login", async (req, res) => {
     }
 
     if (!user.isVerified) {
-      return res
-        .status(400)
-        .json({ error: "Please verify your email before logging in." });
+      return res.status(400).json({ error: "Please verify your email before logging in." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -215,7 +246,19 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid email or password." });
     }
 
-    // Generate OTP for verified user
+    // ✅ No OTP Required for Members
+    if (role === "member") {
+      // Generate JWT Token
+      const token = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+
+      return res.json({ success: true, token, user });
+    }
+
+    // ✅ Organizers Continue Using Email Verification
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     user.otp = otp;
     user.otpExpires = new Date(Date.now() + 60 * 1000); // OTP expires in 60 seconds
@@ -223,9 +266,10 @@ router.post("/login", async (req, res) => {
 
     // Send OTP Email
     if (!(await sendOTPEmail(user.email, otp))) {
-      return res
-        .status(500)
-        .json({ error: "Failed to send OTP. Please try again later." });
+      return res.status(500).json({
+        error: "Failed to send OTP. Please try again later.",
+        user: { _id: user._id, role: user.role, email: user.email },
+      });
     }
 
     // Respond indicating that OTP has been sent
@@ -237,6 +281,46 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("❌ Login error:", error);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/request-otp", async (req, res) => {
+  try {
+    const { email, role } = req.body;
+
+    if (!email || !role) {
+      return res.status(400).json({ error: "Email and role are required." });
+    }
+
+    if (!["organizer", "member"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role. Must be 'organizer' or 'member'." });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser && existingUser.isVerified) {
+      return res.status(400).json({ error: "Email already registered." });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 min expiry
+
+    // Store OTP and role in DB
+    await User.updateOne(
+      { email },
+      { otp, otpExpires, role }, // Store role in temporary data
+      { upsert: true }
+    );
+
+    // Send OTP Email
+    if (!(await sendOTPEmail(email, otp))) {
+      return res.status(500).json({ error: "Failed to send OTP." });
+    }
+
+    return res.json({ success: true, message: "OTP sent to your email." });
+  } catch (error) {
+    console.error("❌ Error in request-otp:", error);
+    return res.status(500).json({ error: "Server error." });
   }
 });
 

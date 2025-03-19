@@ -16,64 +16,69 @@ const LoginScreen = ({ navigation }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE_URL = "http://192.168.56.1:5050"; // Replace with your local network IP
+  const API_BASE_URL = "http://10.0.2.2:5050"; // Replace with your local network IP
 
   const handleLogin = async () => {
     setLoading(true);
-  
-    if (!email || !password) {
-      Alert.alert("Error", "Please enter both email and password.");
-      setLoading(false);
-      return;
-    }
-  
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role: "member" }), // Ensure only members log in
-      });
-  
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid server response. Please check backend.");
-      }
-  
-      const data = await response.json();
-  
-      if (!response.ok) {
-        throw new Error(data.error || "Login failed.");
-      }
-  
-      if (data.user.role !== "member") {
-        throw new Error("Only members can log in here.");
-      }
-  
-      // Store token & user data in AsyncStorage for persistence
-      await AsyncStorage.setItem("token", data.token);
-      if (!data.user || !data.user._id) {
-        console.error("Received user data:", data.user); // Log for debugging
-        throw new Error("Invalid user data received. Please try again.");
-    }
-    
-    
-    await AsyncStorage.setItem("user", JSON.stringify(data.user));
-      
-      Alert.alert("Success", "Login successful!", [
-        { text: "OK", onPress: () => navigation.reset({
-            index: 0,
-            routes: [{ name: "MainApp", params: { screen: "Home" } }], // ✅ Redirect to Home inside MainApp
-          })
-        },
-      ]);
-    } catch (error) {
-      Alert.alert("Error", error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
 
+    if (!email || !password) {
+        Alert.alert("Error", "Please enter both email and password.");
+        setLoading(false);
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, role: "member" }), // Ensure only members log in
+        });
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("Invalid server response. Please check backend.");
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Login failed.");
+        }
+
+        if (!data.user || !data.user._id) {
+            console.error("[LOGIN] Missing user ID:", data.user); // Debugging
+            throw new Error("User ID is missing. Please try again.");
+        }
+
+        if (data.user.role !== "member") {
+            throw new Error("Only members can log in here.");
+        }
+
+        // ✅ Store token & user ID in AsyncStorage for wallet & other API requests
+        await AsyncStorage.setItem("token", data.token);
+        await AsyncStorage.setItem("user", JSON.stringify(data.user));
+
+        console.log("[LOGIN] User logged in successfully:", data.user);
+
+        Alert.alert("Success", "Login successful!", [
+            {
+                text: "OK",
+                onPress: () =>
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: "MainApp", params: { screen: "Home" } }], // ✅ Redirect to Home inside MainApp
+                    }),
+            },
+        ]);
+    } catch (error) {
+        console.error("[LOGIN] Error:", error.message);
+        Alert.alert("Error", error.message);
+    } finally {
+        setLoading(false);
+    }
+};
+
+  
   return (
     <StyledView className="flex-1 bg-white px-6 justify-center">
       {/* Logo */}

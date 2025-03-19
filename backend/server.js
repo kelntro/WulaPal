@@ -9,12 +9,18 @@ const http = require("http");
 const socketIo = require("socket.io");
 const os = require("os");
 const User = require("./models/User");
+const walletRoutes = require("./routes/walletRoutes");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use((req, res, next) => {
+    console.log(`[REQUEST] ${req.method} ${req.url} - Body:`, req.body);
+    next();
+});
 
+app.use("/api/wallet", walletRoutes);  // ✅ Register wallet routes
 // ✅ Get Local Network IP (for mobile access)
 const getLocalIp = () => {
     const interfaces = os.networkInterfaces();

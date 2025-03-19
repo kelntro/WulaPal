@@ -19,49 +19,38 @@ const SignUpScreen = ({ navigation }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
-  const API_BASE_URL = "http://192.168.56.1:5050"; // Replace with your local network IP
+  const API_BASE_URL = "http://10.0.2.2:5050"; // Replace with your local network IP
 
-const handleSignup = async () => {
-  if (!name || !email || !password || !confirmPassword) {
-    Alert.alert("Error", "All fields are required.");
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    Alert.alert("Error", "Passwords do not match.");
-    return;
-  }
-
-  if (!agree) {
-    Alert.alert("Error", "You must agree to the Terms and Conditions.");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, role: "member" }), // Ensure only members register
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Registration failed.");
+  const requestOTP = async () => {
+    if (!email) {
+      Alert.alert("Error", "Please enter your email.");
+      return;
     }
-
-    Alert.alert("Success", "Member account created successfully!", [
-      { text: "OK", onPress: () => navigation.navigate("LoginScreen") },
-    ]);
-  } catch (error) {
-    Alert.alert("Error", error.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  
+    setLoading(true);
+  
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/request-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role: "member" }), // Include role
+      });
+  
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to request OTP.");
+      }
+  
+      Alert.alert("Success", "OTP sent! Check your email.");
+      navigation.navigate("OTPVerificationScreen", { name, email, password });
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
 
   return (
     <StyledView className="flex-1 bg-white px-6 justify-center">
@@ -135,14 +124,14 @@ const handleSignup = async () => {
         </StyledText>
       </StyledView>
 
-      {/* Sign Up Button */}
+      {/* Request OTP Button */}
       <StyledTouchableOpacity
         className="bg-green-700 rounded-lg py-3 items-center mb-4"
-        onPress={handleSignup}
+        onPress={requestOTP}
         disabled={loading}
       >
         <StyledText className="text-white font-bold text-lg">
-          {loading ? "Signing Up..." : "Sign Up"}
+          {loading ? "Requesting OTP..." : "Request OTP"}
         </StyledText>
       </StyledTouchableOpacity>
 

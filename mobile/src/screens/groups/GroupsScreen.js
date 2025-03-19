@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native"; // ✅ Auto-refresh on screen focus
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import io from "socket.io-client";
 
@@ -26,38 +26,43 @@ const GroupsScreen = () => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        const userData = await AsyncStorage.getItem("user");
-        if (!userData) {
-          console.error("❌ User data not found.");
-          return;
-        }
-        const user = JSON.parse(userData);
-        setCurrentUserId(user._id);
-
-        const response = await fetch(`${SERVER_URL}/api/groups`);
-        const data = await response.json();
-
-        console.log("📥 Groups fetched:", data);
-
-        const userJoinedGroups = data.filter((group) => group.members.includes(user._id));
-        const availableGroupsList = data.filter(
-          (group) => !group.members.includes(user._id) && group.members.length < group.requiredMembers
-        );
-
-        setUserGroups(userJoinedGroups);
-        setAvailableGroups(availableGroupsList);
-        setLoading(false);
-      } catch (error) {
-        console.error("❌ Error fetching groups:", error);
-        setLoading(false);
+  const fetchGroups = async () => {
+    try {
+      const userData = await AsyncStorage.getItem("user");
+      if (!userData) {
+        console.error("❌ User data not found.");
+        return;
       }
-    };
+      const user = JSON.parse(userData);
+      setCurrentUserId(user._id);
 
-    fetchGroups();
+      const response = await fetch(`${SERVER_URL}/api/groups`);
+      const data = await response.json();
 
+      console.log("📥 Groups fetched:", data);
+
+      const userJoinedGroups = data.filter((group) => group.members.includes(user._id));
+      const availableGroupsList = data.filter(
+        (group) => !group.members.includes(user._id) && group.members.length < group.requiredMembers
+      );
+
+      setUserGroups(userJoinedGroups);
+      setAvailableGroups(availableGroupsList);
+      setLoading(false);
+    } catch (error) {
+      console.error("❌ Error fetching groups:", error);
+      setLoading(false);
+    }
+  };
+
+  // ✅ Automatically fetch groups when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchGroups();
+    }, [])
+  );
+
+  useEffect(() => {
     // ✅ Listen for new groups in real-time
     socket.on("newGroup", (newGroup) => {
       console.log("🔄 New group received:", newGroup);

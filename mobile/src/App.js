@@ -9,6 +9,10 @@ import OnboardingThree from './screens/onboarding/onboarding-three';
 import BottomTabNavigator from './navigation/BottomTabNavigator'; // Main App after onboarding
 import GroupDetailsScreen from './screens/groups/GroupDetailsScreen';
 import TransactionDetailsScreen from './screens/transactions/TransactionDetailsScreen';
+import OTPVerificationScreen from "./screens/OTPVerificationScreen";
+import DepositScreen from './screens/wallet/DepositScreen';
+import TransferScreen from './screens/wallet/TransferScreen';
+import WithdrawScreen from './screens/wallet/WithdrawScreen';
 
 const Stack = createStackNavigator();
 
@@ -29,6 +33,13 @@ const App = () => {
 
         <Stack.Screen name="TransactionDetails" component={TransactionDetailsScreen} />
 
+        <Stack.Screen name="DepositScreen" component={DepositScreen} options={{ title: 'Deposit Funds' }} />
+        <Stack.Screen name="TransferScreen" component={TransferScreen} options={{ title: 'Transfer Funds' }} />
+        <Stack.Screen name="WithdrawScreen" component={WithdrawScreen} options={{ title: 'Withdraw Funds' }} />
+        
+        <Stack.Screen name="OTPVerificationScreen" component={OTPVerificationScreen} />
+        
+        
         {/* Main App with Bottom Tabs after Onboarding */}
         <Stack.Screen name="MainApp" component={BottomTabNavigator} options={{ gestureEnabled: false }} />
       </Stack.Navigator>
