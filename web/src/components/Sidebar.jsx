@@ -31,7 +31,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       >
         {/* Logo (Always Visible) */}
         <img
-          src="assets/2.png"
+          src="/assets/2.png"
           alt="WulaPal Logo"
           className={`object-cover transition-all duration-300 ${
             isOpen ? "w-[80px] h-[80px]" : "w-[70px] h-[70px]"
@@ -105,34 +105,36 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           isActive={isActive("/help-center")}
         />
         <SidebarItem
-          to="purchase/subscription"
+          to="/purchase/subscription"
           icon={<MdOutlineSubscriptions />}
           label="Subscriptions"
           isOpen={isOpen}
-          isActive={isActive("purchase/subscription")}
+          isActive={isActive("/purchase/subscription")}
         />
       </ul>
 
       {/* User Profile Section */}
       <Link to="/profile/profile-information" className="block">
         <div
-          className={`flex items-center p-1 mt-6 mb-3 rounded-lg cursor-pointer transition duration-200 
-          ${isActive("/profile/profile-information") ? "bg-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          className={`flex items-center p-1 mt-6 mb-3 rounded-lg cursor-pointer transition duration-200 ${
+            isActive("/profile/profile-information")
+              ? "bg-[#6A8C73]"
+              : "hover:bg-[#6A8C73]"
+          }`}
         >
           <img
-            src="assets/Profile.jpg"
+            src="/assets/Profile.jpg"
             alt="User Avatar"
-            className={`transition-all object-cover rounded-full 
-            ${isOpen ? "w-[40px] h-[40px]" : "w-[40px] h-[40px]"}`}
+            className="transition-all object-cover rounded-full w-[40px] h-[40px]"
           />
-          
+
           {isOpen && (
             <div className="ml-3 flex-1">
               <p className="text-base font-semibold">Ali Riaz</p>
               <p className="text-xs text-gray-300">Travel Handler</p>
             </div>
           )}
-          
+
           {isOpen && <HiChevronRight className="text-gray-300" />}
         </div>
       </Link>
