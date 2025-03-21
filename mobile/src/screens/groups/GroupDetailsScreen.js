@@ -6,35 +6,49 @@ const SERVER_URL = "http://192.168.56.1:5050"; // Ensure this is correctly defin
 
 const joinGroup = async (groupId) => {
   try {
-      const userData = await AsyncStorage.getItem("user");
+    const userData = await AsyncStorage.getItem("user");
 
-      if (!userData) {
-          alert("❌ User not logged in! Please log in again.");
-          return;
-      }
+    if (!userData) {
+      alert("❌ User not logged in! Please log in again.");
+      return;
+    }
 
-      const user = JSON.parse(userData);
-      if (!user._id) {
-          alert("❌ Invalid user data! Please log in again.");
-          return;
-      }
+    const user = JSON.parse(userData);
+    if (!user._id) {
+      alert("❌ Invalid user data! Please log in again.");
+      return;
+    }
 
-      const userId = user._id;
+    const userId = user._id;
 
-      const response = await fetch(`${SERVER_URL}/api/join-group`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, groupId }),
-      });
+    // ✅ Fetch group details to check if user is already in the group
+    const groupResponse = await fetch(`${SERVER_URL}/api/groups/${groupId}`);
+    const groupData = await groupResponse.json();
 
-      const data = await response.json();
-      if (data.success) {
-          alert("✅ Successfully joined the group!");
-      } else {
-          alert(`❌ ${data.error}`);
-      }
+    const isMember = groupData.members.some(member =>
+      (typeof member === "string" ? member : member.userId)?.toString() === userId
+    );
+
+    if (isMember) {
+      alert("❌ You are already a member of this group!");
+      return;
+    }
+
+    // ✅ If not a member, proceed to join the group
+    const response = await fetch(`${SERVER_URL}/api/join-group`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, groupId }),
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      alert("✅ Successfully joined the group!");
+    } else {
+      alert(`❌ ${data.error}`);
+    }
   } catch (error) {
-      console.error("❌ Error joining group:", error);
+    console.error("❌ Error joining group:", error);
   }
 };
 

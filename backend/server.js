@@ -368,11 +368,12 @@ app.post("/api/join-group", async (req, res) => {
         }
 
         // Prevent duplicate joining
-        if (group.members.some(member => member.toString() === userId.toString())) {
+        if (group.members.some(member => member.userId.toString() === userId.toString())) {
             return res.status(400).json({ error: "User already joined" });
         }
 
-        group.members.push(userId);
+        // ✅ Always save members as objects with the correct `ObjectId` instantiation
+        group.members.push({ userId: new mongoose.Types.ObjectId(userId), joinDate: new Date() });
 
         // If full, update status to active
         if (group.members.length >= group.requiredMembers) {

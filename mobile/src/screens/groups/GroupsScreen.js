@@ -35,17 +35,26 @@ const GroupsScreen = () => {
       }
       const user = JSON.parse(userData);
       setCurrentUserId(user._id);
-
+  
       const response = await fetch(`${SERVER_URL}/api/groups`);
       const data = await response.json();
-
+  
       console.log("📥 Groups fetched:", data);
-
-      const userJoinedGroups = data.filter((group) => group.members.includes(user._id));
-      const availableGroupsList = data.filter(
-        (group) => !group.members.includes(user._id) && group.members.length < group.requiredMembers
+  
+      // ✅ Extract user IDs from member objects and check membership correctly
+      const userJoinedGroups = data.filter((group) =>
+        group.members.some(member => 
+          (typeof member === "string" ? member : member.userId)?.toString() === user._id
+        )
       );
-
+  
+      const availableGroupsList = data.filter((group) =>
+        !group.members.some(member => 
+          (typeof member === "string" ? member : member.userId)?.toString() === user._id
+        ) &&
+        group.members.length < group.requiredMembers
+      );
+  
       setUserGroups(userJoinedGroups);
       setAvailableGroups(availableGroupsList);
       setLoading(false);
@@ -53,7 +62,7 @@ const GroupsScreen = () => {
       console.error("❌ Error fetching groups:", error);
       setLoading(false);
     }
-  };
+  };  
 
   // ✅ Automatically fetch groups when screen is focused
   useFocusEffect(

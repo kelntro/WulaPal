@@ -86,10 +86,6 @@ const WalletScreen = () => {
           onPress={() => navigation.navigate('DepositScreen')}
         />
         <AnimatedButton
-          title="Transfer"
-          onPress={() => navigation.navigate('TransferScreen')}
-        />
-        <AnimatedButton
           title="Withdraw"
           onPress={() => navigation.navigate('WithdrawScreen')}
         />

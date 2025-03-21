@@ -7,9 +7,6 @@ import TransactionsScreen from '../screens/transactions/TransactionsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import GroupsScreen from '../screens/groups/GroupsScreen';
 import Icon from 'react-native-vector-icons/FontAwesome6';
-import DepositScreen from '../screens/wallet/DepositScreen';
-import TransferScreen from '../screens/wallet/TransferScreen';
-import WithdrawScreen from '../screens/wallet/WithdrawScreen';
 
 const Tab = createBottomTabNavigator();
 

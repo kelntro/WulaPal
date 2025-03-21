@@ -3,130 +3,145 @@ import axios from 'axios';
 import { createPaymentIntent } from '../services/paymongoService.js';
 import Wallet from "../models/Wallet.js"; // ✅ Import Wallet model
 
+const XENDIT_API_KEY = process.env.XENDIT_SECRET_KEY;
+
 export const depositFunds = async (req, res) => {
     console.log("[DEPOSIT] API HIT: Received a deposit request");
 
     try {
-        let { amount, userId } = req.body;
+        const { amount, userId } = req.body;
 
-        // ✅ Validate `amount` and `userId`
         if (!amount || isNaN(amount) || amount <= 0) {
             console.error("[DEPOSIT] Invalid deposit amount:", amount);
-            return res.status(400).json({ message: "Invalid deposit amount. Please enter a valid number." });
+            return res.status(400).json({ message: "Invalid deposit amount." });
         }
 
         if (!userId || typeof userId !== "string") {
-            console.error("[DEPOSIT] Missing or invalid User ID:", userId);
+            console.error("[DEPOSIT] Invalid user ID:", userId);
             return res.status(400).json({ message: "User ID is required and must be a valid string." });
         }
 
-        console.log("[DEPOSIT] Amount received:", amount);
-        console.log("[DEPOSIT] User ID:", userId);
+        console.log("[DEPOSIT] Creating Xendit invoice...");
+        const invoicePayload = {
+            external_id: `deposit-${userId}-${Date.now()}`,
+            payer_email: `user-${userId}@wulapal.app`,
+            description: "WulaPal Deposit",
+            amount: Number(amount),
+            currency: "PHP",
+            success_redirect_url: "https://wulapal.app/payment-success", // optional
+        };
 
-        // ✅ Create PayMongo Payment Intent
-        console.log("[DEPOSIT] Creating PayMongo Payment Intent...");
-        const paymentIntent = await createPaymentIntent(amount);
+        const response = await axios.post("https://api.xendit.co/v2/invoices", invoicePayload, {
+            headers: {
+                Authorization: `Basic ${Buffer.from(XENDIT_API_KEY + ":").toString("base64")}`,
+                "Content-Type": "application/json",
+            },
+        });
 
-        if (!paymentIntent?.data?.id) {
-            console.error("[DEPOSIT] Failed to create payment intent.");
-            return res.status(500).json({ message: "Payment Intent creation failed. Please try again later." });
-        }
-
-        const paymentIntentId = paymentIntent.data.id;
-        console.log(`[DEPOSIT] Payment Intent ID: ${paymentIntentId}`);
-
-        // ✅ Create Payment Link
-        console.log("[DEPOSIT] Creating Payment Link...");
-        let checkoutUrl = null;
-
-        try {
-            const paymentLinkResponse = await axios.post(
-                "https://api.paymongo.com/v1/links",
-                {
-                    data: {
-                        attributes: {
-                            amount: amount * 100, // Convert PHP to centavos
-                            description: "WulaPal Deposit",
-                            currency: "PHP",
-                            payment_method_types: ["gcash", "card"]
-                        }
-                    }
-                },
-                {
-                    headers: {
-                        Authorization: `Basic ${Buffer.from(process.env.PAYMONGO_SECRET_KEY + ':').toString("base64")}`,
-                        "Content-Type": "application/json"
-                    }
-                }
-            );
-
-            checkoutUrl = paymentLinkResponse?.data?.data?.attributes?.checkout_url;
-        } catch (error) {
-            console.error("[DEPOSIT] Error retrieving checkout URL:", error.response?.data || error.message);
-            return res.status(500).json({ message: "Error retrieving checkout URL from PayMongo." });
-        }
+        const checkoutUrl = response.data.invoice_url;
 
         if (!checkoutUrl) {
-            console.error("[DEPOSIT] Error: No checkout URL received.");
-            return res.status(500).json({ message: "Failed to generate payment link. Please try again." });
+            console.error("[DEPOSIT] No checkout URL returned by Xendit.");
+            return res.status(500).json({ message: "Failed to generate payment link. Try again later." });
         }
 
-        console.log("[DEPOSIT] Retrieved Checkout URL:", checkoutUrl);
+        console.log("[DEPOSIT] Xendit Invoice Created. Checkout URL:", checkoutUrl);
 
-        // ✅ Fetch wallet or create a new one
+        // 📝 In live mode, use webhook to credit wallet after successful payment.
+        // For testing, we simulate wallet top-up immediately:
         let wallet = await Wallet.findOne({ userId });
 
         if (!wallet) {
-            console.log("[DEPOSIT] No existing wallet found. Creating new wallet...");
+            console.log("[DEPOSIT] Creating new wallet for user...");
             wallet = new Wallet({ userId, balance: 0 });
         }
 
-        // ✅ Update wallet balance
-        wallet.balance = (wallet.balance || 0) + Number(amount);
+        wallet.balance += Number(amount); // ✅ simulate deposit (remove when webhooks are live)
         await wallet.save();
 
-        console.log("[DEPOSIT] Wallet updated successfully. New Balance: ₱", wallet.balance);
+        console.log("[DEPOSIT] Wallet credited. New Balance: ₱", wallet.balance);
 
-        // ✅ Return success response
-        return res.status(200).json({ 
-            message: "Deposit successful. Payment Link Created.", 
+        return res.status(200).json({
+            message: "Deposit initiated. Redirecting to Xendit payment link.",
             checkout_url: checkoutUrl,
-            balance: wallet.balance 
+            balance: wallet.balance,
         });
-
     } catch (error) {
         console.error("[DEPOSIT] Error processing deposit:", error.response?.data || error.message);
-        return res.status(500).json({ message: "Error processing deposit.", error: error.message });
+        return res.status(500).json({
+            message: "Error processing deposit via Xendit.",
+            error: error.message,
+        });
     }
 };
 
 export const withdrawFunds = async (req, res) => {
+    console.log("[WITHDRAW] API HIT: Received a withdrawal request");
+
     try {
-        const { amount, gcashNumber, userId } = req.body;
-        if (!amount || isNaN(amount) || amount <= 0 || !gcashNumber || !userId) {
-            return res.status(400).json({ message: "Invalid withdrawal details" });
+        const { amount, mobileNumber, userId, channel } = req.body;
+
+        // ✅ Validate input
+        if (!amount || isNaN(amount) || amount <= 0) {
+            console.error("[WITHDRAW] Invalid amount:", amount);
+            return res.status(400).json({ message: "Invalid amount. Must be a positive number." });
         }
 
-        console.log(`[WITHDRAW] Processing withdrawal of ₱${amount} to GCash ${gcashNumber} for User ID: ${userId}`);
-
-        // ✅ Check if the user has sufficient balance
-        let wallet = await Wallet.findOne({ userId });
-
-        if (!wallet || wallet.balance < amount) {
-            console.error("[WITHDRAW] Insufficient balance.");
-            return res.status(400).json({ message: "Insufficient balance" });
+        if (!mobileNumber || typeof mobileNumber !== 'string' || mobileNumber.length < 10) {
+            console.error("[WITHDRAW] Invalid mobile number:", mobileNumber);
+            return res.status(400).json({ message: "Invalid mobile number." });
         }
 
-        // ✅ Deduct the amount from wallet balance
+        if (!userId || typeof userId !== 'string') {
+            console.error("[WITHDRAW] Invalid user ID:", userId);
+            return res.status(400).json({ message: "Invalid user ID." });
+        }
+
+        if (!channel) {
+            console.error("[WITHDRAW] Channel not specified.");
+            return res.status(400).json({ message: "Payout channel is required." });
+        }
+
+        console.log(`[WITHDRAW] Simulating withdrawal: ₱${amount}, Channel: ${channel}, Mobile: ${mobileNumber}, User: ${userId}`);
+
+        // ✅ Check balance
+        const wallet = await Wallet.findOne({ userId });
+        if (!wallet) {
+            console.error("[WITHDRAW] Wallet not found for userId:", userId);
+            return res.status(404).json({ message: "Wallet not found." });
+        }
+
+        if (wallet.balance < amount) {
+            console.warn(`[WITHDRAW] Insufficient funds. Balance: ₱${wallet.balance}, Requested: ₱${amount}`);
+            return res.status(400).json({ message: "Insufficient balance." });
+        }
+
+        // ✅ Deduct balance
         wallet.balance -= amount;
         await wallet.save();
 
-        console.log("[WITHDRAW] Withdrawal successful. New Balance: ₱", wallet.balance);
+        const referenceId = `xendit-${userId}-${Date.now()}`;
+        const payoutLog = {
+            status: "COMPLETED",
+            referenceId,
+            targetChannel: channel,
+            targetMobile: mobileNumber,
+        };
 
-        res.status(200).json({ message: "Withdrawal successful", balance: wallet.balance });
+        console.log("[WITHDRAW] ✅ Xendit simulated payout:", payoutLog);
+
+        return res.status(200).json({
+            message: "Withdrawal processed successfully (Simulated via Xendit)",
+            balance: wallet.balance,
+            payout: payoutLog
+        });
+
     } catch (error) {
-        console.error("[WITHDRAW] Error:", error);
-        res.status(500).json({ message: "Error processing withdrawal" });
+        console.error("[WITHDRAW] Error:", error.message);
+        return res.status(500).json({
+            message: "Withdrawal failed.",
+            error: error.message
+        });
     }
 };
 
