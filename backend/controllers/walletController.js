@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import axios from 'axios';
-import { createPaymentIntent } from '../services/paymongoService.js';
 import Wallet from "../models/Wallet.js"; // ✅ Import Wallet model
+import Transaction from '../models/Transaction.js';
 
 const XENDIT_API_KEY = process.env.XENDIT_SECRET_KEY;
 
@@ -22,8 +22,9 @@ export const depositFunds = async (req, res) => {
         }
 
         console.log("[DEPOSIT] Creating Xendit invoice...");
+        const ref = `deposit-${Date.now()}`;
         const invoicePayload = {
-            external_id: `deposit-${userId}-${Date.now()}`,
+            external_id: ref,
             payer_email: `user-${userId}@wulapal.app`,
             description: "WulaPal Deposit",
             amount: Number(amount),
@@ -59,6 +60,14 @@ export const depositFunds = async (req, res) => {
         wallet.balance += Number(amount); // ✅ simulate deposit (remove when webhooks are live)
         await wallet.save();
 
+        await Transaction.create({
+            userId,
+            type: 'deposit',
+            amount: Number(amount),
+            referenceId: ref,
+            status: 'confirmed'
+          });
+          
         console.log("[DEPOSIT] Wallet credited. New Balance: ₱", wallet.balance);
 
         return res.status(200).json({
@@ -120,7 +129,7 @@ export const withdrawFunds = async (req, res) => {
         wallet.balance -= amount;
         await wallet.save();
 
-        const referenceId = `xendit-${userId}-${Date.now()}`;
+        const referenceId = `xendit-${Date.now()}`;
         const payoutLog = {
             status: "COMPLETED",
             referenceId,
@@ -128,6 +137,18 @@ export const withdrawFunds = async (req, res) => {
             targetMobile: mobileNumber,
         };
 
+        await Transaction.create({
+            userId,
+            type: 'withdraw',
+            amount: Number(amount),
+            referenceId,
+            status: 'confirmed',
+            metadata: {
+              channel,
+              mobileNumber
+            }
+          });
+          
         console.log("[WITHDRAW] ✅ Xendit simulated payout:", payoutLog);
 
         return res.status(200).json({
@@ -142,6 +163,62 @@ export const withdrawFunds = async (req, res) => {
             message: "Withdrawal failed.",
             error: error.message
         });
+    }
+};
+
+export const transferFunds = async (req, res) => {
+    const { senderId, recipientId, amount } = req.body;
+
+    if (!senderId || !recipientId || !amount || isNaN(amount) || amount <= 0) {
+        return res.status(400).json({ message: "Invalid transfer data." });
+    }
+
+    if (senderId === recipientId) {
+        return res.status(400).json({ message: "Cannot transfer to the same user." });
+    }
+
+    try {
+        const senderWallet = await Wallet.findOne({ userId: senderId });
+        const recipientWallet = await Wallet.findOne({ userId: recipientId });
+
+        if (!senderWallet || senderWallet.balance < amount) {
+            return res.status(400).json({ message: "Insufficient balance." });
+        }
+
+        senderWallet.balance -= amount;
+        await senderWallet.save();
+
+        if (!recipientWallet) {
+            await Wallet.create({ userId: recipientId, balance: amount });
+        } else {
+            recipientWallet.balance += amount;
+            await recipientWallet.save();
+        }
+
+        // Sender transaction
+await Transaction.create({
+    userId: senderId,
+    type: 'transfer',
+    amount: Number(amount),
+    referenceId: `transfer-${Date.now()}`,
+    status: 'confirmed',
+    metadata: { to: recipientId }
+  });
+  
+  // Optionally: log for recipient too
+  await Transaction.create({
+    userId: recipientId,
+    type: 'transfer',
+    amount: Number(amount),
+    referenceId: `receive-${Date.now()}`,
+    status: 'confirmed',
+    metadata: { from: senderId }
+  });
+  
+        return res.status(200).json({ message: "Transfer successful." });
+    } catch (err) {
+        console.error("[TRANSFER] Error:", err.message);
+        res.status(500).json({ message: "Transfer failed.", error: err.message });
     }
 };
 
