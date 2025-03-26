@@ -10,6 +10,7 @@ const socketIo = require("socket.io");
 const os = require("os");
 const User = require("./models/User");
 const walletRoutes = require("./routes/walletRoutes");
+const Notification = require("./models/Notification");
 
 const app = express();
 app.use(cors());
@@ -76,52 +77,75 @@ const Group = mongoose.model("Group", GroupSchema);
 // ✅ Update `/api/create-group` to Emit Event When New Group is Created
 app.post("/api/create-group", async (req, res) => {
     try {
-        console.log("📥 Received request to create group:", req.body);
-
-        const { name, contributionAmount, frequency, requiredMembers, image, description, slots, handler } = req.body;
-
-        if (!name || !contributionAmount || !frequency || !requiredMembers || !slots) {
-            console.error("❌ Missing required fields");
-            return res.status(400).json({ error: "Missing required fields" });
-        }
-
-        console.log("🚀 Deploying contract to blockchain...");
-        const blockchainResult = await createGroup(contributionAmount, frequency, requiredMembers);
-
-        if (!blockchainResult.success) {
-            console.error("❌ Blockchain Deployment Failed:", blockchainResult.error);
-            return res.status(500).json({ error: blockchainResult.error });
-        }
-
-        console.log("📦 Saving group to MongoDB...");
-        const newGroup = new Group({
-            name,
-            contributionAmount,
-            frequency: frequency === 604800 ? "Weekly" : "Monthly",
-            requiredMembers,
-            image: image.startsWith("http") ? image : `${SERVER_URL}/uploads/${path.basename(image)}`,
-            description,
-            slots,
-            handler: handler || "Unknown Organizer",
-            contractAddress: blockchainResult.contractAddress,
-            members: [],
-            status: "open",
+      console.log("📥 Received request to create group:", req.body);
+  
+      const {
+        name,
+        contributionAmount,
+        frequency,
+        requiredMembers,
+        image,
+        description,
+        slots,
+        handler,
+      } = req.body;
+  
+      if (!name || !contributionAmount || !frequency || !requiredMembers || !slots) {
+        console.error("❌ Missing required fields");
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+  
+      console.log("🚀 Deploying contract to blockchain...");
+      const blockchainResult = await createGroup(contributionAmount, frequency, requiredMembers);
+  
+      if (!blockchainResult.success) {
+        console.error("❌ Blockchain Deployment Failed:", blockchainResult.error);
+        return res.status(500).json({ error: blockchainResult.error });
+      }
+  
+      console.log("📦 Saving group to MongoDB...");
+      const newGroup = new Group({
+        name,
+        contributionAmount,
+        frequency: frequency === 604800 ? "Weekly" : "Monthly",
+        requiredMembers,
+        image: image.startsWith("http") ? image : `${SERVER_URL}/uploads/${path.basename(image)}`,
+        description,
+        slots,
+        handler: handler || "Unknown Organizer",
+        contractAddress: blockchainResult.contractAddress,
+        members: [],
+        status: "open",
+      });
+  
+      await newGroup.save();
+      console.log("✅ Group saved successfully:", newGroup);
+  
+      // ✅ Save notification to DB and emit
+      const organizer = await User.findOne({ name: newGroup.handler });
+      if (organizer) {
+        const savedNotification = await Notification.create({
+          organizerId: organizer._id,
+          message: `Group "${newGroup.name}" created.`,
         });
-
-        await newGroup.save();
-        console.log("✅ Group saved successfully:", newGroup);
-
-        // ✅ Emit event to notify all connected clients
-        io.emit("newGroup", newGroup);
-
-        res.json({ success: true, group: newGroup });
+  
+        io.emit("newGroup", {
+          organizerId: organizer._id.toString(),
+          message: savedNotification.message,
+          date: savedNotification.date,
+          _id: savedNotification._id,
+          read: savedNotification.read
+        });
+      }
+  
+      res.json({ success: true, group: newGroup });
     } catch (error) {
-        console.error("❌ Server Error:", error);
-        res.status(500).json({ error: error.message });
+      console.error("❌ Server Error:", error);
+      res.status(500).json({ error: error.message });
     }
-});
-
-    
+  });
+  
+ 
 app.post("/api/contribute", async (req, res) => {
     try {
         const { amount } = req.body;
@@ -248,43 +272,60 @@ app.post("/api/groups/:groupId/add-member", async (req, res) => {
             return res.status(404).json({ error: "Group not found" });
         }
 
-        // 🔥 Ensure members array does not contain null values
+        // 🔥 Clean members array
         group.members = group.members.filter(member => member.userId !== null && member.userId !== undefined);
 
-        // Stop accepting if full
+        // Check if full
         if (group.members.length >= group.requiredMembers) {
             return res.status(400).json({ error: "Group is already full" });
         }
 
-        // Prevent duplicate joining
+        // Prevent duplicates
         if (group.members.some(member => member.userId.toString() === user._id.toString())) {
             return res.status(400).json({ error: "User already joined this group" });
         }
 
-        // ✅ Add the user with the join date
+        // ✅ Add user
         group.members.push({
             userId: user._id,
-            joinDate: new Date() // ✅ Store the exact timestamp
+            joinDate: new Date()
         });
 
-        // If full, update status to active and start payouts
-        if (group.members.length + 1 >= group.requiredMembers) {
-            group.status = "active"; // ✅ Change status to active
+        // ✅ Handle full group logic
+        if (group.members.length >= group.requiredMembers) {
+            group.status = "active";
 
-            // ✅ Start the ROSCA payout
-            const payoutDate = new Date();
-            group.payouts = [
-                {
-                    recipientId: group.members[0].userId, // First member gets first payout
-                    payoutDate: payoutDate
-                }
-            ];
-            group.nextPayoutDate = new Date(payoutDate.setDate(payoutDate.getDate() + 30)); // Set next payout date
+            const frequencyDays = group.frequency === "Monthly" ? 30 : 7;
+            const now = new Date();
+
+            const shuffled = [...group.members].sort(() => Math.random() - 0.5);
+
+            group.payouts = shuffled.map((member, index) => ({
+                recipientId: member.userId,
+                payoutDate: new Date(now.getTime() + index * frequencyDays * 24 * 60 * 60 * 1000)
+            }));
+
+            group.nextPayoutDate = group.payouts[0].payoutDate;
         }
 
         await group.save();
 
-        // ✅ Fetch updated member details
+        // ✅ Save notification to DB
+        const organizer = await User.findOne({ name: group.handler });
+        if (organizer) {
+            await Notification.create({
+                organizerId: organizer._id,
+                message: `New member "${user.name}" joined group "${group.name}".`,
+            });
+
+            io.emit("groupUpdated", {
+                organizerId: organizer._id.toString(),
+                message: `New member "${user.name}" joined group "${group.name}".`,
+                date: new Date()
+            });
+        }
+
+        // ✅ Send updated members back
         const membersDetails = await Promise.all(
             group.members.map(async (member) => {
                 const userDetails = await User.findById(member.userId, { _id: 1, name: 1 });
@@ -296,9 +337,6 @@ app.post("/api/groups/:groupId/add-member", async (req, res) => {
                 };
             })
         );
-
-        // ✅ Emit event to update clients
-        io.emit("groupUpdated", { groupId, members: membersDetails, payouts: group.payouts });
 
         res.json({ success: true, members: membersDetails, payouts: group.payouts });
     } catch (error) {
@@ -377,12 +415,42 @@ app.post("/api/join-group", async (req, res) => {
 
         // If full, update status to active
         if (group.members.length >= group.requiredMembers) {
-            group.status = "active"; // Change status to active
-        }
+            group.status = "active";
+        
+            const frequencyDays = group.frequency === "Monthly" ? 30 : 7;
+            const now = new Date();
+        
+            const shuffled = [...group.members].sort(() => Math.random() - 0.5);
+        
+            group.payouts = shuffled.map((member, index) => ({
+                recipientId: member.userId,
+                payoutDate: new Date(now.getTime() + index * frequencyDays * 24 * 60 * 60 * 1000)
+            }));
+        
+            group.nextPayoutDate = group.payouts[0].payoutDate;
+        }        
 
         await group.save();
-        io.emit("groupUpdated", group); // Notify clients
+
+        // ✅ Find organizer and send notification
+        const organizer = await User.findOne({ name: group.handler });
+        if (organizer) {
+            const newNotif = await Notification.create({
+                organizerId: organizer._id,
+                message: `New member joined group "${group.name}".`,
+            });
+
+            io.emit("groupUpdated", {
+                organizerId: organizer._id.toString(),
+                message: newNotif.message,
+                date: newNotif.date,
+                _id: newNotif._id,
+                read: newNotif.read
+            });
+        }
+
         res.json({ success: true, group });
+
     } catch (error) {
         console.error("❌ Error joining group:", error);
         res.status(500).json({ error: error.message });
@@ -523,3 +591,21 @@ server.listen(PORT, () => console.log(`✅ WebSocket & Backend running on port $
 
 const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth", authRoutes);
+
+
+app.get("/api/notifications/:organizerId", async (req, res) => {
+    const { organizerId } = req.params;
+    const notifications = await Notification.find({ organizerId }).sort({ date: -1 });
+    res.json(notifications);
+  });
+  
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    await Notification.findByIdAndUpdate(req.params.id, { read: true });
+    res.json({ success: true });
+  });
+  
+  app.delete("/api/notifications/:id", async (req, res) => {
+    await Notification.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  });
+  

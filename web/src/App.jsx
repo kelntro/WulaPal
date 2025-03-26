@@ -16,6 +16,7 @@ import Transfer from "./pages/wallet/Transfer.jsx";
 import SuccessTransfer from "./pages/wallet/Success-transfer.jsx";
 import Withdraw from "./pages/wallet/Withdraw.jsx";
 import SuccessWithdraw from "./pages/wallet/Success-withdraw.jsx";
+import ChangePassword from "./pages/settings/ChangePassword.jsx";
 
 // Import Main Layout Component
 import MainLayout from "./components/MainLayout";
@@ -43,6 +44,8 @@ const App = () => {
         <Route path="/wallet/withdraw" element={<Withdraw />} />
         <Route path="/wallet/success-withdraw" element={<SuccessWithdraw />} />
 
+        <Route path="/change-password" element={<ChangePassword />} />
+        
         {/* Group Members Route */}
         <Route path="/group-members/:groupId" element={<GroupMembers />} />
         
