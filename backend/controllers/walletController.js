@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import axios from 'axios';
 import Wallet from "../models/Wallet.js"; // ✅ Import Wallet model
 import Transaction from '../models/Transaction.js';
+import { getUSDTFromPHP } from "../utils/exchange.js";
 
 const XENDIT_API_KEY = process.env.XENDIT_SECRET_KEY;
 
@@ -59,13 +60,17 @@ export const depositFunds = async (req, res) => {
         wallet.balance += Number(amount); // ✅ simulate deposit (remove when webhooks are live)
         await wallet.save();
 
+        const { usdtAmount, rate } = await getUSDTFromPHP(Number(amount));
+
         await Transaction.create({
-            userId,
-            type: 'deposit',
-            amount: Number(amount),
-            referenceId: ref,
-            status: 'confirmed'
-          });
+        userId,
+        type: 'deposit',
+        amount: Number(amount),         // PHP value
+        amountUSDT: usdtAmount,         // Converted USDT value
+        exchangeRate: rate,             // Live PHP → USDT rate
+        referenceId: ref,
+        status: 'confirmed'
+        });
           
         console.log("[DEPOSIT] Wallet credited. New Balance: ₱", wallet.balance);
 

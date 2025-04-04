@@ -13,6 +13,7 @@ import OTPVerificationScreen from "./screens/OTPVerificationScreen";
 import DepositScreen from './screens/wallet/DepositScreen';
 import TransferScreen from './screens/wallet/TransferScreen';
 import WithdrawScreen from './screens/wallet/WithdrawScreen';
+import NotificationScreen from './screens/notifications/NotificationScreen';
 
 const Stack = createStackNavigator();
 
@@ -39,6 +40,7 @@ const App = () => {
         
         <Stack.Screen name="OTPVerificationScreen" component={OTPVerificationScreen} />
         
+        <Stack.Screen name="Notifications" component={NotificationScreen} />
         
         {/* Main App with Bottom Tabs after Onboarding */}
         <Stack.Screen name="MainApp" component={BottomTabNavigator} options={{ gestureEnabled: false }} />

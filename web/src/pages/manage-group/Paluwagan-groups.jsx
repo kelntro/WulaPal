@@ -17,57 +17,62 @@ const PaluwaganGroups = () => {
     transports: ["websocket", "polling"],
     reconnection: true, // Auto-reconnect
     reconnectionAttempts: 5, // Retry 5 times before failing
-    timeout: 10000 // 10 seconds timeout
-});
-
-const [organizerId, setOrganizerId] = useState(null); // Store user ID dynamically
-
-useEffect(() => {
-  // Fetch the current logged-in user from local storage or an API
-  const loggedInUser = JSON.parse(localStorage.getItem("user")); // Assuming user data is stored here
-
-  if (loggedInUser && loggedInUser.name) {
-    setOrganizerId(loggedInUser.name);
-  } else {
-    console.error("❌ No logged-in user found!");
-  }
-}, []);
-
-useEffect(() => {
-  if (!organizerId) return; // Don't fetch if the organizer ID is not set
-
-  fetch(`${SERVER_URL}/api/organizer-groups?organizerId=${organizerId}`)
-    .then(async (response) => {
-      const text = await response.text();
-      console.log("📥 Raw API Response:", text);
-      return JSON.parse(text);
-    })
-    .then((data) => {
-      console.log("✅ Organizer Groups:", data);
-      setGroups(data);
-    })
-    .catch((error) => console.error("❌ Error fetching groups:", error));
-
-  // ✅ Listen for real-time updates
-  socket.on("groupUpdated", (updatedGroup) => {
-    setGroups((prevGroups) =>
-      prevGroups.map((group) =>
-        group._id === updatedGroup._id ? updatedGroup : group
-      )
-    );
+    timeout: 10000, // 10 seconds timeout
   });
 
-  return () => {
-    socket.disconnect();
-  };
-}, [organizerId]); // Runs only when organizerId is set
+  const [organizerId, setOrganizerId] = useState(null); // Store user ID dynamically
 
+  useEffect(() => {
+    // Fetch the current logged-in user from local storage or an API
+    const loggedInUser = JSON.parse(localStorage.getItem("user")); // Assuming user data is stored here
+
+    if (loggedInUser && loggedInUser.name) {
+      setOrganizerId(loggedInUser.name);
+    } else {
+      console.error("❌ No logged-in user found!");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (organizerId) {
+      fetchGroups();
+    }
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [organizerId]);
+
+  const fetchGroups = () => {
+    fetch(`${SERVER_URL}/api/organizer-groups?organizerId=${organizerId}`)
+      .then(async (response) => {
+        const text = await response.text();
+        console.log("📥 Raw API Response:", text);
+        return JSON.parse(text);
+      })
+      .then((data) => {
+        console.log("✅ Organizer Groups:", data);
+        setGroups(data);
+      })
+      .catch((error) => console.error("❌ Error fetching groups:", error));
+
+    // Real-time update
+    socket.on("groupUpdated", (updatedGroup) => {
+      setGroups((prevGroups) =>
+        prevGroups.map((group) =>
+          group._id === updatedGroup._id ? updatedGroup : group
+        )
+      );
+    });
+  };
 
   return (
     <div className="p-2 sm:ml-[90px]">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-[#285236]">Paluwagan Groups</h1>
+          <h1 className="text-3xl font-bold text-[#285236]">
+            Paluwagan Groups
+          </h1>
           <p className="text-[#6A8C73] font-normal">
             Here’s your Paluwagan groups and manage your own group.
           </p>
@@ -86,45 +91,70 @@ useEffect(() => {
           onClick={() => setShowModal(true)}
           className="bg-[#3A6953] text-white px-4 py-2 pr-5 rounded-[20px] flex items-center shadow-md hover:bg-[#6A8C73] transition mr-6"
         >
-          <span className="mr-1"><FiPlus /></span> Create a Paluwagan
+          <span className="mr-1">
+            <FiPlus />
+          </span>{" "}
+          Create a Paluwagan
         </button>
       </div>
 
-      {showModal && <CreateGroupModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <CreateGroupModal
+          onClose={() => {
+            setShowModal(false);
+            fetchGroups();
+          }}
+        />
+      )}
 
       <div className="flex flex-wrap justify-center gap-[20px] mr-[30px]">
         {groups.length > 0 ? (
           groups.map((group) => (
-            <div key={group._id} className="bg-white rounded-[20px] shadow-lg p-4 flex-1 min-w-[300px] max-w-[350px]">
+            <div
+              key={group._id}
+              className="bg-white rounded-[20px] shadow-lg p-4 flex-1 min-w-[300px] max-w-[350px]"
+            >
               <div className="w-full h-[140px] rounded-t-[20px] overflow-hidden">
-                <img src={group.image || "/assets/default.jpg"} alt={group.name} className="w-full h-full object-cover" />
+                <img
+                  src={group.image || "/assets/default.jpg"}
+                  alt={group.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="p-4">
-                <h2 className="text-lg font-bold text-[#285236]">{group.name}</h2>
-                <p className="text-gray-600 text-sm mb-2">{group.description || "No description provided."}</p>
+                <h2 className="text-lg font-bold text-[#285236]">
+                  {group.name}
+                </h2>
+                <p className="text-gray-600 text-sm mb-2">
+                  {group.description || "No description provided."}
+                </p>
                 <div className="flex items-center text-[#6A8C73] text-sm mb-1">
-                  <FaUsers className="mr-2 text-[#3A6953]" /> {group.members.length}/{group.slots} Slots
+                  <FaUsers className="mr-2 text-[#3A6953]" />{" "}
+                  {group.members.length}/{group.slots} Slots
                 </div>
                 <div className="flex items-center text-[#6A8C73] text-sm mb-1">
-                  <FaArrowsRotate className="mr-2 text-[#3A6953]" /> ₱{group.contributionAmount} {group.frequency}
+                  <FaArrowsRotate className="mr-2 text-[#3A6953]" /> ₱
+                  {group.contributionAmount} {group.frequency}
                 </div>
                 <div className="flex items-center text-[#6A8C73] text-sm mb-4">
-                  <FaCheckCircle className="mr-2 text-[#3A6953]" /> {group.status}
+                  <FaCheckCircle className="mr-2 text-[#3A6953]" />{" "}
+                  {group.status}
                 </div>
                 <button
-                className="bg-[#6A8C73] text-white w-full px-4 py-2 rounded-[20px] shadow-md hover:bg-[#3A6953] transition"
-                onClick={() => {
-                  if (!group._id) {
-                    console.error("❌ Group ID is undefined. Cannot navigate.");
-                    return;
-                  }
-                  console.log("🔗 Navigating to Group Members:", group._id);
-                  navigate(`/group-members/${group._id}`);
-                }}
-              >
-                View Group
-              </button>
-
+                  className="bg-[#6A8C73] text-white w-full px-4 py-2 rounded-[20px] shadow-md hover:bg-[#3A6953] transition"
+                  onClick={() => {
+                    if (!group._id) {
+                      console.error(
+                        "❌ Group ID is undefined. Cannot navigate."
+                      );
+                      return;
+                    }
+                    console.log("🔗 Navigating to Group Members:", group._id);
+                    navigate(`/group-members/${group._id}`);
+                  }}
+                >
+                  View Group
+                </button>
               </div>
             </div>
           ))

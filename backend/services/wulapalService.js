@@ -1,11 +1,33 @@
+const { getUSDTFromPHP } = require("../utils/exchange");
+
 const { ethers } = require("ethers");
-const WulaPalABI = require("../../blockchain/artifacts/contracts/WulaPal.sol/WulaPal.json");
 require("dotenv").config();
 
-//const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+const WulaPalABI = require("../../blockchain/artifacts/contracts/WulaPal.sol/WulaPal.json");
+const MockUSDTABI = require("../../blockchain/artifacts/contracts/MockUSDT.sol/MockUSDT.json");
+
 const provider = new ethers.JsonRpcProvider(process.env.INFURA_AMOY_URL);
-const privateKey = process.env.PRIVATE_KEY;
-const wallet = new ethers.Wallet(privateKey, provider);
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+async function contributePHP(userId, contractAddress, phpAmount) {
+    const { usdtAmount, rate } = await getUSDTFromPHP(phpAmount);
+  
+    const parsedAmount = ethers.parseUnits(usdtAmount.toString(), 6); // 6 decimals for USDT
+  
+    // ✅ approve & contribute logic here...
+    console.log(`[CHAIN] Sending ${usdtAmount} USDT (₱${phpAmount}) at rate ₱${rate}/USDT`);
+  }
+  
+// Deploy Mock USDT if needed
+async function deployMockToken() {
+    console.log("🚀 Deploying Mock USDT token...");
+    const TokenFactory = new ethers.ContractFactory(MockUSDTABI.abi, MockUSDTABI.bytecode, wallet);
+    const token = await TokenFactory.deploy();
+    await token.waitForDeployment();
+    const tokenAddress = await token.getAddress();
+    console.log("✅ Token deployed at:", tokenAddress);
+    return tokenAddress;
+}
 
 const WulaPalFactory = new ethers.ContractFactory(WulaPalABI.abi, WulaPalABI.bytecode, wallet);
 
@@ -16,14 +38,16 @@ async function createGroup(contributionAmount, frequency, requiredMembers) {
         console.log(`💰 Deployer balance: ${ethers.formatEther(balance)} ETH`);
 
         if (!contributionAmount || !frequency || !requiredMembers) {
-            console.error("❌ Error: Invalid contract parameters");
             return { success: false, error: "Invalid contract parameters" };
         }
 
-        console.log(`🚀 Deploying contract with ${requiredMembers} members...`);
+        // Step 1: Deploy token dynamically
+        const tokenAddress = await deployMockToken();
 
+        console.log(`🚀 Deploying WulaPal contract...`);
         const wulapal = await WulaPalFactory.deploy(
-            ethers.parseUnits(contributionAmount.toString(), "ether"), // Convert to wei
+            tokenAddress,
+            ethers.parseUnits(contributionAmount.toString(), 6),
             frequency,
             requiredMembers
         );
@@ -31,8 +55,8 @@ async function createGroup(contributionAmount, frequency, requiredMembers) {
         await wulapal.waitForDeployment();
         const contractAddress = await wulapal.getAddress();
 
-        console.log(`✅ Smart Contract Deployed at: ${contractAddress}`);
-        return { success: true, contractAddress };
+        console.log(`✅ WulaPal Contract deployed at: ${contractAddress}`);
+        return { success: true, contractAddress, tokenAddress };
 
     } catch (error) {
         console.error("❌ Deployment Error:", error);
@@ -40,35 +64,50 @@ async function createGroup(contributionAmount, frequency, requiredMembers) {
     }
 }
 
-
-// Function to allow users to contribute to the contract
-async function contribute(userAddress, amount) {
+async function contribute(contractAddress, tokenAddress, amount) {
     try {
-        console.log(`🔹 User ${userAddress} contributing ${amount} ETH`);
-        
-        const signer = wallet.connect(provider);
-        const userContract = new ethers.Contract(userAddress, WulaPalABI.abi, signer);
-        
-        const tx = await userContract.contribute({ value: ethers.parseEther(amount.toString()) });
+        const stableToken = new ethers.Contract(tokenAddress, [
+            "function approve(address spender, uint256 amount) public returns (bool)"
+        ], wallet);
+
+        const parsedAmount = ethers.parseUnits(amount.toString(), 6);
+
+        console.log(`🔐 Approving ${amount} tokens to ${contractAddress}`);
+        const approveTx = await stableToken.approve(contractAddress, parsedAmount);
+        await approveTx.wait();
+
+        const contract = new ethers.Contract(contractAddress, WulaPalABI.abi, wallet);
+        const tx = await contract.contribute();
         await tx.wait();
-        
+
         console.log(`✅ Contribution successful: ${tx.hash}`);
         return { success: true, txHash: tx.hash };
+
     } catch (error) {
         console.error("❌ Error in contribute:", error);
         return { success: false, error: error.message };
     }
 }
 
-// Function to get contract balance
-async function getContractBalance(contractAddress) {
+async function getContractBalance(contractAddress, tokenAddress) {
     try {
-        const balance = await provider.getBalance(contractAddress);
-        return { success: true, balance: ethers.formatEther(balance) };
+        const stableToken = new ethers.Contract(tokenAddress, [
+            "function balanceOf(address) view returns (uint256)"
+        ], provider);
+
+        const balance = await stableToken.balanceOf(contractAddress);
+        return {
+            success: true,
+            balance: ethers.formatUnits(balance, 6)
+        };
     } catch (error) {
         console.error("❌ Error getting contract balance:", error);
         return { success: false, error: error.message };
     }
 }
 
-module.exports = { createGroup, contribute, getContractBalance };
+module.exports = {
+    createGroup,
+    contribute,
+    getContractBalance
+};

@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+require("dotenv").config();
 const { createGroup, contribute, getContractBalance } = require("./services/wulapalService");
 const multer = require("multer");
 const path = require("path");
@@ -11,6 +12,17 @@ const os = require("os");
 const User = require("./models/User");
 const walletRoutes = require("./routes/walletRoutes");
 const Notification = require("./models/Notification");
+const MemberNotification = require("./models/MemberNotification");
+const chatRoutes = require('./routes/chatRoutes');
+// 🔌 Connect to MongoDB here
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }).then(() => {
+    console.log("✅ Connected to MongoDB");
+  }).catch((err) => {
+    console.error("❌ Failed to connect to MongoDB:", err.message);
+  });
 
 const app = express();
 app.use(cors());
@@ -39,40 +51,8 @@ const SERVER_IP = "192.168.56.1"; // ✅ Use only the IP, without "http://" and 
 const SERVER_URL = `http://${SERVER_IP}:5050`;
 
 
-// ✅ Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log("✅ MongoDB Connected"))
-    .catch(err => console.error("❌ MongoDB Connection Error:", err));
+const Group = require("./models/Group");
 
-// ✅ Define and Register the Group Schema
-const GroupSchema = new mongoose.Schema({
-    name: String,
-    contributionAmount: String,
-    frequency: String,
-    requiredMembers: Number,
-    image: String,
-    description: String,
-    slots: Number,
-    handler: String,
-    contractAddress: String,
-    members: [
-        {
-            userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-            joinDate: { type: Date, default: Date.now }
-        }
-    ],
-    status: { type: String, default: "open" },
-    payouts: [
-        {
-            recipientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-            payoutDate: { type: Date, default: Date.now }
-        }
-    ],
-    nextPayoutDate: { type: Date } // ✅ Store next payout cycle date
-});
-
-
-const Group = mongoose.model("Group", GroupSchema);
 
 // ✅ Update `/api/create-group` to Emit Event When New Group is Created
 app.post("/api/create-group", async (req, res) => {
@@ -107,13 +87,18 @@ app.post("/api/create-group", async (req, res) => {
       const newGroup = new Group({
         name,
         contributionAmount,
-        frequency: frequency === 604800 ? "Weekly" : "Monthly",
+        frequency: frequency === 300 * 1e6
+        ? "Weekly"
+        : frequency === 600 * 1e6
+        ? "Bi-Weekly"
+        : "Monthly",
         requiredMembers,
         image: image.startsWith("http") ? image : `${SERVER_URL}/uploads/${path.basename(image)}`,
         description,
         slots,
         handler: handler || "Unknown Organizer",
         contractAddress: blockchainResult.contractAddress,
+        tokenAddress: blockchainResult.tokenAddress,
         members: [],
         status: "open",
       });
@@ -148,7 +133,7 @@ app.post("/api/create-group", async (req, res) => {
  
 app.post("/api/contribute", async (req, res) => {
     try {
-        const { amount } = req.body;
+        const { contractAddress, tokenAddress, amount } = req.body;
         const result = await contribute(req.userAddress, amount);
         res.json(result);
     } catch (error) {
@@ -237,7 +222,8 @@ app.get("/api/groups/:groupId", async (req, res) => {
             ...group,
             members: formattedMembers,
             payouts: formattedPayouts,
-            nextPayoutDate: group.nextPayoutDate ? new Date(group.nextPayoutDate).toLocaleDateString() : "Not Set"
+            nextPayoutDate: group.nextPayoutDate ? new Date(group.nextPayoutDate).toLocaleDateString() : "Not Set",
+            startDate: group.startDate ? new Date(group.startDate).toISOString() : null
         };
 
         console.log("✅ Group Data Sent:", formattedGroup);
@@ -294,19 +280,80 @@ app.post("/api/groups/:groupId/add-member", async (req, res) => {
         // ✅ Handle full group logic
         if (group.members.length >= group.requiredMembers) {
             group.status = "active";
+            group.startDate = new Date();
+            group.lastContributionDate = new Date(Date.now() - 5 * 60 * 1000);
+            group.hasStarted = false;
+            
 
-            const frequencyDays = group.frequency === "Monthly" ? 30 : 7;
+            let frequencyDays;
+            switch (group.frequency) {
+              case "Bi-Weekly":
+                frequencyDays = 14;
+                break;
+              case "Weekly":
+                frequencyDays = 7;
+                break;
+              case "Monthly":
+                frequencyDays = 30;
+                break;
+              default:
+                frequencyDays = 7;
+            }
+        
             const now = new Date();
-
             const shuffled = [...group.members].sort(() => Math.random() - 0.5);
-
+        
             group.payouts = shuffled.map((member, index) => ({
                 recipientId: member.userId,
                 payoutDate: new Date(now.getTime() + index * frequencyDays * 24 * 60 * 60 * 1000)
             }));
-
+        
             group.nextPayoutDate = group.payouts[0].payoutDate;
+
+            // ✅ Notify each member about their personal payout schedule
+            for (const payout of group.payouts) {
+                const user = await User.findById(payout.recipientId);
+                const formattedDate = new Date(payout.payoutDate).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+                });
+            
+                const message = `🗓️ Your payout for group "${group.name}" is scheduled on ${formattedDate}.`;
+            
+                await MemberNotification.create({
+                    userId: user._id, // ✅ REQUIRED FIELD
+                    message,
+                    type: "payout_schedule", // optional: better for filtering in UI
+                    groupId: group._id
+                  });                  
+            
+                io.emit("memberNotification", {
+                userId: user._id.toString(),
+                message,
+                date: new Date(),
+                });
+            }
+
+            
+            // ✅ Send notification to ALL members
+            for (const member of group.members) {
+                await MemberNotification.create({
+                  userId: member.userId, // ✅ FIXED FIELD
+                  message: `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`,
+                  type: "group_started", // optional, for filtering
+                  groupId: group._id
+                });
+              
+                io.emit("memberNotification", {
+                  userId: member.userId.toString(),
+                  message: `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`,
+                  date: new Date(),
+                });
+              }              
         }
+        
 
         await group.save();
 
@@ -416,10 +463,26 @@ app.post("/api/join-group", async (req, res) => {
         // If full, update status to active
         if (group.members.length >= group.requiredMembers) {
             group.status = "active";
+            group.startDate = new Date();
+            group.lastContributionDate = new Date(Date.now() - 5 * 60 * 1000);
+            group.hasStarted = false;
+            
+            let frequencyDays;
+            switch (group.frequency) {
+              case "Bi-Weekly":
+                frequencyDays = 14;
+                break;
+              case "Weekly":
+                frequencyDays = 7;
+                break;
+              case "Monthly":
+                frequencyDays = 30;
+                break;
+              default:
+                frequencyDays = 7;
+            }
         
-            const frequencyDays = group.frequency === "Monthly" ? 30 : 7;
             const now = new Date();
-        
             const shuffled = [...group.members].sort(() => Math.random() - 0.5);
         
             group.payouts = shuffled.map((member, index) => ({
@@ -428,7 +491,50 @@ app.post("/api/join-group", async (req, res) => {
             }));
         
             group.nextPayoutDate = group.payouts[0].payoutDate;
-        }        
+        
+            // ✅ Notify each member about their personal payout schedule
+            for (const payout of group.payouts) {
+                const user = await User.findById(payout.recipientId);
+                const formattedDate = new Date(payout.payoutDate).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+                });
+            
+                const message = `🗓️ Your payout for group "${group.name}" is scheduled on ${formattedDate}.`;
+            
+                await MemberNotification.create({
+                    userId: user._id, // ✅ REQUIRED FIELD
+                    message,
+                    type: "payout_schedule", // optional: better for filtering in UI
+                    groupId: group._id
+                  });  
+            
+                io.emit("memberNotification", {
+                userId: user._id.toString(),
+                message,
+                date: new Date(),
+                });
+            }
+  
+            // ✅ Send notification to ALL members
+            for (const member of group.members) {
+                await MemberNotification.create({
+                  userId: member.userId, // ✅ FIXED FIELD
+                  message: `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`,
+                  type: "group_started", // optional, for filtering
+                  groupId: group._id
+                });
+              
+                io.emit("memberNotification", {
+                  userId: member.userId.toString(),
+                  message: `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`,
+                  date: new Date(),
+                });
+              } 
+        }
+             
 
         await group.save();
 
@@ -457,7 +563,30 @@ app.post("/api/join-group", async (req, res) => {
     }
 });
 
+// ✅ Confirm a member's contribution
+app.post("/api/confirm-contribution", async (req, res) => {
+    try {
+      const { userId, groupId } = req.body;
+  
+      if (!userId || !groupId) return res.status(400).json({ error: "Missing userId or groupId" });
+  
+      await MemberNotification.create({
+        userId, // ✅ Correct key
+        groupId,
+        type: "contribution_confirmed",
+        message: `✅ You confirmed your contribution for group.`,
+        processed: false,
+      });
+      
+  
+      res.json({ success: true });
+    } catch (err) {
+      console.error("❌ Error confirming contribution:", err.message);
+      res.status(500).json({ error: "Failed to confirm contribution." });
+    }
+  });
 
+  
 const startRoscaPayout = async (group) => {
     console.log(`🔄 Starting ROSCA for group ${group.name}`);
 
@@ -592,20 +721,67 @@ server.listen(PORT, () => console.log(`✅ WebSocket & Backend running on port $
 const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth", authRoutes);
 
-
-app.get("/api/notifications/:organizerId", async (req, res) => {
-    const { organizerId } = req.params;
-    const notifications = await Notification.find({ organizerId }).sort({ date: -1 });
+app.get("/api/member-notifications/:userId", async (req, res) => {
+    const { userId } = req.params;
+    const notifications = await MemberNotification.find({ userId }).sort({ date: -1 });
     res.json(notifications);
-  });
-  
-  app.patch("/api/notifications/:id/read", async (req, res) => {
-    await Notification.findByIdAndUpdate(req.params.id, { read: true });
+});
+
+  //read
+app.patch("/api/member-notifications/:id/read", async (req, res) => {
+    await MemberNotification.findByIdAndUpdate(req.params.id, { read: true });
     res.json({ success: true });
   });
   
-  app.delete("/api/notifications/:id", async (req, res) => {
-    await Notification.findByIdAndDelete(req.params.id);
+  // Delete
+  app.delete("/api/member-notifications/:id", async (req, res) => {
+    await MemberNotification.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   });
+
+  app.post("/api/confirm-contribution", async (req, res) => {
+    try {
+      const { userId, groupId } = req.body;
   
+      if (!userId || !groupId) {
+        return res.status(400).json({ error: "Missing userId or groupId" });
+      }
+  
+      await MemberNotification.create({
+        userId,
+        groupId,
+        type: "contribution_confirmed",
+        message: `✅ You confirmed your contribution for group.`,
+        processed: false,
+      });
+  
+      console.log(`📥 [Confirm] User ${userId} confirmed contribution for group ${groupId}`);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("❌ Error confirming contribution:", err.message);
+      res.status(500).json({ error: "Failed to confirm contribution." });
+    }
+  });  
+  
+  app.set('io', io); // ✅ Make io accessible in controllers
+  app.use('/api/chat', chatRoutes); // ✅ Mount chat API routes
+
+  io.on("connection", (socket) => {
+    console.log(`🔗 WebSocket connected: ${socket.id}`);
+  
+    socket.on("join", (groupId) => {
+      console.log(`👥 Socket ${socket.id} joined group ${groupId}`);
+      socket.join(groupId); // ✅ this is crucial
+    });
+  
+    socket.on("leave", (groupId) => {
+      console.log(`🚪 Socket ${socket.id} left group ${groupId}`);
+      socket.leave(groupId);
+    });
+  
+    socket.on("disconnect", () => {
+      console.log(`❌ Socket disconnected: ${socket.id}`);
+    });
+  });
+  
+require("./jobs/roscaScheduler");

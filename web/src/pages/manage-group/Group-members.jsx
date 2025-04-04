@@ -97,7 +97,7 @@ const GroupMembers = () => {
             <div className="flex items-center"><FaUsers className="text-[#3A6953] mr-2" /><span className="text-[#6A8C73]">{group.slots} Slots</span></div>
             <div className="flex items-center ml-[-100px]"><FaUsers className="text-[#3A6953] mr-2" /><span className="text-[#6A8C73]">{group.members.length} Members</span></div>
             <div className="flex items-center"><FaArrowsRotate className="text-[#3A6953] mr-2" /><span className="text-[#6A8C73]">₱{group.contributionAmount} {group.frequency}</span></div>
-            <div className="flex items-center ml-[-100px]"><FaCalendarAlt className="text-[#3A6953] mr-2" /><span className="text-[#6A8C73]">Start Date: {group.startDate || "N/A"}</span></div>
+            <div className="flex items-center ml-[-100px]"><FaCalendarAlt className="text-[#3A6953] mr-2" /><span className="text-[#6A8C73]">Start Date: {group.startDate ? new Date(group.startDate).toLocaleDateString() : "N/A"}</span></div>
             <div className="flex items-center"><MdCheckCircle className="text-[#3A6953] mr-2" /><span className="text-[#6A8C73]">{group.status}</span></div>
           </div>
         </div>
@@ -120,7 +120,14 @@ const GroupMembers = () => {
             >
               View Transaction
             </button>
-          </div>
+            <button
+              className="bg-[#6A8C73] text-white px-4 py-2 rounded-[20px] hover:bg-[#3A6953]"
+              onClick={() => navigate(`/manage-group/chat/${group._id}`)}
+            >
+              Group Chat
+            </button>
+
+            </div>
         </div>
 
         {showModal && (

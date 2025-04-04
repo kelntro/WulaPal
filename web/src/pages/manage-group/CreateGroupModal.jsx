@@ -47,13 +47,14 @@ const handleImageUpload = (event) => {
     }
 };
 
+const [frequency, setFrequency] = useState("Weekly");
 
   // Handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!groupName || !contributionAmount || !startDate || !endDate || !slots || !description) {
-        setError("All fields are required.");
+    if (!groupName || !contributionAmount || !slots || !description || !frequency) {
+      setError("All fields are required.");
         return;
     }
 
@@ -73,11 +74,16 @@ const handleImageUpload = (event) => {
         if (!organizerName) {
             throw new Error("Organizer name not found. Please log in again.");
         }
-
+        const frequencyMap = {
+          "Weekly": 300,        // 5 minutes
+          "Bi-Weekly": 600,     // 10 minutes
+          "Monthly": 900        // 15 minutes
+        };
+        
         const payload = {
             name: groupName,
             contributionAmount: parseFloat(contributionAmount),
-            frequency: 604800,
+            frequency: frequencyMap[frequency] * 1e6,
             requiredMembers: parseInt(slots),
             slots: parseInt(slots),
             description,
@@ -144,7 +150,7 @@ const handleImageUpload = (event) => {
           </div>
 
           <div className="flex items-center">
-            <label className="w-1/3 text-[#3A6953] font-medium">Monthly Contribution*</label>
+            <label className="w-1/3 text-[#3A6953] font-medium">Contribution*</label>
             <input 
               type="number" 
               placeholder="e.g. 2500" 
@@ -165,28 +171,17 @@ const handleImageUpload = (event) => {
           </div>
 
           <div className="flex items-center">
-            <label className="w-1/3 text-[#3A6953] font-medium">Date Contribution*</label>
-            <div className="w-2/3 flex space-x-2">
-              <DatePicker
-                selected={startDate}
-                onChange={(date) => setStartDate(date)}
-                selectsStart
-                startDate={startDate}
-                endDate={endDate}
-                placeholderText="Start Date"
-                className="p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#99C6A9] w-full"
-              />
-              <DatePicker
-                selected={endDate}
-                onChange={(date) => setEndDate(date)}
-                selectsEnd
-                startDate={startDate}
-                endDate={endDate}
-                placeholderText="End Date"
-                className="p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#99C6A9] w-full"
-              />
-            </div>
-          </div>
+          <label className="w-1/3 text-[#3A6953] font-medium">Frequency*</label>
+          <select
+            value={frequency}
+            onChange={(e) => setFrequency(e.target.value)}
+            className="w-2/3 p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#99C6A9]"
+          >
+            <option value="Weekly">Weekly</option>
+            <option value="Bi-Weekly">Bi-Weekly</option>
+            <option value="Monthly">Monthly</option>
+          </select>
+        </div>
 
           <div className="flex items-center">
             <label className="w-1/3 text-[#3A6953] font-medium">Open Slots*</label>

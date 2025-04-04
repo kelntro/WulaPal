@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+const Wallet = require("../models/Wallet");
+
 require("dotenv").config();
 
 const router = express.Router();
@@ -120,6 +122,12 @@ router.post("/register", async (req, res) => {
 
       await newUser.save();
 
+      // ✅ Create Wallet
+      await Wallet.create({
+        userId: newUser._id,
+        balance: 0
+      });
+
       return res.status(201).json({
         success: true,
         message: "Check your email to verify your account.",
@@ -152,7 +160,12 @@ router.post("/register", async (req, res) => {
       userOTP.isVerified = true;
 
       await userOTP.save();
-
+      
+      // ✅ Create Wallet
+      await Wallet.create({
+        userId: userOTP._id,
+        balance: 0
+      });
       return res.status(201).json({ success: true, message: "Member registered successfully!" });
     }
 

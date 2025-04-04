@@ -75,9 +75,9 @@ const WalletScreen = () => {
       {loading ? (
         <ActivityIndicator size="large" color="#2E7D32" />
       ) : (
-        <Text style={styles.balance}>
-          ₱{balance?.toLocaleString() || '0.00'}
-        </Text>
+          <Text style={styles.balance}>
+            ₱{Number(balance).toFixed(2).toLocaleString()}
+          </Text>
       )}
 
       <View style={styles.buttonContainer}>
