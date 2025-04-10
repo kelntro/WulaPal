@@ -117,7 +117,13 @@ const Login = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)} // Allow free typing
+              onBlur={() => {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation regex
+                if (!emailRegex.test(email)) {
+                  alert("Please enter a valid email address."); // Optional: Show feedback
+                }
+              }}
               className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
               required
             />
@@ -132,7 +138,19 @@ const Login = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  const newPassword = e.target.value;
+                  if (newPassword.length <= 30) {
+                    setPassword(newPassword); // Update password only if within max length
+                  }
+                }}
+                onBlur={() => {
+                  if (!passwordRegex.test(password)) {
+                    alert(
+                      "Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, and one number."
+                    );
+                  }
+                }}
                 className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
                 required
               />

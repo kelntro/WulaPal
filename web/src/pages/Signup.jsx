@@ -155,7 +155,13 @@ const Signup = () => {
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                const newName = e.target.value;
+                const nameRegex = /^[a-zA-Z\s]*$/; // Allows only letters and spaces
+                if (nameRegex.test(newName) && newName.length <= 50) {
+                  setName(newName); // Update state only if valid
+                }
+              }}
               className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
               required
             />
@@ -169,7 +175,13 @@ const Signup = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)} // Allow free typing
+              onBlur={() => {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation regex
+                if (!emailRegex.test(email)) {
+                  alert("Please enter a valid email address."); // Optional: Show feedback
+                }
+              }}
               className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
               required
             />
@@ -185,6 +197,14 @@ const Signup = () => {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => {
+                  if (!passwordRegex.test(password)) {
+                    alert(
+                      "Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, and one number."
+                    );
+                  }
+                }}
+                maxLength={30} // Enforce max length of 30 characters
                 className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
                 required
               />
@@ -208,6 +228,12 @@ const Signup = () => {
                 type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                onBlur={() => {
+                  if (confirmPassword !== password) {
+                    alert("Passwords do not match.");
+                  }
+                }}
+                maxLength={30} // Enforce max length of 30 characters
                 className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
                 required
               />
