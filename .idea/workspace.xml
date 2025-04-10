@@ -5,22 +5,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="72ed7d27-63e3-4bfc-9e29-cafd36c20ba5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/backend/controllers/walletController.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/controllers/walletController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/models/Group.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/models/Group.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/backend/.env.example" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/jobs/roscaScheduler.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/jobs/roscaScheduler.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/jobs/tasks.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/jobs/tasks.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/models/Transaction.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/models/Transaction.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/node_modules/.package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/node_modules/.package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/server.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/services/wulapalService.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/services/wulapalService.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/blockchain/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain/.env.example" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/blockchain/contracts/WulaPal.sol" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain/contracts/WulaPal.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/blockchain/scripts/deploy.js" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain/scripts/deploy.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/android/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/android/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/android/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/android/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/App.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/dashboard/HomeScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/dashboard/HomeScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/wallet/WalletScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/wallet/WalletScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/src/pages/manage-group/CreateGroupModal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/pages/manage-group/CreateGroupModal.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/screens/notifications/NotificationScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/notifications/NotificationScreen.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

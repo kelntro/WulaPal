@@ -1,13 +1,14 @@
-import Wallet from '../models/Wallet.js';
-import Group from '../models/Group.js';
-import MemberNotification from '../models/MemberNotification.js';
-import { contribute } from '../services/wulapalService.js';
-import { getUSDTFromPHP } from '../utils/exchange.js';
-import Transaction from '../models/Transaction.js';
-import mongoose from 'mongoose';
+const Wallet = require('../models/Wallet');
+const Group = require('../models/Group');
+const MemberNotification = require('../models/MemberNotification');
+const { contribute } = require('../services/wulapalService');
+const { getUSDTFromPHP } = require('../utils/exchange');
+const Transaction = require('../models/Transaction');
+const { sendPushToUser } = require('../services/pushService');
+const mongoose = require('mongoose');
 
 
-export const handleAutoContribution = async () => {
+const handleAutoContribution = async () => {
     console.log("▶️ [AutoContribution] Started running...");
   
     const groups = await Group.find({ status: "active" });
@@ -83,6 +84,12 @@ export const handleAutoContribution = async () => {
             type: "confirmation_request",
           });
       
+          await sendPushToUser(
+            memberId,
+            "WulaPal",
+            `✅ You have enough funds to contribute ₱${amount} to "${group.name}". Confirm now.`
+          );
+
           console.log(`✅ [Member: ${memberId}] Notification to confirm contribution sent.`);
         } else {
           await MemberNotification.create({
@@ -92,6 +99,11 @@ export const handleAutoContribution = async () => {
             type: "low_funds_warning",
           });
       
+          await sendPushToUser(
+            memberId,
+            "WulaPal",
+            `⚠️ Your wallet is low. You need ₱${amount} to contribute in "${group.name}".`
+          );
           console.log(`⚠️ [Member: ${memberId}] Low balance. Warning sent.`);
         }
       }
@@ -105,7 +117,7 @@ export const handleAutoContribution = async () => {
   };
   
   
-  export const confirmPendingPayments = async () => {
+  const confirmPendingPayments = async () => {
     console.log("▶️ [ConfirmPayments] Starting check for pending confirmed contributions...");
   
     const groups = await Group.find({ status: "active" });
@@ -164,6 +176,12 @@ export const handleAutoContribution = async () => {
           type: "contribution_processed",
           groupId: group._id,
         });
+
+        await sendPushToUser(
+          confirm.userId.toString(),
+          "WulaPal",
+          `✅ You contributed ₱${amountPHP} to "${group.name}".`
+        );
       
         // 🧾 Log transaction
         const referenceId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
@@ -195,8 +213,7 @@ export const handleAutoContribution = async () => {
   };
   
   
-
-  export const handleAutoPayouts = async () => {
+  const handleAutoPayouts = async () => {
     console.log("▶️ [AutoPayouts] Starting payout checks...");
   
     const groups = await Group.find({ status: "active" });
@@ -238,6 +255,11 @@ export const handleAutoContribution = async () => {
         groupId: group._id,
       });
   
+      await sendPushToUser(
+        payout.recipientId.toString(),
+        "WulaPal",
+        `🎉 You received ₱${totalPayout} from group "${group.name}".`
+      );
       // 🧾 Log payout as transaction
       const referenceId = `PAYOUT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
       await Transaction.create({
@@ -270,6 +292,11 @@ export const handleAutoContribution = async () => {
             message: `✅ Group "${group.name}" has completed all payout cycles.`,
             type: "group_completed"
           });
+          await sendPushToUser(
+            member.userId.toString(),
+            "WulaPal",
+            `✅ Group "${group.name}" is now completed. 🎉`
+          );
         }
 
         console.log(`🏁 [Group: ${group.name}] All payout cycles completed. Group marked as completed.`);
@@ -283,3 +310,50 @@ export const handleAutoContribution = async () => {
     console.log("✅ [AutoPayouts] Finished processing all groups.\n");
   }
   
+  const sendUpcomingContributionReminders = async () => {
+    const groups = await Group.find({ status: "active", hasStarted: true });
+  
+    for (const group of groups) {
+      const now = new Date();
+      const contributionIntervalDays = group.frequency === "Bi-Weekly" ? 14 : group.frequency === "Monthly" ? 30 : 7;
+      
+      const nextDueDate = new Date(group.lastContributionDate.getTime() + contributionIntervalDays * 24 * 60 * 60 * 1000);
+      const oneDayBefore = new Date(nextDueDate);
+      oneDayBefore.setDate(oneDayBefore.getDate() - 1);
+  
+      const isReminderDay =
+        now.getFullYear() === oneDayBefore.getFullYear() &&
+        now.getMonth() === oneDayBefore.getMonth() &&
+        now.getDate() === oneDayBefore.getDate();
+  
+      if (!isReminderDay) continue;
+  
+      for (const member of group.members) {
+        const memberId = member.userId.toString();
+        const payout = group.payouts[group.currentPayoutIndex || 0];
+        const isPayoutRecipient = payout?.recipientId?.toString() === memberId;
+        if (isPayoutRecipient) continue;
+  
+        await MemberNotification.create({
+          userId: memberId,
+          groupId: group._id,
+          type: "contribution_reminder",
+          message: `📢 Reminder: Your ₱${group.contributionAmount} contribution for "${group.name}" is due tomorrow.`,
+        });
+        await sendPushToUser(
+          memberId,
+          "WulaPal",
+          `📢 Reminder: Your ₱${group.contributionAmount} contribution for "${group.name}" is due tomorrow.`
+        );
+        console.log(`📨 [Reminder] Sent contribution deadline reminder to ${memberId} for "${group.name}"`);
+      }
+    }
+  };
+  
+
+  module.exports = {
+    handleAutoContribution,
+    confirmPendingPayments,
+    handleAutoPayouts,
+    sendUpcomingContributionReminders
+  };

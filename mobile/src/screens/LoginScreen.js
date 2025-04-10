@@ -4,6 +4,8 @@ import { styled } from 'nativewind';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import logo from '../assets/logo-mobile.png';
+import messaging from '@react-native-firebase/messaging';
+
 
 const StyledText = styled(Text);
 const StyledView = styled(View);
@@ -59,6 +61,21 @@ const LoginScreen = ({ navigation }) => {
         await AsyncStorage.setItem("user", JSON.stringify(data.user));
 
         console.log("[LOGIN] User logged in successfully:", data.user);
+        // ✅ Save FCM token
+        const authStatus = await messaging().requestPermission();
+        console.log('📲 Notification permission status:', authStatus);
+        const fcmToken = await messaging().getToken();
+
+        if (fcmToken) {
+          await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: data.user._id, fcmToken }),
+          });
+          console.log("✅ FCM token saved:", fcmToken);
+        } else {
+          console.log("⚠️ Failed to get FCM token");
+        }
 
         Alert.alert("Success", "Login successful!", [
             {
