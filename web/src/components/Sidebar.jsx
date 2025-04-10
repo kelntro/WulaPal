@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { UserContext } from "../context/UserContext.jsx";
 import { FaQuestionCircle } from "react-icons/fa";
 import { RxDashboard } from "react-icons/rx";
 import {
@@ -14,8 +15,8 @@ import { HiChevronRight } from "react-icons/hi";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
+  const { user } = useContext(UserContext); // ✅ real-time context user
 
-  // Function to check if a link is active
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -29,7 +30,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         className="flex items-center space-x-[-15px] cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
-        {/* Logo (Always Visible) */}
         <img
           src="/assets/2.png"
           alt="WulaPal Logo"
@@ -37,8 +37,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             isOpen ? "w-[80px] h-[80px]" : "w-[70px] h-[70px]"
           }`}
         />
-
-        {/* Text (Only Visible When Sidebar is Open) */}
         {isOpen && (
           <span className="text-white text-2xl font-octosquares font-bold transition-all duration-300">
             ulaPal
@@ -123,15 +121,23 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           }`}
         >
           <img
-            src="/assets/Profile.jpg"
+            src={
+              user?.profileImage
+                ? `http://localhost:5050${user.profileImage}`
+                : "/assets/Profile.jpg"
+            }
             alt="User Avatar"
             className="transition-all object-cover rounded-full w-[40px] h-[40px]"
           />
 
           {isOpen && (
             <div className="ml-3 flex-1">
-              <p className="text-base font-semibold">Ali Riaz</p>
-              <p className="text-xs text-gray-300">Travel Handler</p>
+              <p className="text-base font-semibold">
+                {user?.name || "Organizer"}
+              </p>
+              <p className="text-xs text-gray-300 capitalize">
+                {user?.role || "Organizer"}
+              </p>
             </div>
           )}
 
@@ -142,7 +148,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   );
 };
 
-// SidebarItem Component to make the code modular
 const SidebarItem = ({ to, icon, label, isOpen, isActive }) => (
   <li>
     <Link

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { PieChart } from "@mui/x-charts/PieChart";
 import { GoArrowDownLeft, GoArrowUpRight } from "react-icons/go";
 import { HiChevronRight } from "react-icons/hi";
+import { UserContext } from "../../context/UserContext.jsx";
 import {
   BarChart,
   Bar,
@@ -22,15 +23,17 @@ const AccountBalanceCard = () => {
   return (
     <div className="w-[375px] bg-white rounded-[20px] shadow-md p-6">
       <h2 className="text-[#3a6953] text-[22px] font-bold">Account Balance</h2>
-      <p className="text-[#6A8C73] text-sm mt-2">Here’s your remaining balance</p>
+      <p className="text-[#6A8C73] text-sm mt-2">
+        Here’s your remaining balance
+      </p>
       <div className="w-full h-[150px] mt-4 rounded-[20px] bg-gradient-to-b from-[#99c6a9] to-[#6a8c73] flex flex-col justify-center p-6">
         <span className="text-white text-sm">Current Balance</span>
         <span className="text-white text-3xl font-semibold">₱15,750.20</span>
       </div>
-      <button 
+      <button
         className="w-full mt-4 h-10 rounded-[10px] border border-[#6a8c73] text-[#3a6953] text-xs font-normal"
         onClick={() => navigate("/wallet")} // Ensure the correct route
-        >
+      >
         View more
       </button>
     </div>
@@ -44,10 +47,10 @@ const GroupSlotsCard = () => {
     <div className="w-[375px] bg-white rounded-3xl shadow-md p-6 mt-6">
       <div className="flex justify-between items-center">
         <h1 className="text-[#3a6953] text-[22px] font-bold">Group Slots</h1>
-        <button 
+        <button
           className="flex gap-1 px-2 py-2 text-xs text-white rounded-xl bg-[#89A598]"
           onClick={() => navigate("/purchase/subscription")} // Ensure the correct route
-          >
+        >
           Get more slots <HiChevronRight className=" w-4 h-4 text-white" />
         </button>
       </div>
@@ -55,24 +58,26 @@ const GroupSlotsCard = () => {
         <PieChart
           width={200}
           height={150}
-          series={[{
-            data: [
-              { id: 1, value: 55, color: "#285236" },
-              { id: 2, value: 35, color: "#99c6a9" },
-              { id: 3, value: 15, color: "#BFFFE4" }
-            ],
-            innerRadius: 40,
-            outerRadius: 105,
-            paddingAngle: 1,
-            cornerRadius: 5,
-            startAngle: -90,
-            endAngle: 90,
-            cx: 100,
-            cy: 100,
-          }]} 
+          series={[
+            {
+              data: [
+                { id: 1, value: 55, color: "#285236" },
+                { id: 2, value: 35, color: "#99c6a9" },
+                { id: 3, value: 15, color: "#BFFFE4" },
+              ],
+              innerRadius: 40,
+              outerRadius: 105,
+              paddingAngle: 1,
+              cornerRadius: 5,
+              startAngle: -90,
+              endAngle: 90,
+              cx: 100,
+              cy: 100,
+            },
+          ]}
         />
       </div>
-           <div className="flex flex-col mt-[-10px] text-[#285236] space-y-2">
+      <div className="flex flex-col mt-[-10px] text-[#285236] space-y-2">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 bg-[#285236] rounded-full" />
@@ -95,12 +100,12 @@ const GroupSlotsCard = () => {
           <p className="text-lg font-medium">15</p>
         </div>
       </div>
-      <button 
+      <button
         className="w-full mt-6 py-3 bg-[#D4E8DB] text-[#3A6953] border border-[#6a8c73] rounded-xl text-base font-medium"
         onClick={() => navigate("/manage-group/paluwagan-groups")} // Ensure the correct route
-        >
+      >
         View all Paluwagan groups
-      </button>  
+      </button>
     </div>
   );
 };
@@ -122,7 +127,7 @@ const data = [
 
 const AnalyticsChart = () => {
   return (
-        <div className="w-[758px] bg-white rounded-[20px] shadow-md p-6 mt-6">
+    <div className="w-[758px] bg-white rounded-[20px] shadow-md p-6 mt-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-[#3A6953] text-[26px] font-bold">Analytics</h2>
         <div className="relative">
@@ -135,32 +140,44 @@ const AnalyticsChart = () => {
             <option>2030</option>
           </select>
           <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-            <svg className="w-4 h-4 text-[#3a6953]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            <svg
+              className="w-4 h-4 text-[#3a6953]"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
             </svg>
           </div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={400}>
-        <BarChart data={data} margin={{ top: 10, right: 15, left: 0, bottom: 0 }}>
+        <BarChart
+          data={data}
+          margin={{ top: 10, right: 15, left: 0, bottom: 0 }}
+        >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="month" />
           <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}K`} />
           <Tooltip />
           <Legend />
-          <Bar 
-            dataKey="income" 
-            fill="#7FC8A9" 
-            barSize={10} 
-            name="Income" 
-            radius={[10, 10, 0, 0]} 
+          <Bar
+            dataKey="income"
+            fill="#7FC8A9"
+            barSize={10}
+            name="Income"
+            radius={[10, 10, 0, 0]}
           />
-          <Bar 
-            dataKey="contribution" 
-            fill="#FF9AA2" 
-            barSize={10} 
-            name="Contribution" 
-            radius={[10, 10, 0, 0]} 
+          <Bar
+            dataKey="contribution"
+            fill="#FF9AA2"
+            barSize={10}
+            name="Contribution"
+            radius={[10, 10, 0, 0]}
           />
         </BarChart>
       </ResponsiveContainer>
@@ -201,11 +218,13 @@ const RecentTransactions = () => {
   return (
     <div className=" w-[758px] bg-white rounded-[20px] shadow-md p-6 mt-6 relative">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-[#3A6953] text-[26px] font-bold">Recent Transactions</h2>
-        <button 
+        <h2 className="text-[#3A6953] text-[26px] font-bold">
+          Recent Transactions
+        </h2>
+        <button
           className="bg-[#89A598] text-white px-4 py-2 rounded-lg hover:bg-[#D4E8DB] transition"
           onClick={() => navigate("/transactions")} // Ensure the correct route
-          >
+        >
           View More
         </button>
       </div>
@@ -240,11 +259,15 @@ const RecentTransactions = () => {
 };
 
 const Dashboard = () => {
+  const { user } = React.useContext(UserContext);
+
   return (
     <div className="p-2 flex justify-center">
       <div className="grid grid-cols-3 gap-8 max-w-[1500px]">
-        <div className="ml-[20px] : ml-[15px] col-span-2">
-          <h1 className="text-4xl font-bold text-[#285236] mb-2">Welcome Back, Ali</h1>
+        <div className="ml-[20px] col-span-2">
+          <h1 className="text-4xl font-bold text-[#285236] mb-2">
+            Welcome Back, {user?.name?.split(" ")[0] || "Organizer"}
+          </h1>
           <p className="text-[#6A8C73] font-normal mb-6">
             Here’s what’s happening with your Paluwagan today.
           </p>
@@ -257,8 +280,12 @@ const Dashboard = () => {
                   <GoArrowDownLeft className="w-5 h-5 text-white" />
                 </div>
                 <div className="ml-5">
-                  <div className="text-[#285236] text-base font-normal">Total Income</div>
-                  <div className="text-[#3a6953] text-2xl font-normal">₱632,000</div>
+                  <div className="text-[#285236] text-base font-normal">
+                    Total Income
+                  </div>
+                  <div className="text-[#3a6953] text-2xl font-normal">
+                    ₱632,000
+                  </div>
                 </div>
               </div>
               <div className="text-[#285236] bg-[#E5F8ED] px-3 py-1 rounded-full text-sm">
@@ -273,8 +300,12 @@ const Dashboard = () => {
                   <GoArrowUpRight className="w-5 h-5 text-white" />
                 </div>
                 <div className="ml-5">
-                  <div className="text-[#285236] text-base font-normal">Total Contribution</div>
-                  <div className="text-[#3a6953] text-2xl font-normal">₱632,000</div>
+                  <div className="text-[#285236] text-base font-normal">
+                    Total Contribution
+                  </div>
+                  <div className="text-[#3a6953] text-2xl font-normal">
+                    ₱632,000
+                  </div>
                 </div>
               </div>
               <div className="text-[#9B2C2C] bg-[#FBE7E7] px-3 py-1 rounded-full text-sm">

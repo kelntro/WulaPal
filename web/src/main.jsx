@@ -1,13 +1,15 @@
-import { StrictMode } from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.jsx"; // ✅ Import App.js
+import App from "./App.jsx";
 import "./styles/global.css";
-console.log("🔍 Checking if global.css is loaded");
+import { UserProvider } from "./context/UserContext.jsx";
 
 const rootElement = document.getElementById("root");
 
 createRoot(rootElement).render(
-  <StrictMode>
-    <App /> {/* ✅ Use App.js for routing */}
-  </StrictMode>
+  <React.StrictMode>
+    <UserProvider>
+      <App />
+    </UserProvider>
+  </React.StrictMode>
 );

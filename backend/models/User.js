@@ -6,11 +6,21 @@ const generateUserId = () => {
 
 const userSchema = new mongoose.Schema(
   {
-    userId: { type: String, unique: true, required: true, default: generateUserId },
+    userId: {
+      type: String,
+      unique: true,
+      required: true,
+      default: generateUserId,
+    },
+    profileImage: { type: String, default: null },
     name: { type: String, required: true, trim: true },
-    email: { type: String, unique: true, required: true, trim: true },
-    password: { type: String, required: true },
     role: { type: String, enum: ["organizer", "member"], required: true },
+    dateofBirth: { type: Date, default: null },
+    country: { type: String, default: null },
+    mobile: { type: String, default: null },
+    email: { type: String, unique: true, required: true, trim: true },
+    address: { type: String, default: null },
+    password: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
     groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
