@@ -152,7 +152,9 @@ const GroupMembers = () => {
     {group.members.length > 0 ? (
         group.members.map((member) => (
             <tr key={member.id} className="border-b hover:bg-gray-50">
-                <td className="p-4 text-[#3A6953] font-semibold">{member.userId || "N/A"}</td> {/* ✅ Fix Here */}
+                <td className="p-4 text-[#3A6953] font-semibold">
+                  {member.id}
+                </td>
                 <td className="p-4">{member.name || "Unknown"}</td>
                 <td className="p-4">{member.dateJoined || "N/A"}</td>
                 <td className="p-4">{member.timeJoined || "N/A"}</td>

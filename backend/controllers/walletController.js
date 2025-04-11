@@ -50,11 +50,11 @@ export const depositFunds = async (req, res) => {
 
         // 📝 In live mode, use webhook to credit wallet after successful payment.
         // For testing, we simulate wallet top-up immediately:
-        let wallet = await Wallet.findOne({ userId });
+        let wallet = await Wallet.findOne({ userId: new mongoose.Types.ObjectId(userId) });
 
         if (!wallet) {
             console.log("[DEPOSIT] Creating new wallet for user...");
-            wallet = new Wallet({ userId, balance: 0 });
+            wallet = new Wallet({ userId: new mongoose.Types.ObjectId(userId), balance: 0 });
         }
 
         wallet.balance += Number(amount); // ✅ simulate deposit (remove when webhooks are live)
@@ -118,7 +118,7 @@ export const withdrawFunds = async (req, res) => {
         console.log(`[WITHDRAW] Simulating withdrawal: ₱${amount}, Channel: ${channel}, Mobile: ${mobileNumber}, User: ${userId}`);
 
         // ✅ Check balance
-        const wallet = await Wallet.findOne({ userId });
+        let wallet = await Wallet.findOne({ userId: new mongoose.Types.ObjectId(userId) });
         if (!wallet) {
             console.error("[WITHDRAW] Wallet not found for userId:", userId);
             return res.status(404).json({ message: "Wallet not found." });
@@ -133,7 +133,7 @@ export const withdrawFunds = async (req, res) => {
         wallet.balance -= amount;
         await wallet.save();
 
-        const referenceId = `xendit-${Date.now()}`;
+        const referenceId = `withdraw-${Date.now()}`;
         const payoutLog = {
             status: "COMPLETED",
             referenceId,
@@ -182,9 +182,9 @@ export const transferFunds = async (req, res) => {
     }
 
     try {
-        const senderWallet = await Wallet.findOne({ userId: senderId });
-        const recipientWallet = await Wallet.findOne({ userId: recipientId });
-
+        const senderWallet = await Wallet.findOne({ userId: new mongoose.Types.ObjectId(senderId) });
+        const recipientWallet = await Wallet.findOne({ userId: new mongoose.Types.ObjectId(recipientId) });
+        
         if (!senderWallet || senderWallet.balance < amount) {
             return res.status(400).json({ message: "Insufficient balance." });
         }

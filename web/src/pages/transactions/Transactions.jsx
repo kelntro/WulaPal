@@ -1,42 +1,55 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IoIosSearch } from "react-icons/io";
 
 const Transactions = () => {
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [transactions, setTransactions] = useState([]);
 
-  const transactions = [
-    { id: "2341421", name: "Ahmed Rashdan", contributed: "Paluwagan D", date: "29 July 2023", time: "10:20 pm", status: "Transferred" },
-    { id: "3411421", name: "Ali Alhamdan", contributed: "Paluwagan K", date: "29 July 2023", time: "10:20 pm", status: "Deposit" },
-    { id: "2341121", name: "Mona Alghafar", contributed: "Paluwagan A", date: "29 July 2023", time: "10:20 pm", status: "Withdrawal" },
-    { id: "2341421", name: "Moustafa Adel", contributed: "Paluwagan A", date: "29 July 2023", time: "10:20 pm", status: "Transferred" },
-    { id: "2341421", name: "Jhon Neleson", contributed: "Paluwagan E", date: "29 July 2023", time: "10:20 pm", status: "Withdrawal" },
-    { id: "2341421", name: "Kadi Manela", contributed: "Paluwagan B", date: "29 July 2023", time: "10:20 pm", status: "Transferred" },
-    { id: "2341421", name: "Moustafa Adel", contributed: "Paluwagan A", date: "29 July 2023", time: "10:20 pm", status: "Deposit" },
-    { id: "2341421", name: "Jhon Neleson", contributed: "Paluwagan E", date: "29 July 2023", time: "10:20 pm", status: "Deposit" },
-    { id: "2341421", name: "Kadi Manela", contributed: "Paluwagan B", date: "29 July 2023", time: "10:20 pm", status: "Withdrawal" }
-  ];
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
 
-  const filteredTransactions = transactions.filter(
-    (txn) =>
-      (txn.name.toLowerCase().includes(search.toLowerCase()) ||
-      txn.contributed.toLowerCase().includes(search.toLowerCase()) ||
-      txn.status.toLowerCase().includes(search.toLowerCase())) &&
-      (dateFilter === "" || txn.date === dateFilter)
-  );
+    fetch(`http://localhost:5050/api/wallet/transactions?userId=${userId}`)
+      .then((res) => res.json())
+      .then((data) => setTransactions(data || []))
+      .catch((err) => console.error("Error fetching transactions:", err));
+  }, []);
+
+  const filteredTransactions = transactions.filter((txn) => {
+    const txnDate = new Date(txn.timestamp).toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    const searchMatch =
+      txn.type?.toLowerCase().includes(search.toLowerCase()) ||
+      txn.referenceId?.toLowerCase().includes(search.toLowerCase()) ||
+      (txn.metadata?.channel || "").toLowerCase().includes(search.toLowerCase());
+
+    const dateMatch =
+      !dateFilter ||
+      txnDate === new Date(dateFilter).toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+
+    return searchMatch && dateMatch;
+  });
 
   return (
     <div className="sm:ml-[90px] col-span-2 p-2">
-      {/* Header */}
       <h1 className="text-4xl font-bold text-[#285236] mb-2">Transaction History</h1>
       <p className="text-[#6A8C73] font-normal mb-6">
         Here’s your transaction of your Paluwagan today.
       </p>
 
       <div className="bg-white p-6 rounded-lg shadow-lg">
-        {/* Search & Controls */}
+        {/* Search + Date Filter */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-          <div className="relative w-full sm:w-1/3">
+          <div className="relative w-full sm:w-1/3 mb-2 sm:mb-0">
             <IoIosSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
             <input
               type="text"
@@ -65,42 +78,74 @@ const Transactions = () => {
             <thead>
               <tr className="bg-gray-100 text-gray-600">
                 <th className="p-3 text-left">Transaction ID</th>
-                <th className="p-3 text-left">Name</th>
-                <th className="p-3 text-left">Contributed to</th>
+                <th className="p-3 text-left">Type</th>
+                <th className="p-3 text-left">Details</th>
                 <th className="p-3 text-left">Date</th>
                 <th className="p-3 text-left">Time</th>
+                <th className="p-3 text-left">Amount</th>
                 <th className="p-3 text-left">Status</th>
               </tr>
             </thead>
             <tbody>
-              {filteredTransactions.map((txn, index) => (
-                <tr key={index} className="border-t">
-                  <td className="p-3">{txn.id}</td>
-                  <td className="p-3">{txn.name}</td>
-                  <td className="p-3">{txn.contributed}</td>
-                  <td className="p-3">{txn.date}</td>
-                  <td className="p-3">{txn.time}</td>
-                  <td className="p-3">
-                    <span
-                      className={`px-3 py-1 rounded-lg text-sm ${
-                        txn.status === "Deposit"
-                          ? "bg-[#EAE8C3] text-[#85830F]"
-                          : txn.status === "Withdrawal"
-                          ? "bg-[#D4E8DB] text-[#3A6953]"
-                          : "bg-[#E6EFFC] text-[#0764E6]"
-                      }`}
-                    >
-                      {txn.status}
-                    </span>
+              {filteredTransactions.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center text-gray-400 py-4">
+                    No transactions found.
                   </td>
                 </tr>
-              ))}
+              )}
+              {filteredTransactions.map((txn, index) => {
+                const dateObj = new Date(txn.timestamp);
+                const date = dateObj.toLocaleDateString("en-US", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                });
+                const time = dateObj.toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+
+                return (
+                  <tr key={index} className="border-t">
+                    <td className="p-3">{txn.referenceId}</td>
+                    <td className="p-3 capitalize">{txn.type}</td>
+                    <td className="p-3">
+                      {txn.metadata?.to
+                        ? `To: ${txn.metadata.to}`
+                        : txn.metadata?.from
+                        ? `From: ${txn.metadata.from}`
+                        : txn.metadata?.mobileNumber
+                        ? `Mobile: ${txn.metadata.mobileNumber}`
+                        : txn.metadata?.channel
+                        ? txn.metadata.channel
+                        : "-"}
+                    </td>
+                    <td className="p-3">{date}</td>
+                    <td className="p-3">{time.toLowerCase()}</td>
+                    <td className="p-3">₱{txn.amount.toFixed(2)}</td>
+                    <td className="p-3">
+                      <span
+                        className={`px-3 py-1 rounded-lg text-sm ${
+                          txn.type === "deposit"
+                            ? "bg-[#EAE8C3] text-[#85830F]"
+                            : txn.type === "withdraw"
+                            ? "bg-[#D4E8DB] text-[#3A6953]"
+                            : "bg-[#E6EFFC] text-[#0764E6]"
+                        }`}
+                      >
+                        {txn.type.charAt(0).toUpperCase() + txn.type.slice(1)}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="text-gray-500 text-sm mt-4">Page 1 of 100</div>
+        {/* Pagination Placeholder */}
+        <div className="text-gray-500 text-sm mt-4">Page 1 of 1</div>
       </div>
     </div>
   );

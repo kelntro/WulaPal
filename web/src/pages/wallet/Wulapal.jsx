@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { GoArrowDownLeft, GoArrowUpRight } from "react-icons/go";
 import { PiHandDepositBold } from "react-icons/pi";
@@ -22,13 +22,31 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 dayjs.extend(customParseFormat);
 
 const AccountBalanceCard = () => {
+  const [balance, setBalance] = useState(0);
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+
+    if (!userId) {
+      console.warn("User ID missing");
+      return;
+    }
+
+    fetch(`http://localhost:5050/api/wallet/balance?userId=${userId}`)
+      .then((res) => res.json())
+      .then((data) => setBalance(data.balance || 0))
+      .catch((err) => {
+        console.error("Error fetching balance:", err);
+      });
+  }, []);
+
   return (
     <div className="w-[375px] bg-white rounded-[20px] shadow-md p-6">
       <h2 className="text-[#3a6953] text-[22px] font-bold">Account Balance</h2>
       <p className="text-[#6A8C73] text-sm mt-2">Here’s your remaining balance</p>
       <div className="w-full h-[150px] mt-4 rounded-[20px] bg-gradient-to-b from-[#99c6a9] to-[#6a8c73] flex flex-col justify-center p-6">
         <span className="text-white text-sm">Current Balance</span>
-        <span className="text-white text-3xl font-semibold">₱15,750.20</span>
+        <span className="text-white text-3xl font-semibold">₱{balance.toLocaleString()}</span>
       </div>
       <button className="w-full mt-4 h-10 rounded-[10px] border border-[#6a8c73] text-[#3a6953] text-xs font-normal">
         Get Income Statement
@@ -36,6 +54,7 @@ const AccountBalanceCard = () => {
     </div>
   );
 };
+
 
 const Wallet = () => {
   return (

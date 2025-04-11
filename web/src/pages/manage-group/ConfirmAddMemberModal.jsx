@@ -28,7 +28,7 @@ const ConfirmAddMemberModal = ({ member, onClose, onAdd }) => {
           <label className="block text-sm font-medium text-[#3A6953]">Account Number*</label>
           <input
             type="text"
-            value={member.accountNumber}
+            value={member.userId || member._id}
             disabled
             className="w-full mt-2 px-3 py-2 border border-[#99C6A9] rounded-md bg-gray-50 text-[#3A6953]"
           />

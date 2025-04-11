@@ -6,27 +6,72 @@ import { IoIosLock } from "react-icons/io";
 
 export default function PaymentOption() {
   const navigate = useNavigate();
+  console.log("userId:", localStorage.getItem("userId"));
 
-  // States
   const [depositAmount, setDepositAmount] = useState("");
   const [depositFee, setDepositFee] = useState(0);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  // Function to handle deposit amount change
   const handleDepositChange = (e) => {
     const amount = e.target.value;
     setDepositAmount(amount);
-    
+
     if (!amount) {
       setDepositFee(0);
       setTotal(0);
       return;
     }
-    
+
     const numericAmount = parseFloat(amount) || 0;
     const fee = numericAmount * 0.02 < 5 ? 5 : numericAmount * 0.02;
     setDepositFee(fee);
     setTotal(numericAmount + fee);
+  };
+
+  const handleDeposit = async () => {
+    const userId = localStorage.getItem("userId"); // 🔐 Replace this with actual source if using context/auth
+
+    if (!userId) {
+      alert("User ID missing. Please login again.");
+      return;
+    }
+
+    if (!depositAmount || isNaN(depositAmount) || depositAmount <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch("http://localhost:5050/api/wallet/deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: parseFloat(depositAmount),
+          userId
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Deposit failed.");
+      }
+
+      // ✅ Open Xendit payment link in new tab
+      if (data.checkout_url) {
+        window.open(data.checkout_url, "_blank");
+      }
+
+      // ✅ Navigate to success screen
+      navigate("/wallet/success-deposit");
+    } catch (error) {
+      alert("Deposit failed: " + error.message);
+      console.error("Deposit error:", error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,12 +92,13 @@ export default function PaymentOption() {
           </p>
 
           <div className="mb-4">
-            <label className="text-sm font-medium text-[#3A6953]">Bank Payment</label>
-            <div className="border rounded-lg p-3 flex items-center mt-2">
-              <img src="/assets/gcashlogo.jpg" alt="Gcash" className="h-[20px] mr-1 ml-[-10px]" />
-              <span className="text-gray-700 font-medium">Gcash</span>
-            </div>
+          <label className="text-sm font-medium text-[#3A6953]">Powered by</label>
+          <div className="border rounded-lg p-3 flex items-center mt-2">
+            <img src="/assets/xendit-logo.png" alt="Xendit" className="h-[20px] mr-2 ml-[-10px]" />
+            <span className="text-gray-700 font-medium">Xendit Payment Gateway</span>
           </div>
+        </div>
+
 
           <div className="mb-4">
             <label className="text-sm font-medium text-[#3A6953] flex items-center">
@@ -92,8 +138,13 @@ export default function PaymentOption() {
               Cancel
             </button>
 
-            <button className="w-full bg-[#3A6953] text-white p-2 rounded-md"
-                    onClick={() => navigate("/wallet/success-deposit")}>Confirm Deposit</button>
+            <button
+              className="w-full bg-[#3A6953] text-white p-2 rounded-md"
+              onClick={handleDeposit}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Deposit"}
+            </button>
           </div>
         </div>
 

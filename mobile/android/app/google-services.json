@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "320941725450",
+    "project_id": "wulap-404708",
+    "storage_bucket": "wulap-404708.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:320941725450:android:d1f714473bede1376f4cf3",
+        "android_client_info": {
+          "package_name": "com.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6Q2YnG7G6X76oK-a3flLfm_ewg6ecLKE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -422,9 +422,11 @@ app.post("/api/groups/:groupId/add-member", async (req, res) => {
         const userDetails = await User.findById(member.userId, {
           _id: 1,
           name: 1,
+          userId: 1,
         });
         return {
           id: userDetails._id.toString(),
+          userId: userDetails.userId || "N/A",
           name: userDetails.name || "Unknown",
           dateJoined: new Date(member.joinDate).toLocaleDateString(),
           timeJoined: new Date(member.joinDate).toLocaleTimeString(),
@@ -443,7 +445,7 @@ app.post("/api/groups/:groupId/add-member", async (req, res) => {
   }
 });
 
-// ✅ API to Find User by Account Number
+
 app.get("/api/users/find", async (req, res) => {
   try {
     const { query } = req.query;
@@ -454,9 +456,17 @@ app.get("/api/users/find", async (req, res) => {
 
     let users;
 
-    // ✅ Search by User ID (8-character account number)
-    if (query.length === 8) {
-      console.log(`🔍 Searching for user by User ID: ${query}`);
+    // ✅ Check if it's a valid MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(query)) {
+      console.log(`🔍 Searching by MongoDB _id: ${query}`);
+      users = await User.find(
+        { _id: query },
+        { _id: 1, name: 1, email: 1 }
+      );
+    }
+    // ✅ Search by short userId (8-character account number)
+    else if (query.length === 8) {
+      console.log(`🔍 Searching by userId shortcode: ${query}`);
       users = await User.find(
         { userId: query },
         { _id: 1, name: 1, email: 1, userId: 1 }
@@ -464,15 +474,15 @@ app.get("/api/users/find", async (req, res) => {
     }
     // ✅ Search by Email
     else if (query.includes("@")) {
-      console.log(`🔍 Searching for user by Email: ${query}`);
+      console.log(`🔍 Searching by Email: ${query}`);
       users = await User.find(
         { email: query },
         { _id: 1, name: 1, email: 1, userId: 1 }
       );
     }
-    // ✅ Search by Name (partial match, case insensitive)
+    // ✅ Search by Name (partial, case-insensitive)
     else {
-      console.log(`🔍 Searching for users by Name: ${query}`);
+      console.log(`🔍 Searching by Name: ${query}`);
       users = await User.find(
         { name: { $regex: query, $options: "i" } },
         { _id: 1, name: 1, email: 1, userId: 1 }
@@ -487,9 +497,10 @@ app.get("/api/users/find", async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error("❌ Error finding users:", error);
-    res
-      .status(500)
-      .json({ error: "Internal Server Error", details: error.message });
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
   }
 });
 

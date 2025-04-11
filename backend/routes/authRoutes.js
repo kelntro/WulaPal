@@ -122,11 +122,18 @@ router.post("/register", async (req, res) => {
 
       await newUser.save();
 
-      // ✅ Create Wallet
-      await Wallet.create({
-        userId: newUser._id,
-        balance: 0
-      });
+      // ✅ Create Wallet only if it doesn't exist
+      const existingWallet = await Wallet.findOne({ userId: newUser._id });
+      if (!existingWallet) {
+        await Wallet.create({
+          userId: newUser._id,
+          balance: 0
+        });
+        console.log(`✅ Wallet created for organizer ${newUser.email} (${newUser._id})`);
+      } else {
+        console.log(`ℹ️ Wallet already exists for organizer ${newUser.email} (${newUser._id})`);
+      }
+      
 
       return res.status(201).json({
         success: true,

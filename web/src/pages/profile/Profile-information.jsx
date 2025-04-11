@@ -154,21 +154,25 @@ const ProfileInformation = () => {
               Account Information
             </h3>
             <div className="mt-2 flex items-center bg-[#F4F4F4] p-3 rounded-2xl border border-[#6a8c73] text-[#285236] justify-between">
-              <span>Account Number</span>
-              <div className="flex items-center space-x-2">
-                <span className="text-[#285236] opacity-60 font-medium">
-                  {user.userId}
-                </span>
-                <FaRegCopy
-                  className="text-gray-500 cursor-pointer"
-                  onClick={handleCopy}
-                  title="Copy"
-                />
-                {copySuccess && (
-                  <span className="text-xs text-green-500">Copied!</span>
-                )}
-              </div>
+            <span>Account Number</span>
+            <div className="flex items-center space-x-2">
+              <span className="text-[#285236] opacity-60 font-medium">
+                {user._id}
+              </span>
+              <FaRegCopy
+                className="text-gray-500 cursor-pointer"
+                onClick={() => {
+                  navigator.clipboard.writeText(user._id);
+                  setCopySuccess(true);
+                  setTimeout(() => setCopySuccess(false), 2000);
+                }}
+                title="Copy"
+              />
+              {copySuccess && (
+                <span className="text-xs text-green-500">Copied!</span>
+              )}
             </div>
+          </div>
 
             <h3 className="text-xl font-semibold text-[#3a6953] mt-6">
               Personal Information

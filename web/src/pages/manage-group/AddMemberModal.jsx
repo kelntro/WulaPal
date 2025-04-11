@@ -112,7 +112,7 @@ const AddMemberModal = ({ groupId, onClose, onMemberAdded }) => {
                 className="p-2 border-b hover:bg-gray-100 cursor-pointer"
                 onClick={() => selectUser(user)}
               >
-                <p><strong>User ID:</strong> {user.userId}</p>
+                <p><strong>User ID:</strong> {user.userId || user._id}</p>
                 <p><strong>Name:</strong> {user.name}</p>
                 <p><strong>Email:</strong> {user.email}</p>
               </div>

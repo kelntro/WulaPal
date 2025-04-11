@@ -1,17 +1,7 @@
 const mongoose = require("mongoose");
 
-const generateUserId = () => {
-  return Math.random().toString(36).substr(2, 8).toUpperCase();
-};
-
 const userSchema = new mongoose.Schema(
   {
-    userId: {
-      type: String,
-      unique: true,
-      required: true,
-      default: generateUserId,
-    },
     profileImage: { type: String, default: null },
     name: { type: String, required: true, trim: true },
     role: { type: String, enum: ["organizer", "member"], required: true },
