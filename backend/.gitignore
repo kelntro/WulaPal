@@ -8,3 +8,5 @@ uploads/
 #Json Package
 *package.json
 *package-lock.json
+
+firebase-service-account.json

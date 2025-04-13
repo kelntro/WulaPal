@@ -6,20 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="72ed7d27-63e3-4bfc-9e29-cafd36c20ba5" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/backend/.env.example" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/jobs/roscaScheduler.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/jobs/roscaScheduler.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/jobs/tasks.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/jobs/tasks.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/models/Transaction.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/models/Transaction.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/node_modules/.package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/node_modules/.package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/server.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/backend/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/android/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/android/app/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/android/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/android/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/android/app/google-services.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/android/app/google-services.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/App.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/notifications/NotificationScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/notifications/NotificationScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/screens/LoginScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/LoginScreen.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

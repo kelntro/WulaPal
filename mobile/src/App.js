@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
-import { Alert, Platform } from 'react-native';
+import { Alert } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
+import notifee, { AndroidImportance } from '@notifee/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
+// Screens
 import SignUpScreen from './screens/SignUpScreen';
 import LoginScreen from './screens/LoginScreen';
 import OnboardingOne from './screens/onboarding/onboarding-one';
@@ -20,57 +22,78 @@ import NotificationScreen from './screens/notifications/NotificationScreen';
 
 const Stack = createStackNavigator();
 
+// ✅ Background handler (required)
 messaging().setBackgroundMessageHandler(async remoteMessage => {
-  console.log('📨 Push in background:', remoteMessage);
+  console.log('📨 [Background] Message:', remoteMessage);
+
+  await notifee.displayNotification({
+    title: remoteMessage.notification?.title || 'WulaPal',
+    body: remoteMessage.notification?.body || '',
+    android: {
+      channelId: 'default',
+      importance: AndroidImportance.HIGH,
+    },
+  });
 });
 
 const App = () => {
-  // 🔔 Request permission + get token
   useEffect(() => {
-    const setupPush = async () => {
+    const setupNotifications = async () => {
       try {
+        await notifee.requestPermission();
+
+        await notifee.createChannel({
+          id: 'default',
+          name: 'Default Channel',
+          importance: AndroidImportance.HIGH,
+        });
+
         const authStatus = await messaging().requestPermission();
         const enabled =
           authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
           authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-        if (enabled) {
-          const fcmToken = await messaging().getToken();
-          console.log('📲 FCM Token:', fcmToken);
-
-          // 🧠 Save this token to your backend (optional):
-          // await axios.post('http://10.0.2.2:5050/api/save-fcm-token', {
-          //   userId: ..., token: fcmToken
-          // });
-        } else {
+        if (!enabled) {
           Alert.alert("Notifications Disabled", "Please enable notifications.");
         }
 
-        // Foreground messages
-        messaging().onMessage(async remoteMessage => {
-          Alert.alert(remoteMessage.notification.title, remoteMessage.notification.body);
-        });
-
-        // When app opened from notification
-        messaging().onNotificationOpenedApp(remoteMessage => {
-          console.log('🔁 Notification caused app to open:', remoteMessage.notification);
-        });
-
-        // App was opened by tapping a notification (cold start)
-        messaging()
-          .getInitialNotification()
-          .then(remoteMessage => {
-            if (remoteMessage) {
-              console.log('💥 App opened from quit by notification:', remoteMessage.notification);
-            }
-          });
-
-      } catch (error) {
-        console.error("❌ Error setting up FCM:", error.message);
+      } catch (err) {
+        console.error("❌ FCM Setup Error:", err.message);
       }
     };
 
-    setupPush();
+    setupNotifications();
+
+    // ✅ Foreground listener
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      console.log('🔔 [Foreground] Received message:', JSON.stringify(remoteMessage, null, 2));
+
+      await notifee.displayNotification({
+        title: remoteMessage.notification?.title || 'WulaPal',
+        body: remoteMessage.notification?.body || '',
+        android: {
+          channelId: 'default',
+          smallIcon: 'ic_notification',
+          importance: AndroidImportance.HIGH,
+        },
+      });
+    });
+
+    // ✅ Background (when app is in background and clicked)
+    messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log('🔁 [Opened from background]:', remoteMessage.notification);
+    });
+
+    // ✅ Cold start (when app is killed and opened by tapping)
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        if (remoteMessage) {
+          console.log('💥 [Opened from quit state]:', remoteMessage.notification);
+        }
+      });
+
+    return () => unsubscribe();
   }, []);
 
   return (

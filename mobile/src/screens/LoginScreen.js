@@ -62,8 +62,6 @@ const LoginScreen = ({ navigation }) => {
 
         console.log("[LOGIN] User logged in successfully:", data.user);
         // ✅ Save FCM token
-        const authStatus = await messaging().requestPermission();
-        console.log('📲 Notification permission status:', authStatus);
         const fcmToken = await messaging().getToken();
 
         if (fcmToken) {
