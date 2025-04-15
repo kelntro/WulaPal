@@ -1,60 +1,88 @@
-import React, { useState } from "react";
-import { MessageCircle, X } from "lucide-react"; // Icons for chat button
+import React, { useEffect, useState, useRef } from "react";
+import { MessageCircle, X } from "lucide-react";
 import { RiSendPlaneFill } from "react-icons/ri";
+import io from "socket.io-client";
 
-const FloatingChat = () => {
+const socket = io("http://localhost:5050");
+
+const FloatingChat = ({ groupId, currentUser }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [typingUsers, setTypingUsers] = useState([]);
+  const chatRef = useRef(null);
+
+  // 🛡️ Guard to prevent early render
+  if (!groupId || !currentUser || !currentUser._id) {
+    console.warn("⛔ FloatingChat: missing groupId or currentUser._id");
+    return null;
+  }
 
   const toggleChat = () => {
+    console.log("🟢 Floating Chat Icon Clicked");
     setIsOpen(!isOpen);
   };
 
-  const formatDate = (date) => {
-    const now = new Date();
-    const messageDate = new Date(date);
-
-    if (messageDate.toDateString() === now.toDateString()) {
-      return "Today";
-    } else if (
-      messageDate.toDateString() ===
-      new Date(now.setDate(now.getDate() - 1)).toDateString()
-    ) {
-      return "Yesterday";
-    } else {
-      return messageDate.toLocaleDateString();
-    }
+  const scrollToBottom = () => {
+    chatRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const sendMessage = () => {
-    if (input.trim() !== "") {
-      const now = new Date();
-      const timestamp = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      const newMessage = {
-        text: input,
-        sender: "user",
-        status: "Sending...",
-        time: timestamp,
-        date: now.toISOString(),
-      };
+  useEffect(() => {
+    fetch(`http://localhost:5050/api/chat/group/${groupId}`)
+      .then((res) => res.json())
+      .then(setMessages);
 
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-      setInput("");
+    fetch(`http://localhost:5050/api/chat/group/${groupId}/mark-read`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: currentUser._id }),
+    });
 
+    socket.emit("join", groupId);
+
+    socket.on("new-message", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    socket.on("typing", ({ user }) => {
+      setTypingUsers((prev) => [...new Set([...prev, user])]);
       setTimeout(() => {
-        setMessages((prevMessages) =>
-          prevMessages.map((msg, index) =>
-            index === prevMessages.length - 1 ? { ...msg, status: "Sent" } : msg
-          )
-        );
-      }, 1000);
-    }
+        setTypingUsers((prev) => prev.filter((u) => u !== user));
+      }, 3000);
+    });
+
+    return () => {
+      socket.off("new-message");
+      socket.off("typing");
+      socket.emit("leave", groupId);
+    };
+  }, [groupId]);
+
+  useEffect(scrollToBottom, [messages]);
+
+  const handleTyping = () => {
+    socket.emit("typing", { groupId, user: currentUser.name });
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    await fetch(`http://localhost:5050/api/chat/group/${groupId}/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        groupId,
+        sender: currentUser._id,
+        type: "text",
+        content: input,
+      }),
+    });
+
+    setInput("");
   };
 
   return (
-    <div>
-      {/* Floating Chat Button */}
+    <>
       <button
         onClick={toggleChat}
         className="fixed bottom-6 right-6 bg-[#3A6953] text-white p-4 rounded-full shadow-lg hover:bg-green-800 transition-all flex items-center justify-center"
@@ -62,61 +90,76 @@ const FloatingChat = () => {
         <MessageCircle size={28} />
       </button>
 
-      {/* Chatbox */}
       {isOpen && (
-        <div className="fixed bottom-5 right-6 w-[480px] bg-white rounded-lg shadow-lg border border-gray-300">
-          {/* Chat Header */}
+        <div className="fixed bottom-5 right-6 w-[400px] bg-white rounded-lg shadow-lg border border-gray-300 z-50 flex flex-col">
           <div className="bg-[#3A6953] text-white p-4 flex justify-between items-center rounded-t-lg">
-            <span className="font-semibold text-lg">Paluwagan Group Chat</span>
+            <span className="font-semibold text-lg">Group Chat</span>
             <button onClick={toggleChat}>
-              <X size={22} className="text-white" />
+              <X size={22} />
             </button>
           </div>
 
-          {/* Chat Body */}
-          <div className="p-4 h-[420px] overflow-y-auto bg-green-50">
-            {messages.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center">Start a conversation...</p>
-            ) : (
-              messages.map((msg, index) => (
-                <div key={index} className={`mb-2 ${msg.sender === "user" ? "text-right" : "text-left"}`}>
-                  {index === 0 || formatDate(messages[index - 1].date) !== formatDate(msg.date) ? (
-                    <p className="text-center text-gray-400 text-xs my-2">{formatDate(msg.date)}</p>
-                  ) : null}
-                  <span
-                    className={`inline-block p-3 rounded-lg text-sm ${
-                      msg.sender === "user" ? "bg-[#6A8C73] text-white" : "bg-white border border-gray-300"
-                    }`}
-                  >
-                    {msg.text}
-                  </span>
-                  {msg.sender === "user" && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {msg.status} • {msg.time}
-                    </p>
+          <div className="p-4 h-[360px] overflow-y-auto bg-green-50">
+            {messages.map((msg) => (
+              <div
+                key={msg._id}
+                className={`mb-2 ${
+                  msg.sender === currentUser._id ? "text-right" : "text-left"
+                }`}
+              >
+                <span
+                  className={`inline-block p-3 rounded-lg text-sm ${
+                    msg.sender === currentUser._id
+                      ? "bg-[#6A8C73] text-white"
+                      : "bg-white border border-gray-300"
+                  }`}
+                >
+                  {msg.type === "file" ? (
+                    <a
+                      href={msg.content}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline text-blue-500"
+                    >
+                      📎 View Attachment
+                    </a>
+                  ) : (
+                    msg.content
                   )}
-                </div>
-              ))
-            )}
+                </span>
+              </div>
+            ))}
+            <div ref={chatRef} />
           </div>
 
-          {/* Chat Input */}
+          {typingUsers.length > 0 && (
+            <div className="text-xs text-gray-500 px-4">
+              {typingUsers.join(", ")} typing...
+            </div>
+          )}
+
           <div className="p-4 border-t border-gray-300 flex items-center">
             <input
               type="text"
               placeholder="Write your message..."
-              className="flex-1 p-3 border border-gray-300 rounded-md"
+              className="flex-1 p-2 border border-gray-300 rounded-md text-sm"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                handleTyping();
+              }}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             />
-            <button onClick={sendMessage} className="ml-2 text-[#3A6953]">
-              <RiSendPlaneFill size={28} />
+            <button
+              onClick={sendMessage}
+              className="ml-2 text-[#3A6953]"
+            >
+              <RiSendPlaneFill size={24} />
             </button>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

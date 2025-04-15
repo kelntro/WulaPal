@@ -10,7 +10,6 @@ const GroupChat = () => {
   const [input, setInput] = useState("");
   const [file, setFile] = useState(null);
   const [typingUsers, setTypingUsers] = useState([]);
-  const [isMemberOrOrganizer, setIsMemberOrOrganizer] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
   const chatRef = useRef(null);
 
@@ -19,29 +18,14 @@ const GroupChat = () => {
   };
 
   const handleTyping = () => {
-    if (isMemberOrOrganizer) {
-      socket.emit("typing", { groupId, user: user.name });
-    }
+    socket.emit("typing", { groupId, user: user.name });
   };
 
   useEffect(() => {
-    if (!groupId || !user?._id || !user?.userId || !user?.name) return;
-
-    fetch(`http://localhost:5050/api/groups/${groupId}`)
-      .then(res => res.json())
-      .then(data => {
-        const joined = data.members.some(m => m.id === user._id);
-        const isOrganizer = data.handler === user.name;
-        setIsMemberOrOrganizer(joined || isOrganizer);
-      })
-      .catch(console.error);
-  }, [groupId]);
-
-  useEffect(() => {
-    if (!groupId || !user) return;
+    if (!groupId || !user?._id) return;
 
     fetch(`http://localhost:5050/api/chat/group/${groupId}`)
-      .then(res => res.json())
+      .then((res) => res.json())
       .then(setMessages);
 
     fetch(`http://localhost:5050/api/chat/group/${groupId}/mark-read`, {
@@ -53,13 +37,13 @@ const GroupChat = () => {
     socket.emit("join", groupId);
 
     socket.on("new-message", (msg) => {
-      setMessages(prev => [...prev, msg]);
+      setMessages((prev) => [...prev, msg]);
     });
 
     socket.on("typing", ({ user }) => {
-      setTypingUsers(prev => [...new Set([...prev, user])]);
+      setTypingUsers((prev) => [...new Set([...prev, user])]);
       setTimeout(() => {
-        setTypingUsers(prev => prev.filter(u => u !== user));
+        setTypingUsers((prev) => prev.filter((u) => u !== user));
       }, 3000);
     });
 
@@ -101,7 +85,6 @@ const GroupChat = () => {
   };
 
   const sendMessage = async () => {
-    if (!isMemberOrOrganizer) return alert("You must join the group to send messages.");
     if (file) await uploadFileAndSend();
     if (!input.trim()) return;
 
@@ -163,16 +146,12 @@ const GroupChat = () => {
           }}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           className="flex-1 border rounded-lg p-2 w-full"
-          placeholder={isMemberOrOrganizer ? "Type a message..." : "Join the group to chat"}
-          disabled={!isMemberOrOrganizer}
+          placeholder="Type a message..."
         />
         <input type="file" onChange={handleFileChange} className="text-sm" />
         <button
           onClick={sendMessage}
-          className={`px-4 py-2 rounded-lg text-white ${
-            isMemberOrOrganizer ? "bg-green-600 hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
-          }`}
-          disabled={!isMemberOrOrganizer}
+          className="px-4 py-2 rounded-lg text-white bg-green-600 hover:bg-green-700"
         >
           Send
         </button>

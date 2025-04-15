@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { PieChart } from "@mui/x-charts/PieChart";
 import { GoArrowDownLeft, GoArrowUpRight } from "react-icons/go";
 import { HiChevronRight } from "react-icons/hi";
+import { MessageCircle } from "lucide-react";
 import { UserContext } from "../../context/UserContext.jsx";
 import {
   BarChart,
@@ -260,10 +261,19 @@ const RecentTransactions = () => {
 
 const Dashboard = () => {
   const { user } = React.useContext(UserContext);
+  const navigate = useNavigate();
 
   return (
     <div className="p-2 flex justify-center">
       <div className="grid grid-cols-3 gap-8 max-w-[1500px]">
+{/* 🟢 Floating Chat Button (bottom-right) */}
+<button
+    onClick={() => navigate("/groupchats")}
+    className="fixed bottom-6 right-6 bg-[#3A6953] hover:bg-[#285236] text-white p-4 rounded-full shadow-lg z-50"
+    title="Group Chats"
+  >
+    <MessageCircle size={24} />
+  </button>
         <div className="ml-[20px] col-span-2">
           <h1 className="text-4xl font-bold text-[#285236] mb-2">
             Welcome Back, {user?.name?.split(" ")[0] || "Organizer"}

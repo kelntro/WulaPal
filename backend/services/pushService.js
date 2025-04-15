@@ -18,13 +18,36 @@ const sendPushToUser = async (userId, title, body) => {
 
     await admin.messaging().send({
       token: user.fcmToken,
-      notification: { title, body }
-    });
+      notification: { title, body },
+      android: {
+        priority: 'high',
+        notification: {
+          sound: 'default',
+          channelId: 'default',
+          tag: `${userId}-${Date.now()}`, // unique tag per user+timestamp
+        }
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: 'default',
+            contentAvailable: true
+          }
+        }
+      }
+    });     
 
     console.log(`📲 Push sent to ${userId}: ${body}`);
   } catch (error) {
-    console.error(`❌ Failed to send push:`, error);
+    console.error(`❌ Failed to send push to ${userId}:`, error.message);
+
+    // 🧹 Cleanup invalid token
+    if (error.code === 'messaging/registration-token-not-registered') {
+      await User.findByIdAndUpdate(userId, { $unset: { fcmToken: "" } });
+      console.log(`🧹 Invalid FCM token removed for ${userId}`);
+    }
   }
 };
+
 
 module.exports = { sendPushToUser };

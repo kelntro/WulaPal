@@ -38,6 +38,7 @@ const AnimatedTabIcon = ({ name, label, focused }) => {
 const BottomTabNavigator = () => {
   return (
     <Tab.Navigator
+    initialRouteName="Home"
       screenOptions={{
         tabBarShowLabel: false,
         tabBarStyle: styles.tabBar,

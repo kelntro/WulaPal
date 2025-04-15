@@ -4,7 +4,8 @@ import { styled } from 'nativewind';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import logo from '../assets/logo-mobile.png';
-import messaging from '@react-native-firebase/messaging';
+import { getMessaging } from '@react-native-firebase/messaging';
+import { getApp } from '@react-native-firebase/app';
 
 
 const StyledText = styled(Text);
@@ -62,14 +63,19 @@ const LoginScreen = ({ navigation }) => {
 
         console.log("[LOGIN] User logged in successfully:", data.user);
         // ✅ Save FCM token
-        const fcmToken = await messaging().getToken();
+        const fcmToken = await getMessaging(getApp()).getToken();
 
         if (fcmToken) {
-          await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
+          const res = await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: data.user._id, fcmToken }),
           });
+        
+          if (!res.ok) {
+            throw new Error("FCM token failed to save");
+          }
+        
           console.log("✅ FCM token saved:", fcmToken);
         } else {
           console.log("⚠️ Failed to get FCM token");
@@ -81,7 +87,7 @@ const LoginScreen = ({ navigation }) => {
                 onPress: () =>
                     navigation.reset({
                         index: 0,
-                        routes: [{ name: "MainApp", params: { screen: "Home" } }], // ✅ Redirect to Home inside MainApp
+                        routes: [{ name: "Main", params: { screen: "Home" } }], // ✅ Redirect to Home inside MainApp
                     }),
             },
         ]);

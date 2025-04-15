@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ScrollView, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getMessaging } from '@react-native-firebase/messaging';
+import { getApp } from '@react-native-firebase/app';
 
 const ProfileScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('info');
@@ -30,6 +32,18 @@ const ProfileScreen = ({ navigation }) => {
 
 // Profile Information Section (No Vertical Centering)
 const ProfileInfo = () => {
+  const [userId, setUserId] = useState('');
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const user = await AsyncStorage.getItem("user");
+      if (user) {
+        const parsedUser = JSON.parse(user);
+        setUserId(parsedUser._id); // Use .userId if that's your field instead
+      }
+    };
+    fetchUserId();
+  }, []);
+
   return (
     <ScrollView style={styles.profileContainer}>
       <View style={styles.avatarContainer}>
@@ -37,8 +51,10 @@ const ProfileInfo = () => {
       </View>
 
       <Text style={styles.sectionTitle}>Account Information</Text>
-      <View style={styles.inputBox}><Text style={styles.label}>Account Number</Text><TextInput value="3024982387" editable={false} style={styles.input} /></View>
-
+      <View style={styles.inputBox}>
+        <Text style={styles.label}>Account Number</Text>
+        <TextInput value={userId} editable={false} style={styles.input} />
+      </View>
       <Text style={styles.sectionTitle}>Personal Information</Text>
       <View style={styles.inputBox}><Text style={styles.label}>Full Name</Text><TextInput value="Michael Santos" editable={false} style={styles.input} /></View>
       <View style={styles.inputBox}><Text style={styles.label}>Date of Birth</Text><TextInput value="May 25, 2000" editable={false} style={styles.input} /></View>
@@ -55,12 +71,28 @@ const ProfileInfo = () => {
 const ProfileSettings = ({ navigation }) => {
   const handleLogout = async () => {
     try {
+      // Get current FCM token
+      const fcmToken = await getMessaging(getApp()).getToken();
+  
+      // 🚫 Remove token from backend
+      await fetch("http://10.0.2.2:5050/api/users/remove-fcm-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fcmToken }),
+      });
+  
+      // 🧹 Optionally delete token on device
+      await getMessaging(getApp()).deleteToken();
+  
+      // 🧼 Clear session
       await AsyncStorage.removeItem("token");
       await AsyncStorage.removeItem("user");
+  
       Alert.alert("Logged Out", "You have been successfully logged out.", [
-        { text: "OK", onPress: () => navigation.reset({ index: 0, routes: [{ name: "LoginScreen" }] }) },
+        { text: "OK", onPress: () => navigation.reset({ index: 0, routes: [{ name: "Login" }] }) },
       ]);
     } catch (error) {
+      console.error("Logout error:", error);
       Alert.alert("Error", "Failed to log out. Try again.");
     }
   };

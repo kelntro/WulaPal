@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
     dateofBirth: { type: Date, default: null },
     country: { type: String, default: null },
     mobile: { type: String, default: null },
-    email: { type: String, unique: true, required: true, trim: true },
+    email: { type: String, required: true, trim: true },
     address: { type: String, default: null },
     password: { type: String, required: true },
     fcmToken: { type: String, default: null },
@@ -22,5 +22,8 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// ✅ Allow same email with different role (composite unique index)
+userSchema.index({ email: 1, role: 1 }, { unique: true });
 
 module.exports = mongoose.model("User", userSchema);

@@ -93,10 +93,10 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "Invalid role. Must be 'organizer' or 'member'." });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email, role });
     if (existingUser && existingUser.isVerified) {
-      return res.status(400).json({ error: "Email already registered." });
-    }
+      return res.status(400).json({ error: "This email is already registered as a " + role + "." });
+    }    
 
     // ✅ Organizers Use Email Verification Instead (No OTP required)
     if (role === "organizer" || platform === "web") {
@@ -316,10 +316,10 @@ router.post("/request-otp", async (req, res) => {
       return res.status(400).json({ error: "Invalid role. Must be 'organizer' or 'member'." });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email, role });
     if (existingUser && existingUser.isVerified) {
-      return res.status(400).json({ error: "Email already registered." });
-    }
+      return res.status(400).json({ error: "This email is already registered as a " + role + "." });
+    }    
 
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -425,6 +425,68 @@ router.post("/change-password", async (req, res) => {
   await user.save();
 
   res.json({ success: true });
+});
+
+// ✅ Google Sign-In for Organizer (Web Only)
+router.post("/google-login", async (req, res) => {
+  try {
+    const { name, email, profileImage } = req.body;
+
+    if (!email) return res.status(400).json({ error: "Email is required" });
+
+    let user = await User.findOne({ email, role: "organizer" });
+
+    if (!user) {
+      const emailUsed = await User.findOne({ email });
+      if (emailUsed && emailUsed.role !== "organizer") {
+        console.log("⚠️ Same email exists for different role, continuing to create new organizer...");
+      }
+    
+      const userId = await generateUserId();
+      user = await User.create({
+        userId,
+        name,
+        email,
+        profileImage,
+        password: "google_oauth",
+        role: "organizer",
+        isVerified: true,
+      });
+    
+      await Wallet.create({ userId: user._id, balance: 0 });
+      console.log(`✅ Organizer wallet created via Google Sign-In`);
+    }
+    
+    // Create new user if not exists
+    if (!user) {
+      const userId = await generateUserId();
+      user = await User.create({
+        userId,
+        name,
+        email,
+        profileImage,
+        password: "google_oauth", // Placeholder
+        role: "organizer",
+        isVerified: true,
+      });
+
+      // Create wallet
+      await Wallet.create({ userId: user._id, balance: 0 });
+      console.log(`✅ Organizer wallet created via Google Sign-In`);
+    }
+
+    // Generate JWT Token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({ token, user });
+  } catch (error) {
+    console.error("❌ Google Login error:", error.message);
+    res.status(500).json({ error: "Login failed. Try again later." });
+  }
 });
 
 

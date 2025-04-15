@@ -10,8 +10,10 @@ exports.getMessages = async (req, res) => {
     const room = await GroupChatRoom.findOne({ groupId });
     if (!room) return res.json([]); // No room = no messages
 
-    const messages = await ChatMessage.find({ roomId: room._id }).sort('timestamp');
-    res.json(messages);
+    const messages = await ChatMessage.find({ roomId: room._id })
+    .populate('sender', 'name') // ✅ Only fetch the sender's name
+    .sort('timestamp');
+      res.json(messages);
   } catch (error) {
     console.error("❌ Error fetching messages:", error.message);
     res.status(500).json({ error: "Server error" });
@@ -27,7 +29,7 @@ exports.sendMessage = async (req, res) => {
     if (!group) return res.status(404).json({ error: "Group not found" });
 
     const user = await User.findById(sender);
-    const isOrganizer = group.handler === user.name;
+    const isOrganizer = group.handler.toString() === sender;
     const isMember = group.members.some(m => m.userId.toString() === sender);
 
     if (!isOrganizer && !isMember) {
@@ -35,19 +37,33 @@ exports.sendMessage = async (req, res) => {
     }
 
     let room = await GroupChatRoom.findOne({ groupId });
+
     if (!room) {
+      // Automatically add all current group members + organizer to chat
+      const memberIds = group.members.map(m => m.userId.toString());
+      if (!memberIds.includes(group.handler.toString())) {
+        memberIds.push(group.handler.toString());
+      }
+    
       room = await GroupChatRoom.create({
         groupId,
-        members: [sender],
+        members: memberIds,
       });
+    
+      console.log(`🛠️ Created GroupChatRoom for group ${groupId} with members:`, memberIds);
     }
+    
 
-    const message = await ChatMessage.create({
+    let message = await ChatMessage.create({
       roomId: room._id,
       sender,
       type,
       content
     });
+    
+    // 🔥 Populate sender name immediately
+    message = await message.populate('sender', 'name');
+    
 
     req.app.get('io').in(groupId).emit('new-message', message);
     res.status(201).json(message);

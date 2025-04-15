@@ -64,7 +64,6 @@ const Group = require("./models/Group");
 app.post("/api/create-group", async (req, res) => {
   try {
     console.log("📥 Received request to create group:", req.body);
-
     const {
       name,
       contributionAmount,
@@ -87,6 +86,11 @@ app.post("/api/create-group", async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    const organizerUser = await User.findOne({ name: handler }); // or { email: handler } if preferred
+    if (!organizerUser) {
+      return res.status(404).json({ error: "Organizer not found" });
+    }
+    
     console.log("🚀 Deploying contract to blockchain...");
     const blockchainResult = await createGroup(
       contributionAmount,
@@ -115,7 +119,7 @@ app.post("/api/create-group", async (req, res) => {
         : `${SERVER_URL}/uploads/${path.basename(image)}`,
       description,
       slots,
-      handler: handler || "Unknown Organizer",
+      handler: organizerUser._id,
       contractAddress: blockchainResult.contractAddress,
       tokenAddress: blockchainResult.tokenAddress,
       members: [],
@@ -832,7 +836,7 @@ app.get("/api/organizer-groups", async (req, res) => {
     }
 
     // Find groups where handler matches the organizer's name
-    const groups = await Group.find({ handler: organizer.name });
+    const groups = await Group.find({ handler: organizer._id });
 
     if (groups.length === 0) {
       return res
@@ -1061,6 +1065,27 @@ app.post('/api/users/save-fcm-token', async (req, res) => {
   }
 });
 
+app.post('/api/users/remove-fcm-token', async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+
+    if (!fcmToken) {
+      return res.status(400).json({ error: 'Missing fcmToken' });
+    }
+
+    const user = await User.findOne({ fcmToken });
+    if (!user) return res.status(404).json({ error: 'User not found with this token' });
+
+    user.fcmToken = null;
+    await user.save();
+
+    res.json({ success: true, message: 'FCM token removed' });
+  } catch (err) {
+    console.error("❌ Error removing FCM token:", err.message);
+    res.status(500).json({ error: "Failed to remove FCM token" });
+  }
+});
+
   
 require("./jobs/roscaScheduler");
 
@@ -1071,3 +1096,4 @@ app.use(
   "/uploads/profile",
   express.static(path.join(__dirname, "uploads/profile"))
 );
+

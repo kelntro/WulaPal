@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { Link } from "react-router-dom";
+import { auth, provider } from "../firebase-config";
+import { signInWithPopup } from "firebase/auth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -100,6 +102,41 @@ const Login = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const { displayName, email, photoURL } = result.user;
+  
+      console.log("🔐 Google Result:", { displayName, email, photoURL });
+  
+      const response = await fetch("http://localhost:5050/api/auth/google-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: displayName,
+          email,
+          profileImage: photoURL,
+        }),
+      });
+  
+      const data = await response.json();
+      if (!response.ok) {
+        console.error("❌ Google login failed:", data);
+        throw new Error(data.error || "Google sign-in failed");
+      }
+  
+      // ✅ Save JWT + User
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+  
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Google Sign-In Error:", err.message);
+      setError("Google Sign-In failed. Please try again.");
+    }
+  };
+  
+  
   return (
     <div className="bg-gray-100 flex justify-center items-center min-h-screen px-4">
       <div className="w-full max-w-[1000px] flex flex-row bg-white shadow-lg rounded-lg overflow-hidden">
@@ -209,9 +246,13 @@ const Login = () => {
           </div>
 
           {/* Google Sign-In Button */}
-          <button className="w-full flex items-center justify-center border py-3 rounded-lg hover:bg-gray-100 transition">
-            <FcGoogle className="mr-2" size={22} /> Sign in with Google
-          </button>
+          <button
+          onClick={handleGoogleSignIn}
+          className="w-full flex items-center justify-center border py-3 rounded-lg hover:bg-gray-100 transition"
+        >
+          <FcGoogle className="mr-2" size={22} /> Sign in with Google
+        </button>
+
 
           {/* Sign Up Link */}
           <p className="mt-6 text-sm text-gray-600 text-center">

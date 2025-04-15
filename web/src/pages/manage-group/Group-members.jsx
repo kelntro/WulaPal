@@ -20,6 +20,7 @@ const GroupMembers = () => {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
+  const currentUser = JSON.parse(localStorage.getItem("user")); 
   useEffect(() => {
     console.log("🔍 Fetching group details for ID:", groupId);
 
@@ -171,40 +172,53 @@ const GroupMembers = () => {
 </div>
 
 
-      <div className="p-6 w-full max-w-6xl mx-auto mt-8">
-    <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-green-900">Group Contribution Details</h2>
-    </div>
+<div className="p-6 w-full max-w-6xl mx-auto mt-10 bg-[#f5faf7] rounded-xl border border-[#d9e5db] shadow-sm">
+  <h2 className="text-2xl font-bold text-[#3A6953] mb-6 text-center">
+    📊 Group Contribution Details
+  </h2>
 
+  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
     {/* Contribution Start Date */}
-    <div className="mb-4 text-center">
-        <p className="text-lg text-[#3A6953] font-semibold">
-            Contribution Started: {group.payouts?.length > 0 ? new Date(group.payouts[0].payoutDate).toLocaleDateString() : "Not Started"}
-        </p>
+    <div className="bg-white rounded-lg p-4 border shadow">
+      <p className="text-sm text-gray-500 mb-1">Contribution Started</p>
+      <p className="text-lg text-[#3A6953] font-semibold">
+        {group.payouts?.length > 0
+          ? new Date(group.payouts[0].payoutDate).toLocaleDateString()
+          : "Not Started"}
+      </p>
     </div>
 
     {/* Current Payout Recipient */}
-    <div className="mb-4 text-center">
-        <p className="text-lg text-[#3A6953] font-semibold">
-            Current Payout Recipient: 
-            {group.payouts?.length > 0 ? group.members.find(m => m.id === group.payouts[0].recipientId)?.name || "N/A" : "Not Assigned"}
-        </p>
+    <div className="bg-white rounded-lg p-4 border shadow">
+      <p className="text-sm text-gray-500 mb-1">Current Payout Recipient</p>
+      <p className="text-lg text-[#3A6953] font-semibold">
+        {group.payouts?.length > 0
+          ? group.members.find((m) => m.id === group.payouts[0].recipientId)?.name || "N/A"
+          : "Not Assigned"}
+      </p>
     </div>
 
     {/* Next Payout Date */}
-    <div className="mb-4 text-center">
-        <p className="text-lg text-[#3A6953] font-semibold">
-            Next Payout Date: {group.nextPayoutDate ? new Date(group.nextPayoutDate).toLocaleDateString() : "Not Set"}
-        </p>
+    <div className="bg-white rounded-lg p-4 border shadow">
+      <p className="text-sm text-gray-500 mb-1">Next Payout Date</p>
+      <p className="text-lg text-[#3A6953] font-semibold">
+        {group.nextPayoutDate
+          ? new Date(group.nextPayoutDate).toLocaleDateString()
+          : "Not Set"}
+      </p>
     </div>
+  </div>
 </div>
 
       </div>
 
       {selectedMember && <MemberInfoModal member={selectedMember} onClose={() => setSelectedMember(null)} />}
 
-      {/* Floating Chat */}
-      <FloatingChat />
+{/* Floating Chat */}
+{group && currentUser && (
+  <FloatingChat groupId={group._id} currentUser={currentUser} />
+)}
+
     </div>
   );
 };

@@ -243,11 +243,10 @@ const handleAutoContribution = async () => {
         continue;
       }
   
-      const totalPayout = Number(group.contributionAmount) * (group.requiredMembers - 1);
+      const totalPayout = Number(group.contributionAmount) * expectedContributions;
       recipient.balance += totalPayout;
       await recipient.save();
   
-      // 🔔 Notify recipient
       await MemberNotification.create({
         userId: payout.recipientId,
         message: `🎉 You received a total of ₱${totalPayout} payout from group "${group.name}".`,
@@ -260,7 +259,7 @@ const handleAutoContribution = async () => {
         "WulaPal",
         `🎉 You received ₱${totalPayout} from group "${group.name}".`
       );
-      // 🧾 Log payout as transaction
+  
       const referenceId = `PAYOUT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
       await Transaction.create({
         userId: payout.recipientId,
@@ -277,14 +276,12 @@ const handleAutoContribution = async () => {
   
       console.log(`🎉 [User: ${payout.recipientId}] Received ₱${totalPayout} from group "${group.name}". Transaction logged.`);
   
-      // Reset for next cycle
       group.currentCycleContributions = 0;
       group.currentPayoutIndex += 1;
-      // ✅ Check if all cycles are completed
+  
       if (group.currentPayoutIndex >= group.payouts.length) {
         group.status = "completed";
-
-        // Optional: notify all members
+  
         for (const member of group.members) {
           await MemberNotification.create({
             userId: member.userId,
@@ -292,23 +289,31 @@ const handleAutoContribution = async () => {
             message: `✅ Group "${group.name}" has completed all payout cycles.`,
             type: "group_completed"
           });
+  
           await sendPushToUser(
             member.userId.toString(),
             "WulaPal",
             `✅ Group "${group.name}" is now completed. 🎉`
           );
         }
-
+  
         console.log(`🏁 [Group: ${group.name}] All payout cycles completed. Group marked as completed.`);
       }
-      
-      group.lastContributionDate = new Date(Date.now() - 5 * 60 * 1000);
+  
+      // ✅ Use proper interval based on group frequency
+      let intervalDays = 7;
+      if (group.frequency === "Bi-Weekly") intervalDays = 14;
+      if (group.frequency === "Monthly") intervalDays = 30;
+  
+      group.lastContributionDate = new Date(); // reset to now
       group.hasStarted = true;
+  
       await group.save();
     }
   
     console.log("✅ [AutoPayouts] Finished processing all groups.\n");
-  }
+  };
+  
   
   const sendUpcomingContributionReminders = async () => {
     const groups = await Group.find({ status: "active", hasStarted: true });

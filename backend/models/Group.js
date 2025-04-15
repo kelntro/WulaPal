@@ -9,7 +9,7 @@ const GroupSchema = new mongoose.Schema(
     image: { type: String, default: "" }, // Group image URL
     description: { type: String, default: "No description provided." },
     slots: { type: Number, required: true },
-    handler: { type: String, required: true },
+    handler: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     contractAddress: { type: String, default: "" },
     tokenAddress: { type: String, default: "" },
     hasStarted: { type: Boolean, default: false },

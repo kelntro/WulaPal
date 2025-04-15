@@ -17,6 +17,8 @@ import SuccessTransfer from "./pages/wallet/Success-transfer.jsx";
 import Withdraw from "./pages/wallet/Withdraw.jsx";
 import SuccessWithdraw from "./pages/wallet/Success-withdraw.jsx";
 import ChangePassword from "./pages/settings/ChangePassword.jsx";
+import GroupChatList from "./pages/group/GroupChatList";
+import GroupChat from "./pages/manage-group/Group-chat";
 
 // Import Main Layout Component
 import MainLayout from "./components/MainLayout";
@@ -45,7 +47,10 @@ const App = () => {
         <Route path="/wallet/success-withdraw" element={<SuccessWithdraw />} />
 
         <Route path="/change-password" element={<ChangePassword />} />
-        
+              
+        <Route path="/groupchats" element={<GroupChatList />} />
+        <Route path="/groupchat/:groupId" element={<GroupChat />} />
+
         {/* Group Members Route */}
         <Route path="/group-members/:groupId" element={<GroupMembers />} />
         

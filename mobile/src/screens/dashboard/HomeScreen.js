@@ -48,11 +48,17 @@ const HomeScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Header with notification bell */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Welcome to WulaPal 👋</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
-          <Icon name="notifications-outline" size={26} color="#2E7D32" />
-        </TouchableOpacity>
-      </View>
+  <Text style={styles.greeting}>Welcome to WulaPal 👋</Text>
+  <View style={{ flexDirection: 'row', gap: 15 }}>
+    <TouchableOpacity onPress={() => navigation.navigate('GroupChats')}>
+      <Icon name="chatbubbles-outline" size={26} color="#2E7D32" />
+    </TouchableOpacity>
+    <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+      <Icon name="notifications-outline" size={26} color="#2E7D32" />
+    </TouchableOpacity>
+  </View>
+</View>
+
 
       {/* Group Status Summary */}
       {groupStats && (
