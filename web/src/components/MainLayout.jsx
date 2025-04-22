@@ -56,7 +56,7 @@ const MainLayout = () => {
             <Route path="/manage-group/add-member" element={<AddMember />} />
             <Route path="/manage-group/chat/:groupId" element={<GroupChat />} />
             <Route path="/manage-group/members" element={<GroupMembers />} />
-            <Route path="/manage-group/transactions" element={<GroupTransactions />} />
+            <Route path="/manage-group/transactions/:groupId" element={<GroupTransactions />} />
             <Route path="/manage-group/paluwagan-groups" element={<PaluwaganGroups />} />
 
             {/* Settings */}

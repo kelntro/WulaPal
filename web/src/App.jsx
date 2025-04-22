@@ -19,6 +19,9 @@ import SuccessWithdraw from "./pages/wallet/Success-withdraw.jsx";
 import ChangePassword from "./pages/settings/ChangePassword.jsx";
 import GroupChatList from "./pages/group/GroupChatList";
 import GroupChat from "./pages/manage-group/Group-chat";
+import SearchResults from "./pages/SearchResults";
+import UserProfile from "./pages/UserProfile";
+import MessageUser from "./pages/MessageUser";
 
 // Import Main Layout Component
 import MainLayout from "./components/MainLayout";
@@ -53,6 +56,10 @@ const App = () => {
 
         {/* Group Members Route */}
         <Route path="/group-members/:groupId" element={<GroupMembers />} />
+        
+        <Route path="/search" element={<SearchResults />} />
+        <Route path="/user/:userId" element={<UserProfile />} />
+        <Route path="/message/:userId" element={<MessageUser />} />
         
         {/* Routes that include Sidebar */}
         <Route path="/*" element={<MainLayout />} />

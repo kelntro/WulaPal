@@ -18,7 +18,10 @@ const walletRoutes = require("./routes/walletRoutes");
 const Notification = require("./models/Notification");
 const MemberNotification = require("./models/MemberNotification");
 const chatRoutes = require("./routes/chatRoutes");
-
+const Transaction = require("./models/Transaction");
+const purchaseRoutes = require('./routes/purchaseRoutes');
+const userRoutes = require("./routes/userRoutes");
+const messageRoutes = require("./routes/messageRoutes");
 // 🔌 Connect to MongoDB here
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -130,7 +133,7 @@ app.post("/api/create-group", async (req, res) => {
     console.log("✅ Group saved successfully:", newGroup);
 
     // ✅ Save notification to DB and emit
-    const organizer = await User.findOne({ name: newGroup.handler });
+    const organizer = await User.findById(newGroup.handler);
     if (organizer) {
       const savedNotification = await Notification.create({
         organizerId: organizer._id,
@@ -384,7 +387,18 @@ app.post("/api/groups/:groupId/add-member", async (req, res) => {
           date: new Date(),
         });
       }
-
+ // ✅ Notify the organizer that group started
+      await Notification.create({
+        organizerId: organizer._id,
+        message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
+      });
+      
+      io.emit("groupUpdated", {
+        organizerId: organizer._id.toString(),
+        message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
+        date: new Date(),
+      });
+      
       // ✅ Notify all members that group started
       for (const member of group.members) {
         await MemberNotification.create({
@@ -406,7 +420,7 @@ app.post("/api/groups/:groupId/add-member", async (req, res) => {
     await group.save();
 
     // ✅ Save notification to DB
-    const organizer = await User.findOne({ name: group.handler });
+    const organizer = await User.findById(group.handler);
     if (organizer) {
       await Notification.create({
         organizerId: organizer._id,
@@ -609,7 +623,18 @@ app.post("/api/join-group", async (req, res) => {
           date: new Date()
         });
       }
-
+ // ✅ Notify the organizer that group started
+      await Notification.create({
+        organizerId: organizer._id,
+        message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
+      });
+      
+      io.emit("groupUpdated", {
+        organizerId: organizer._id.toString(),
+        message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
+        date: new Date(),
+      });
+      
       // ✅ Notify all members group started
       for (const member of group.members) {
         await MemberNotification.create({
@@ -630,7 +655,7 @@ app.post("/api/join-group", async (req, res) => {
     await group.save();
 
     // ✅ Notify organizer
-    const organizer = await User.findOne({ name: group.handler });
+    const organizer = await User.findById(group.handler);
     if (organizer) {
       const newNotif = await Notification.create({
         organizerId: organizer._id,
@@ -786,8 +811,20 @@ app.post("/api/confirm-contribution", async (req, res) => {
                   message: `✅ Group "${group.name}" has completed all payout cycles.`,
                   type: "group_completed",
                 });
+                // 💬 Send real-time notification to organizer
+                await Notification.create({
+                  organizerId: group.handler,
+                  message: `🏁 Group "${group.name}" has completed all payout cycles.`,
+                });
+                
+                io.emit("groupUpdated", {
+                  organizerId: group.handler.toString(),
+                  message: `🏁 Group "${group.name}" has completed all payout cycles.`,
+                  date: new Date(),
+                });
 
-                // 💬 Send real-time notification
+                
+                // 💬 Send real-time notification to members
                 const io = req.app.get("io");
                 io.emit("memberNotification", {
                 userId: member.userId.toString(),
@@ -813,6 +850,36 @@ app.post("/api/confirm-contribution", async (req, res) => {
     }
   });
 
+  // ✅ Fetch Transactions for Specific Group
+  app.get("/api/group-transactions/:groupId", async (req, res) => {
+    try {
+      const { groupId } = req.params;
+  
+      if (!mongoose.Types.ObjectId.isValid(groupId)) {
+        return res.status(400).json({ error: "Invalid groupId format" });
+      }
+  
+      const transactions = await Transaction.find({ "metadata.groupId": groupId }).sort({ createdAt: -1 }).populate('userId', 'name');
+  
+      const formatted = transactions.map((txn) => {
+        const createdAt = txn.createdAt ? new Date(txn.createdAt) : new Date(); // 🛠️ FIXED
+        return {
+          id: txn.referenceId,
+          name: txn.userId?.name || "Unknown", // 🛠️ FIXED
+          contributed: txn.metadata?.to || txn.metadata?.from || "N/A",
+          date: createdAt.toLocaleDateString(),
+          time: createdAt.toLocaleTimeString(),
+          status: txn.type === "transfer" ? "Deposit" : "Withdrawal",
+        };
+      });
+  
+      res.json(formatted);
+    } catch (error) {
+      console.error("❌ Error fetching group transactions:", error.message);
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+  
 app.get("/api/organizer-groups", async (req, res) => {
   try {
     const { organizerId } = req.query;
@@ -941,6 +1008,19 @@ server.listen(PORT, () =>
 
 const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth", authRoutes);
+
+app.get("/api/notifications/:organizerId", async (req, res) => {
+  try {
+    const { organizerId } = req.params;
+    
+    const notifications = await Notification.find({ organizerId }).sort({ date: -1 });
+    res.json(notifications);
+  } catch (error) {
+    console.error("❌ Error fetching organizer notifications:", error.message);
+    res.status(500).json({ error: "Failed to fetch organizer notifications" });
+  }
+});
+
 
 app.get("/api/member-notifications/:userId", async (req, res) => {
     try {
@@ -1097,3 +1177,6 @@ app.use(
   express.static(path.join(__dirname, "uploads/profile"))
 );
 
+app.use('/api/purchase', purchaseRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/messages", messageRoutes);

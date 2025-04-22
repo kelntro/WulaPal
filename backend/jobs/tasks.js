@@ -29,6 +29,20 @@ const handleAutoContribution = async () => {
           console.log(`🚀 [Group: ${group.name}] First contribution cycle is starting now.`);
           group.hasStarted = true;
           await group.save();
+
+          // ✅ Notify the organizer that group started
+          await Notification.create({
+            organizerId: group.handler,  // Directly use the ID
+            message: `🚀 Contribution cycle started for group "${group.name}".`,
+          });
+          
+          io.emit("groupUpdated", {
+            organizerId: group.handler.toString(),
+            message: `🚀 Contribution cycle started for group "${group.name}".`,
+            date: new Date(),
+          });
+
+          
         } else {
           console.log(`⏳ [Group: ${group.name}] Waiting 5 minutes before first contribution cycle. Passed: ${minuteDifference}/5`);
           continue;

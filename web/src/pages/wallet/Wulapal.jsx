@@ -21,6 +21,7 @@ import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 dayjs.extend(customParseFormat);
 
+
 const AccountBalanceCard = () => {
   const [balance, setBalance] = useState(0);
 
@@ -57,10 +58,49 @@ const AccountBalanceCard = () => {
 
 
 const Wallet = () => {
+  const navigate = useNavigate();
+
+  const [walletSummary, setWalletSummary] = useState({
+    deposit: 0,
+    withdraw: 0,
+    receive: 0,
+    transfer: 0,
+  });
+
+  useEffect(() => {
+    const fetchWalletSummary = async () => {
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+
+      try {
+        const res = await fetch(`http://localhost:5050/api/wallet/transactions?userId=${userId}`);
+        const transactions = await res.json();
+
+        let deposit = 0;
+        let withdraw = 0;
+        let receive = 0;
+        let transfer = 0;
+
+        transactions.forEach((txn) => {
+          if (txn.type === "deposit") deposit += txn.amount;
+          if (txn.type === "withdraw") withdraw += txn.amount;
+          if (txn.type === "receive") receive += txn.amount;
+          if (txn.type === "transfer") transfer += txn.amount;
+        });
+
+        setWalletSummary({ deposit, withdraw, receive, transfer });
+        console.log("✅ Wallet Stats Fetched:", { deposit, withdraw, receive, transfer });
+      } catch (error) {
+        console.error("❌ Error fetching wallet transactions:", error.message);
+      }
+    };
+
+    fetchWalletSummary();
+  }, []);
+
   return (
     <div className="p-2 flex justify-center ml-[40px]">
       <div className="max-w-[1500px] p-2">
-        {/* Wallet Header */}
         <h1 className="text-4xl font-bold text-[#285236]">WulaPal Wallet</h1>
         <p className="text-[#6A8C73] mb-6">Here’s your Wulapal wallet data.</p>
 
@@ -70,7 +110,7 @@ const Wallet = () => {
             <AccountBalanceCard />
           </div>
 
-          {/* Right Column - Buttons & Stats */}
+          {/* Right Column - Stats */}
           <div className="col-span-2 flex flex-col">
             {/* Buttons */}
             <div className="flex gap-[20px] justify-end mb-6 mr-[28px]">
@@ -79,15 +119,44 @@ const Wallet = () => {
               <WithdrawButton />
             </div>
 
-            {/* Stats Grid */}
+            {/* Wallet Stats Grid */}
             <div className="grid grid-cols-2 gap-5">
-              <StatCard title="Total Income" amount="₱632.00" icon={<GoArrowDownLeft />} change="+1.29%" changeColor="text-[#285236]" changeBg="bg-[#E5F8ED]" />
-              <StatCard title="Total Contribution" amount="₱632.00" icon={<GoArrowUpRight />} change="-1.29%" changeColor="text-[#9B2C2C]" changeBg="bg-[#FBE7E7]" />
-              <StatCard title="Total Deposit" amount="₱300.00" icon={<GoArrowDownLeft />} change="+1.29%" changeColor="text-[#285236]" changeBg="bg-[#E5F8ED]" />
-              <StatCard title="Total Transfer" amount="₱1,245.00" icon={<GoArrowUpRight />} change="-1.29%" changeColor="text-[#9B2C2C]" changeBg="bg-[#FBE7E7]" />
+              <StatCard
+                title="Total Deposit"
+                amount={`₱${walletSummary.deposit.toLocaleString()}`}
+                icon={<GoArrowDownLeft />}
+                change="+1.29%"
+                changeColor="text-[#285236]"
+                changeBg="bg-[#E5F8ED]"
+              />
+              <StatCard
+                title="Total Withdraw"
+                amount={`₱${walletSummary.withdraw.toLocaleString()}`}
+                icon={<GoArrowUpRight />}
+                change="-1.29%"
+                changeColor="text-[#9B2C2C]"
+                changeBg="bg-[#FBE7E7]"
+              />
+              <StatCard
+                title="Total Receive"
+                amount={`₱${walletSummary.receive.toLocaleString()}`}
+                icon={<GoArrowDownLeft />}
+                change="+1.29%"
+                changeColor="text-[#285236]"
+                changeBg="bg-[#E5F8ED]"
+              />
+              <StatCard
+                title="Total Transfer"
+                amount={`₱${walletSummary.transfer.toLocaleString()}`}
+                icon={<GoArrowUpRight />}
+                change="-1.29%"
+                changeColor="text-[#9B2C2C]"
+                changeBg="bg-[#FBE7E7]"
+              />
             </div>
           </div>
         </div>
+
         <AnalyticsChart />
         <CashActivityChart />
       </div>
@@ -175,41 +244,107 @@ const data = [
 ];
 
 const AnalyticsChart = () => {
+  const [viewType, setViewType] = useState("monthly");
+  const [chartData, setChartData] = useState([]);
+  const [rawTransactions, setRawTransactions] = useState([]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  useEffect(() => {
+    if (rawTransactions.length > 0) {
+      processChartData();
+    }
+  }, [viewType, rawTransactions]);
+
+  const fetchTransactions = async () => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    try {
+      const res = await fetch(`http://localhost:5050/api/wallet/transactions?userId=${userId}`);
+      const transactions = await res.json();
+      console.log("📥 [AnalyticsChart] Transactions fetched:", transactions);
+      setRawTransactions(transactions);
+    } catch (err) {
+      console.error("❌ Error fetching transactions:", err.message);
+    }
+  };
+
+  const processChartData = () => {
+    if (viewType === "monthly") {
+      const monthlyData = Array.from({ length: 12 }, (_, index) => ({
+        month: new Date(0, index).toLocaleString("default", { month: "short" }),
+        deposit: 0,
+        withdraw: 0,
+        receive: 0,
+        transfer: 0,
+      }));
+
+      rawTransactions.forEach((txn) => {
+        const date = new Date(txn.timestamp);
+        const month = date.getMonth(); // 0-11
+        if (txn.type === "deposit") monthlyData[month].deposit += txn.amount;
+        if (txn.type === "withdraw") monthlyData[month].withdraw += txn.amount;
+        if (txn.type === "receive") monthlyData[month].receive += txn.amount;
+        if (txn.type === "transfer") monthlyData[month].transfer += txn.amount;
+      });
+
+      console.log("✅ Processed Monthly Data:", monthlyData);
+      setChartData(monthlyData);
+    } else if (viewType === "yearly") {
+      const yearlyDataMap = {};
+
+      rawTransactions.forEach((txn) => {
+        const year = new Date(txn.timestamp).getFullYear();
+        if (!yearlyDataMap[year]) {
+          yearlyDataMap[year] = { year, deposit: 0, withdraw: 0, receive: 0, transfer: 0 };
+        }
+        if (txn.type === "deposit") yearlyDataMap[year].deposit += txn.amount;
+        if (txn.type === "withdraw") yearlyDataMap[year].withdraw += txn.amount;
+        if (txn.type === "receive") yearlyDataMap[year].receive += txn.amount;
+        if (txn.type === "transfer") yearlyDataMap[year].transfer += txn.amount;
+      });
+
+      const yearlyData = Object.values(yearlyDataMap).sort((a, b) => a.year - b.year);
+      console.log("✅ Processed Yearly Data:", yearlyData);
+      setChartData(yearlyData);
+    }
+  };
+
   return (
     <div className="w-[1158px] bg-white rounded-[20px] shadow-md p-6 mt-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-[#3A6953] text-[26px] font-bold">Statistical Overview</h2>
         <div className="relative mr-4">
-          <select className="appearance-none border border-[#99C6A9] pl-4 pr-10 py-2 rounded-full text-[15px] font-medium focus:outline-none">
-            <option>2025</option>
-            <option>2026</option>
-            <option>2027</option>
-            <option>2028</option>
-            <option>2029</option>
-            <option>2030</option>
+          <select
+            value={viewType}
+            onChange={(e) => setViewType(e.target.value)}
+            className="appearance-none border border-[#99C6A9] pl-4 pr-10 py-2 rounded-full text-[15px] font-medium focus:outline-none"
+          >
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
           </select>
           <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
             <svg className="w-4 h-4 text-[#3a6953]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </div>
         </div>
       </div>
+
       <ResponsiveContainer width="100%" height={400}>
-        <BarChart data={data} margin={{ top: 10, right: 15, left: 13, bottom: 0 }}>
+        <BarChart data={chartData} margin={{ top: 10, right: 15, left: 13, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" />
+          <XAxis dataKey={viewType === "monthly" ? "month" : "year"} />
           <YAxis tickFormatter={(value) => `₱${value.toLocaleString()}`} />
-          <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
+          <Tooltip formatter={(value) => `₱${Number(value).toLocaleString()}`} />
           <Legend />
-          <Bar dataKey="income" fill="#7FC8A9" barSize={10} name="Income" radius={[10, 10, 0, 0]} />
-          <Bar dataKey="contribution" fill="#FF9AA2" barSize={10} name="Contribution" radius={[10, 10, 0, 0]} />
-          <Bar dataKey="transfer" fill="#B5D3FF" barSize={10} name="Transfer" radius={[10, 10, 0, 0]} />
           <Bar dataKey="deposit" fill="#EBE571" barSize={10} name="Deposit" radius={[10, 10, 0, 0]} />
+          <Bar dataKey="withdraw" fill="#9B2C2C" barSize={10} name="Withdraw" radius={[10, 10, 0, 0]} />
+          <Bar dataKey="receive" fill="#7FC8A9" barSize={10} name="Receive" radius={[10, 10, 0, 0]} />
+          <Bar dataKey="transfer" fill="#B5D3FF" barSize={10} name="Transfer" radius={[10, 10, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -232,9 +367,66 @@ const generateData = (year, month) => {
 };
 
 const CashActivityChart = () => {
-  const [selectedYear, setSelectedYear] = useState("2025");
-  const [selectedMonth, setSelectedMonth] = useState("01");
-  const data = generateData(selectedYear, selectedMonth);
+  const [selectedYear, setSelectedYear] = useState(dayjs().format("YYYY"));
+  const [selectedMonth, setSelectedMonth] = useState(dayjs().format("MM"));
+  const [data, setData] = useState([]);
+  const [rawTransactions, setRawTransactions] = useState([]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  useEffect(() => {
+    if (rawTransactions.length > 0) {
+      generateChartData();
+    }
+  }, [selectedYear, selectedMonth, rawTransactions]);
+
+  const fetchTransactions = async () => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    try {
+      const res = await fetch(`http://localhost:5050/api/wallet/transactions?userId=${userId}`);
+      const transactions = await res.json();
+      console.log("📥 [CashActivityChart] Transactions fetched:", transactions);
+      setRawTransactions(transactions);
+    } catch (err) {
+      console.error("❌ Error fetching transactions:", err.message);
+    }
+  };
+
+  const generateChartData = () => {
+    const daysInMonth = dayjs(`${selectedYear}-${selectedMonth}`, "YYYY-MM").daysInMonth();
+
+    const dayMap = Array.from({ length: daysInMonth }, (_, i) => ({
+      date: dayjs(`${selectedYear}-${selectedMonth}-${String(i + 1).padStart(2, "0")}`).format("YYYY-MM-DD"),
+      income: 0,
+      contribution: 0,
+    }));
+
+    rawTransactions.forEach((txn) => {
+      const txnDate = dayjs(txn.timestamp).format("YYYY-MM-DD");
+      const txnYear = dayjs(txn.timestamp).year();
+      const txnMonth = dayjs(txn.timestamp).month() + 1; // dayjs month starts at 0
+      const txnMonthFormatted = String(txnMonth).padStart(2, "0");
+
+      if (txnYear.toString() === selectedYear && txnMonthFormatted === selectedMonth) {
+        const dayEntry = dayMap.find((d) => d.date === txnDate);
+        if (dayEntry) {
+          if (txn.type === "deposit" || txn.type === "receive") {
+            dayEntry.income += txn.amount;
+          }
+          if (txn.type === "transfer") {
+            dayEntry.contribution += txn.amount;
+          }
+        }
+      }
+    });
+
+    console.log("✅ Generated Cash Activity Data:", dayMap);
+    setData(dayMap);
+  };
 
   return (
     <div className="w-[1158px] bg-white rounded-[20px] shadow-md p-[20px] mt-6">
@@ -284,13 +476,16 @@ const CashActivityChart = () => {
         <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" tickFormatter={(date) => dayjs(date).format("MMM DD")} />
-          <YAxis domain={[0, 50000]} tickFormatter={(value) => `₱${value.toLocaleString()}`} />
-          <Tooltip labelFormatter={(label) => dayjs(label).format("MMMM DD, YYYY")} formatter={(value) => `₱${value.toLocaleString()}`} />
+          <YAxis tickFormatter={(value) => `₱${value.toLocaleString()}`} />
+          <Tooltip
+            labelFormatter={(label) => dayjs(label).format("MMMM DD, YYYY")}
+            formatter={(value) => `₱${Number(value).toLocaleString()}`}
+          />
           <Legend />
           {/* Income Line */}
           <Line type="monotone" dataKey="income" stroke="#6A8C73" strokeWidth={3} dot={false} strokeLinecap="round" />
-          {/* Contribute Line (Dotted) */}
-          <Line type="monotone" dataKey="contribute" stroke="#FF9AA2" strokeWidth={3} dot={false} strokeLinecap="round" strokeDasharray="5 5" />
+          {/* Contribution Line */}
+          <Line type="monotone" dataKey="contribution" stroke="#FF9AA2" strokeWidth={3} dot={false} strokeLinecap="round" strokeDasharray="5 5" />
         </LineChart>
       </ResponsiveContainer>
     </div>

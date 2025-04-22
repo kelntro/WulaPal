@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { exportToCSV } from "../../../utils/exportToCSV";
 import { IoIosSearch } from "react-icons/io";
 
 const Transactions = () => {
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [transactions, setTransactions] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(""); // 🌟 added
+  const [selectedYear, setSelectedYear] = useState("");   // 🌟 added
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -16,12 +19,19 @@ const Transactions = () => {
       .catch((err) => console.error("Error fetching transactions:", err));
   }, []);
 
+  const months = [
+    "", "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const years = [""]; // blank option first
+  for (let year = 2020; year <= currentYear; year++) {
+    years.push(year.toString());
+  }
+  
   const filteredTransactions = transactions.filter((txn) => {
-    const txnDate = new Date(txn.timestamp).toLocaleDateString("en-US", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+    const txnDate = new Date(txn.timestamp);
 
     const searchMatch =
       txn.type?.toLowerCase().includes(search.toLowerCase()) ||
@@ -30,14 +40,32 @@ const Transactions = () => {
 
     const dateMatch =
       !dateFilter ||
-      txnDate === new Date(dateFilter).toLocaleDateString("en-US", {
+      txnDate.toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }) === new Date(dateFilter).toLocaleDateString("en-US", {
         day: "numeric",
         month: "long",
         year: "numeric",
       });
 
-    return searchMatch && dateMatch;
+    const monthMatch =
+      !selectedMonth || txnDate.toLocaleString('default', { month: 'long' }) === selectedMonth;
+
+    const yearMatch =
+      !selectedYear || txnDate.getFullYear().toString() === selectedYear;
+
+    return searchMatch && dateMatch && monthMatch && yearMatch;
   });
+
+  const handleDownload = () => {
+    if (!selectedMonth && !selectedYear) {
+      alert("Please select month and/or year before downloading.");
+      return;
+    }
+    exportToCSV(filteredTransactions);
+  };
 
   return (
     <div className="sm:ml-[90px] col-span-2 p-2">
@@ -47,9 +75,9 @@ const Transactions = () => {
       </p>
 
       <div className="bg-white p-6 rounded-lg shadow-lg">
-        {/* Search + Date Filter */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-          <div className="relative w-full sm:w-1/3 mb-2 sm:mb-0">
+        {/* Search + Filters */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+          <div className="relative w-full sm:w-1/3">
             <IoIosSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
             <input
               type="text"
@@ -59,15 +87,33 @@ const Transactions = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex gap-2 items-center">
-            <input
-              type="date"
+
+          <div className="flex gap-2">
+            <select
               className="border border-gray-300 rounded-lg p-2"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
-            <button className="bg-[#6A8C73] text-white rounded-lg px-4 py-2">
-              Download Transaction
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
+              {months.map((month, index) => (
+                <option key={index} value={month}>{month || "Select Month"}</option>
+              ))}
+            </select>
+
+            <select
+              className="border border-gray-300 rounded-lg p-2"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+            >
+              {years.map((year, index) => (
+                <option key={index} value={year}>{year || "Select Year"}</option>
+              ))}
+            </select>
+
+            <button
+              className="bg-[#6A8C73] text-white rounded-lg px-4 py-2"
+              onClick={handleDownload}
+            >
+              Download Transactions
             </button>
           </div>
         </div>
@@ -144,7 +190,6 @@ const Transactions = () => {
           </table>
         </div>
 
-        {/* Pagination Placeholder */}
         <div className="text-gray-500 text-sm mt-4">Page 1 of 1</div>
       </div>
     </div>

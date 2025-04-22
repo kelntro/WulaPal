@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
 import { styled } from 'nativewind';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import logo from '../assets/logo-mobile.png';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import auth from '@react-native-firebase/auth';
 import { getMessaging } from '@react-native-firebase/messaging';
 import { getApp } from '@react-native-firebase/app';
 
@@ -21,6 +23,13 @@ const LoginScreen = ({ navigation }) => {
 
   const API_BASE_URL = "http://10.0.2.2:5050"; // Replace with your local network IP
 
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: '841356244009-icpfsekev3ptc9r73qmee7tn68orqpii.apps.googleusercontent.com',      
+      offlineAccess: true,
+    });
+  }, []);
+  
   const handleLogin = async () => {
     setLoading(true);
 
@@ -99,6 +108,48 @@ const LoginScreen = ({ navigation }) => {
     }
 };
 
+const handleGoogleLogin = async () => {
+  console.log("🚀 Google login started");
+
+  try {
+    // Check if Play Services are available
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    console.log("✅ Play services available");
+
+    // Trigger Google Sign-In flow
+    const { idToken, user } = await GoogleSignin.signIn();
+    console.log("✅ Google sign-in success. ID Token:", idToken);
+    console.log("👤 Google user info:", user);
+
+    // Get credential from Google ID token
+    const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+    console.log("🔑 Google credential created");
+
+    // Sign in with Firebase Authentication
+    const userCredential = await auth().signInWithCredential(googleCredential);
+    console.log("✅ Firebase sign-in success:", JSON.stringify(userCredential.user, null, 2));
+
+    // Save token and user to AsyncStorage
+    const firebaseToken = await userCredential.user.getIdToken();
+    console.log("📥 Firebase Auth Token fetched:", firebaseToken);
+
+    await AsyncStorage.setItem("token", firebaseToken);
+    await AsyncStorage.setItem("user", JSON.stringify(userCredential.user));
+    console.log("💾 Token and user saved to AsyncStorage");
+
+    // Navigate to MainApp
+    console.log("🚀 Navigating to MainApp screen");
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Main", params: { screen: "Home" } }],
+    });
+
+  } catch (error) {
+    console.error("❌ Google Sign-In Error Details:", error);
+    Alert.alert("Google Sign-In Error", error.message || "Unknown error during Google login.");
+  }
+};
+
   
   return (
     <StyledView className="flex-1 bg-white px-6 justify-center">
@@ -159,7 +210,11 @@ const LoginScreen = ({ navigation }) => {
       </StyledView>
 
       {/* Google Sign-In */}
-      <StyledTouchableOpacity className="items-center mb-4">
+      <StyledTouchableOpacity
+        className="items-center mb-4"
+        onPress={handleGoogleLogin} // ✅ Added onPress
+        activeOpacity={0.8} // ✅ Optional: for better UI touch feedback
+      >
         <Image
           source={require('../assets/Google-icon.png')}
           style={{ width: 48, height: 48 }}

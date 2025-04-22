@@ -117,7 +117,7 @@ const GroupMembers = () => {
             </button>
             <button
               className="bg-[#6A8C73] text-white px-4 py-2 rounded-[20px] hover:bg-[#3A6953]"
-              onClick={() => navigate("/manage-group/transactions")}
+              onClick={() => navigate(`/manage-group/transactions/${group._id}`)}
             >
               View Transaction
             </button>

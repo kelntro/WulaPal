@@ -49,7 +49,8 @@ export default function PaymentOption() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: parseFloat(depositAmount),
-          userId
+          userId,
+          successRedirectURL: "http://localhost:5173/wallet/success-deposit"
         }),
       });
 
@@ -61,7 +62,7 @@ export default function PaymentOption() {
 
       // ✅ Open Xendit payment link in new tab
       if (data.checkout_url) {
-        window.open(data.checkout_url, "_blank");
+        window.location.href = data.checkout_url;
       }
 
       // ✅ Navigate to success screen

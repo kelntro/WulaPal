@@ -46,9 +46,14 @@ const Notifications = () => {
 
   useEffect(() => {
     if (!organizerId) return;
-
+  
     const handleNew = (notif) => {
-      if (notif.organizerId === organizerId) {
+      console.log("📥 [Socket] Received notification:", notif);
+      console.log("👤 [Socket] Organizer ID from socket notif:", notif.organizerId);
+      console.log("👤 [Socket] Organizer ID from localStorage:", organizerId);
+  
+      if (notif.organizerId?.toString() === organizerId.toString()) {
+        console.log("✅ [Socket] Organizer ID matched. Adding notification to list.");
         setNotifications((prev) => [
           {
             id: notif._id || Date.now(),
@@ -59,17 +64,20 @@ const Notifications = () => {
           },
           ...prev,
         ]);
+      } else {
+        console.log("❌ [Socket] Organizer ID mismatch. Ignoring notification.");
       }
     };
-
+  
     socket.on("newGroup", handleNew);
     socket.on("groupUpdated", handleNew);
-
+  
     return () => {
       socket.off("newGroup", handleNew);
       socket.off("groupUpdated", handleNew);
     };
   }, [organizerId]);
+  
 
   const markAsRead = async (notifId) => {
     await axios.patch(`${SERVER_URL}/api/notifications/${notifId}/read`);

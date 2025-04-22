@@ -15,6 +15,7 @@
     "@mui/x-charts": "^7.27.0",
     "axios": "^1.8.4",
     "dayjs": "^1.11.13",
+    "file-saver": "^2.0.5",
     "firebase": "^11.6.0",
     "lucide-react": "^0.475.0",
     "multer": "^1.4.5-lts.2",

@@ -9,6 +9,7 @@ const ProfileInformation = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -36,28 +37,37 @@ const ProfileInformation = () => {
     if (!formData.email || !formData.email.includes("@")) {
       return alert("Please enter a valid email address.");
     }
-
+  
     if (formData.mobile && !/^\+?\d*$/.test(formData.mobile)) {
       return alert("Mobile number should only contain numbers and an optional '+' sign.");
     }
-
+  
     const token = localStorage.getItem("token");
+  
+    // 👇 ADD this line: copy the latest profile image from `user`
+    const finalFormData = { ...formData, profileImage: user.profileImage };
+  
     const res = await fetch("http://localhost:5050/api/profile", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(finalFormData),
     });
-
+  
     const data = await res.json();
     if (data.success) {
       setUser(data.user);
-      setContextUser(data.user); // ✅ update context for real-time sidebar update
+      setContextUser(data.user); // update global context
+      setFormData(data.user); // ✅ update formData after save to avoid old inputs
       setIsEditing(false);
+
+        // 🎯 Show success modal
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 2000);
     }
-  };
+  };  
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -96,33 +106,49 @@ const ProfileInformation = () => {
       <h1 className="text-4xl font-bold text-[#285236]">Profile Information</h1>
       <p className="text-[#6A8C73] mb-4">Here’s your profile information.</p>
 
+      {showSuccessModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+        <div className="bg-white rounded-2xl p-8 shadow-lg flex flex-col items-center">
+          <img src="/assets/success.gif" alt="Success" className="w-24 h-24 mb-4" /> {/* optional image */}
+          <h2 className="text-2xl font-bold text-green-600 mb-2">Success!</h2>
+          <p className="text-gray-600">Profile updated successfully.</p>
+        </div>
+      </div>
+    )}
+
       <div className="w-[calc(100%-0.1rem)] max-w-7xl bg-white shadow-md rounded-lg p-6">
         <div className="flex justify-between items-start relative pb-6">
           <div className="flex items-center space-x-4">
-            <div className="w-24 h-24 rounded-full border-2 border-[#6A8C73] relative overflow-hidden cursor-pointer">
-              <img
-                src={
-                  user.profileImage
-                    ? `http://localhost:5050${user.profileImage}`
-                    : "/assets/Profile.jpg"
-                }
-                alt="Profile"
-                className="w-full h-full rounded-full object-cover"
-                onClick={() => document.getElementById("uploadInput").click()}
-              />
-              <input
-                type="file"
-                id="uploadInput"
-                hidden
-                accept="image/*"
-                onChange={handleImageUpload}
-              />
-              {uploading && (
-                <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center text-sm">
-                  Uploading...
-                </div>
-              )}
+          <div className="w-24 h-24 rounded-full border-2 border-[#6A8C73] relative overflow-hidden cursor-pointer">
+          <img
+            src={
+              user.profileImage
+                ? `http://localhost:5050${user.profileImage}`
+                : "/assets/Profile.jpg"
+            }
+            alt="Profile"
+            className="w-full h-full rounded-full object-cover"
+            onClick={() => {
+              if (isEditing) {
+                document.getElementById("uploadInput").click();
+              }
+            }}
+            style={{ cursor: isEditing ? "pointer" : "default" }} // ➡️ optional: update cursor style too
+          />
+          <input
+            type="file"
+            id="uploadInput"
+            hidden
+            accept="image/*"
+            onChange={handleImageUpload}
+          />
+          {uploading && (
+            <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center text-sm">
+              Uploading...
             </div>
+          )}
+        </div>
+
             <div>
               <h2 className="text-2xl font-semibold text-[#285236]">
                 {isEditing ? (

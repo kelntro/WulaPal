@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView } from 'react-native'; // 🔥 TextInput added
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AnimatedButton from '../../components/Button';
@@ -57,6 +57,14 @@ const HomeScreen = () => {
       <Icon name="notifications-outline" size={26} color="#2E7D32" />
     </TouchableOpacity>
   </View>
+</View>
+{/* Search Bar */}
+<View style={styles.searchContainer}>
+  <TextInput
+    placeholder="Search users by name, email, or ID..."
+    style={styles.searchInput}
+    onFocus={() => navigation.navigate('SearchScreen')}
+  />
 </View>
 
 
@@ -139,6 +147,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   emptyText: { color: '#999', fontStyle: 'italic' },
+  searchContainer: {
+    marginBottom: 20,
+  },
+  searchInput: {
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    fontSize: 14,
+  },  
 });
 
 export default HomeScreen;

@@ -489,5 +489,55 @@ router.post("/google-login", async (req, res) => {
   }
 });
 
+// ✅ Google Sign-In for Member (Mobile Only)
+router.post("/google-login-member", async (req, res) => {
+  try {
+    console.log("📥 Google Sign-In Request Body:", req.body);
+
+    const { name, email, profileImage } = req.body;
+
+    if (!email) {
+      console.warn("⚠️ Email is missing in request.");
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    let user = await User.findOne({ email, role: "member" });
+    console.log("🔍 Found user:", user ? user._id : "None");
+
+    if (!user) {
+      console.log("🆕 Creating new member account...");
+
+      const userId = await generateUserId();
+      user = await User.create({
+        userId,
+        name,
+        email,
+        profileImage,
+        password: "google_oauth",
+        role: "member",
+        isVerified: true,
+      });
+
+      console.log(`✅ New user created: ${user._id} (${user.email})`);
+
+      await Wallet.create({ userId: user._id, balance: 0 });
+      console.log(`✅ Wallet created for ${user.email}`);
+    }
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    console.log("✅ JWT Token generated");
+
+    res.json({ token, user });
+  } catch (error) {
+    console.error("❌ Google Login Member Error:", error);
+    res.status(500).json({ error: "Login failed. Try again later." });
+  }
+});
+
 
 module.exports = router;

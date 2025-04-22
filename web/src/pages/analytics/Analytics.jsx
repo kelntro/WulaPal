@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import { HiChevronRight } from "react-icons/hi";
+import React, { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -19,34 +18,80 @@ import {
   Cell,
 } from "recharts";
 
-const performanceData = [
-  { month: "Jan", active: 85, inactive: 35 },
-  { month: "Feb", active: 86, inactive: 52 },
-  { month: "Mar", active: 70, inactive: 65 },
-  { month: "Apr", active: 95, inactive: 24 },
-  { month: "May", active: 84, inactive: 40 },
-  { month: "Jun", active: 75, inactive: 22 },
-  { month: "Jul", active: 60, inactive: 34 },
-  { month: "Aug", active: 65, inactive: 52 },
-  { month: "Sep", active: 78, inactive: 12 },
-  { month: "Oct", active: 85, inactive: 42 },
-  { month: "Nov", active: 92, inactive: 32 },
-  { month: "Dec", active: 98, inactive: 9 },
+const fetchGroups = async (organizerId) => {
+  console.log("🔵 Fetching groups for organizer:", organizerId);
+  try {
+    const res = await fetch(`http://localhost:5050/api/organizer-groups?organizerId=${organizerId}`);
+    const data = await res.json();
+    console.log("🟢 Successfully fetched groups:", data);
+    return data;
+  } catch (error) {
+    console.error("🔴 Error fetching groups:", error);
+    return [];
+  }
+};
+
+const months = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
 const PerformanceOverview = () => {
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [chartData, setChartData] = useState([]);
+
+  useEffect(() => {
+    const organizerId = localStorage.getItem("userId"); // 📦 Replace if you store organizerId differently
+
+    if (organizerId) {
+      fetchGroups(organizerId).then(groups => {
+        console.log("📊 Processing groups for year:", selectedYear);
+        const monthlyData = months.map((month, idx) => ({
+          month,
+          open: 0,
+          active: 0,
+          completed: 0,
+        }));
+
+        groups.forEach(group => {
+          const createdAt = new Date(group.createdAt);
+          const year = createdAt.getFullYear();
+          const month = createdAt.getMonth();
+
+          if (year === selectedYear) {
+            if (group.status && monthlyData[month][group.status] !== undefined) {
+              monthlyData[month][group.status]++;
+            }
+          }
+        });
+
+        console.log("✅ Final chart data:", monthlyData);
+        setChartData(monthlyData);
+      });
+    } else {
+      console.warn("⚠️ Organizer ID not found in localStorage.");
+    }
+  }, [selectedYear]);
+
   return (
-        <div className="w-[758px] bg-white rounded-[20px] shadow-md p-7 mt-6">
+    <div className="w-[758px] bg-white rounded-[20px] shadow-md p-7 mt-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-[#3A6953] text-[26px] font-bold">Group Performance Overview</h2>
         <div className="relative">
-          <select className="appearance-none border border-[#99C6A9] pl-4 pr-10 py-2 rounded-full text-[15px] font-medium focus:outline-none">
-            <option>2025</option>
-            <option>2026</option>
-            <option>2027</option>
-            <option>2028</option>
-            <option>2029</option>
-            <option>2030</option>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            className="appearance-none border border-[#99C6A9] pl-4 pr-10 py-2 rounded-full text-[15px] font-medium focus:outline-none"
+          >
+          {Array.from({ length: 6 }, (_, i) => {
+            const year = new Date().getFullYear() + i;
+            return (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            );
+          })}
+
           </select>
           <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
             <svg className="w-4 h-4 text-[#3a6953]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -55,50 +100,77 @@ const PerformanceOverview = () => {
           </div>
         </div>
       </div>
+
       <ResponsiveContainer width="100%" height={400}>
-        <BarChart data={performanceData} margin={{ top: 10, right: 15, left: 0, bottom: 0 }}>
+        <BarChart data={chartData} margin={{ top: 10, right: 15, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="month" />
-          <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}`} />
+          <YAxis allowDecimals={false} />
           <Tooltip />
           <Legend />
-          <Bar 
-            dataKey="active" 
-            fill="#7FC8A9" 
-            barSize={10} 
-            name="Active" 
-            radius={[10, 10, 0, 0]} 
-          />
-          <Bar 
-            dataKey="inactive" 
-            fill="#FF9AA2" 
-            barSize={10} 
-            name="Inactive" 
-            radius={[10, 10, 0, 0]} 
-          />
+          <Bar dataKey="open" fill="#FFD700" name="Open" barSize={10} radius={[10, 10, 0, 0]} />
+          <Bar dataKey="active" fill="#7FC8A9" name="Active" barSize={10} radius={[10, 10, 0, 0]} />
+          <Bar dataKey="completed" fill="#6A8C73" name="Completed" barSize={10} radius={[10, 10, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
   );
 };
 
-const incomeData = [
-  { month: "Jan", income: 10000, transferred: 5000 },
-  { month: "Feb", income: 12000, transferred: 7000 },
-  { month: "Mar", income: 25000, transferred: 10000 },
-  { month: "Apr", income: 30000, transferred: 15000 },
-  { month: "May", income: 28000, transferred: 12000 },
-  { month: "Jun", income: 27000, transferred: 13000 },
-  { month: "Jul", income: 26000, transferred: 11000 },
-  { month: "Aug", income: 25000, transferred: 14000 },
-  { month: "Sep", income: 10000, transferred: 8000 },
-  { month: "Oct", income: 26000, transferred: 11000 },
-  { month: "Nov", income: 25000, transferred: 14000 },
-  { month: "Dec", income: 10000, transferred: 8000 },
-];
+const fetchIncomeData = async (organizerId) => {
+  console.log("🔵 Fetching income data for organizer:", organizerId);
+  try {
+    const res = await fetch(`http://localhost:5050/api/organizer-groups?organizerId=${organizerId}`); // ✅ FIXED
+    const groups = await res.json();
+    console.log("📥 [IncomeFlow] Raw groups fetched:", groups);
+
+    const monthlyData = months.map((month) => ({
+      month,
+      income: 0,
+      transferred: 0,
+    }));
+
+    groups.forEach((group) => {
+      const createdAt = new Date(group.createdAt);
+      const year = createdAt.getFullYear();
+      const monthIdx = createdAt.getMonth(); // 0 = Jan
+
+      if (year === new Date().getFullYear()) {
+        const contributionAmount = parseFloat(group.contributionAmount) || 0;
+        const membersCount = group.members.length || 0;
+
+        // 💵 Organizer earns when members contribute
+        monthlyData[monthIdx].income += contributionAmount * membersCount;
+
+        // 💸 Organizer pays out when group is active/completed
+        if (group.status === "active" || group.status === "completed") {
+          monthlyData[monthIdx].transferred += contributionAmount * (membersCount - 1);
+          // -1 because payout recipient does not contribute
+        }
+      }
+    });
+
+    console.log("✅ [IncomeFlow] Final monthly data:", monthlyData);
+    return monthlyData;
+  } catch (error) {
+    console.error("❌ [IncomeFlow] Error fetching income data:", error);
+    return months.map((month) => ({ month, income: 0, transferred: 0 }));
+  }
+};
 
 const IncomeFlowChart = () => {
   const [selectedData, setSelectedData] = useState("income");
+  const [incomeData, setIncomeData] = useState([]);
+
+  useEffect(() => {
+    const organizerId = localStorage.getItem("userId");
+    console.log("📦 Organizer ID from localStorage:", organizerId);
+    if (organizerId) {
+      fetchIncomeData(organizerId).then(setIncomeData);
+    } else {
+      console.warn("⚠️ Organizer ID not found in localStorage.");
+    }
+  }, []);
 
   return (
     <div className="w-[758px] bg-white rounded-2xl shadow-lg p-7 mt-6">
@@ -128,7 +200,6 @@ const IncomeFlowChart = () => {
 
       <ResponsiveContainer width="100%" height={350}>
         <AreaChart data={incomeData} margin={{ top: 30, right: 30, left: 0, bottom: 0 }}>
-          {/* Gradient Definitions */}
           <defs>
             <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#6A8C73" stopOpacity={0.3} />
@@ -140,16 +211,11 @@ const IncomeFlowChart = () => {
             </linearGradient>
           </defs>
 
-          {/* Axes & Grid */}
           <XAxis dataKey="month" stroke="#aaa" />
           <YAxis stroke="#aaa" tickFormatter={(value) => `₱${value / 1000}K`} />
           <CartesianGrid strokeDasharray="3 3" />
-
-          {/* Tooltip */}
           <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
-
-          {/* Legend */}
-          <Legend 
+          <Legend
             align="right"
             verticalAlign="top"
             wrapperStyle={{ paddingBottom: 20 }}
@@ -159,16 +225,35 @@ const IncomeFlowChart = () => {
               </span>
             )}
           />
-
-          {/* Dynamic Area & Line */}
           {selectedData === "income" ? (
-            <Area type="monotone" dataKey="income" stroke="#4CAF50" fillOpacity={1} fill="url(#colorIncome)" name="Income" />
+            <Area
+              type="monotone"
+              dataKey="income"
+              stroke="#4CAF50"
+              fillOpacity={1}
+              fill="url(#colorIncome)"
+              name="Income"
+            />
           ) : (
-            <Area type="monotone" dataKey="transferred" stroke="#FF6B6B" fillOpacity={1} fill="url(#colorTransferred)" name="Transferred" />
+            <Area
+              type="monotone"
+              dataKey="transferred"
+              stroke="#FF6B6B"
+              fillOpacity={1}
+              fill="url(#colorTransferred)"
+              name="Transferred"
+            />
           )}
-
           {selectedData === "transferred" && (
-            <Line type="monotone" dataKey="transferred" stroke="#FF6B6B" strokeWidth={2} strokeLinecap="round" dot={false} name="Transferred" />
+            <Line
+              type="monotone"
+              dataKey="transferred"
+              stroke="#FF6B6B"
+              strokeWidth={2}
+              strokeLinecap="round"
+              dot={false}
+              name="Transferred"
+            />
           )}
         </AreaChart>
       </ResponsiveContainer>
@@ -176,16 +261,74 @@ const IncomeFlowChart = () => {
   );
 };
 
-const depositData = [
-  { name: "Deposit", value: 55, color: "#3A6953" },  // Dark Green
-  { name: "Income", value: 35, color: "#6A8C73" }, // Medium Green
-  { name: "Transfer", value: 10, color: "#99C6A9" } // Light Green
-];
+const COLORS = {
+  Deposit: "#3A6953", // Dark Green
+  Income: "#6A8C73",  // Medium Green
+  Transfer: "#99C6A9" // Light Green
+};
 
-const DepositChart = () => {
+const fetchTransactionData = async (userId) => {
+  console.log("🔵 Fetching transactions for user:", userId);
+  try {
+    const res = await fetch(`http://localhost:5050/api/wallet/transactions?userId=${userId}`);
+    const transactions = await res.json();
+    console.log("📥 [PieChart] Transactions fetched:", transactions);
+
+    let deposit = 0;
+    let income = 0;
+    let transfer = 0;
+
+    transactions.forEach((txn) => {
+      if (txn.status === "confirmed") {
+        if (txn.type === "deposit") deposit += txn.amount;
+        if (txn.type === "withdraw") income += txn.amount;
+        if (txn.type === "transfer") transfer += txn.amount;
+      }
+    });
+
+    const total = deposit + income + transfer;
+    const percent = (value) => (total ? ((value / total) * 100).toFixed(0) : 0);
+
+    console.log(`✅ Calculated: Deposit ₱${deposit}, Income ₱${income}, Transfer ₱${transfer}`);
+
+    return {
+      deposit,
+      income,
+      transfer,
+      depositPercent: percent(deposit),
+      incomePercent: percent(income),
+      transferPercent: percent(transfer)
+    };
+  } catch (error) {
+    console.error("❌ [PieChart] Error fetching transactions:", error);
+    return {
+      deposit: 0, income: 0, transfer: 0,
+      depositPercent: 0, incomePercent: 0, transferPercent: 0
+    };
+  }
+};
+
+// 🔥 Deposit Chart
+export const DepositChart = () => {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      fetchTransactionData(userId).then(setData);
+    }
+  }, []);
+
+  if (!data) return null;
+
+  const depositData = [
+    { name: "Deposit", value: data.deposit, color: COLORS.Deposit },
+    { name: "Income", value: data.income, color: COLORS.Income },
+    { name: "Transfer", value: data.transfer, color: COLORS.Transfer },
+  ];
+
   return (
     <div className="w-[375px] bg-white rounded-2xl shadow-lg p-6 mt-6 flex flex-col items-center relative">
-      {/* Pie Chart */}
       <PieChart width={200} height={200}>
         <Pie
           data={depositData}
@@ -197,56 +340,62 @@ const DepositChart = () => {
           endAngle={-270}
           dataKey="value"
         >
-          {depositData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
+          {depositData.map((entry, idx) => (
+            <Cell key={`cell-${idx}`} fill={entry.color} />
           ))}
         </Pie>
       </PieChart>
-      
-      {/* Centered Text Inside Pie Chart */}
+
+      {/* Center */}
       <div className="absolute top-[37%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 text-center text-green-900 font-semibold">
-        <p className="text-lg">55%</p>
+        <p className="text-lg">{data.depositPercent}%</p>
         <p className="text-sm">Deposit</p>
       </div>
 
-      {/* Summary Section Below Chart */}
+      {/* Summary */}
       <div className="flex justify-between w-full mt-8 text-[#5B5B5B]">
-        {/* Income */}
         <div className="flex flex-col items-center">
           <p className="text-sm font-medium">Income</p>
-          <p className="text-md font-semibold">₱5000.00</p>
+          <p className="text-md font-semibold">₱{data.income.toLocaleString()}</p>
         </div>
-
-        {/* Deposit - Highlighted */}
         <div className="flex flex-col items-center bg-[#3A6953] text-white px-4 py-1 rounded-lg">
           <p className="text-sm font-medium">Deposit</p>
-          <p className="text-md font-semibold">₱15000.00</p>
+          <p className="text-md font-semibold">₱{data.deposit.toLocaleString()}</p>
         </div>
-
-        {/* Transfer */}
         <div className="flex flex-col items-center">
           <p className="text-sm font-medium">Transfer</p>
-          <p className="text-md font-semibold">₱1000.00</p>
+          <p className="text-md font-semibold">₱{data.transfer.toLocaleString()}</p>
         </div>
       </div>
     </div>
   );
 };
 
-const incomePieData = [
-  { name: "Deposit", value: 55, color: "#3A6953" },  // Dark Green
-  { name: "Income", value: 35, color: "#6A8C73" }, // Medium Green
-  { name: "Transfer", value: 10, color: "#99C6A9" } // Light Green
-];
+// 🔥 Income Chart (just different center label)
+export const IncomeChart = () => {
+  const [data, setData] = useState(null);
 
-const IncomeChart = () => {
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      fetchTransactionData(userId).then(setData);
+    }
+  }, []);
+
+  if (!data) return null;
+
+  const incomeData = [
+    { name: "Deposit", value: data.deposit, color: COLORS.Deposit },
+    { name: "Income", value: data.income, color: COLORS.Income },
+    { name: "Transfer", value: data.transfer, color: COLORS.Transfer },
+  ];
+
   return (
     <div className="w-[375px] bg-white rounded-2xl shadow-lg p-6 mt-6 flex flex-col items-center relative">
-      {/* Pie Chart */}
       <div className="relative flex items-center justify-center">
         <PieChart width={200} height={200}>
           <Pie
-            data={incomePieData}
+            data={incomeData}
             cx="50%"
             cy="50%"
             innerRadius={45}
@@ -255,53 +404,57 @@ const IncomeChart = () => {
             endAngle={-270}
             dataKey="value"
           >
-            {incomePieData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
+            {incomeData.map((entry, idx) => (
+              <Cell key={`cell-${idx}`} fill={entry.color} />
             ))}
           </Pie>
         </PieChart>
 
-        {/* Centered Text Inside Pie Chart */}
         <div className="absolute flex flex-col items-center text-green-900 font-semibold">
-          <p className="text-lg">35%</p>
+          <p className="text-lg">{data.incomePercent}%</p>
           <p className="text-sm">Income</p>
         </div>
       </div>
 
-      {/* Summary Section Below Chart */}
       <div className="flex justify-between w-full mt-6 text-[#5B5B5B]">
-        {/* Income */}
         <div className="flex flex-col items-center bg-[#6A8C73] text-white px-4 py-1 rounded-lg">
           <p className="text-sm font-medium">Income</p>
-          <p className="text-md font-semibold">₱5000.00</p>
+          <p className="text-md font-semibold">₱{data.income.toLocaleString()}</p>
         </div>
-
-        {/* Deposit - Highlighted */}
         <div className="flex flex-col items-center">
           <p className="text-sm font-medium">Deposit</p>
-          <p className="text-md font-semibold">₱15000.00</p>
+          <p className="text-md font-semibold">₱{data.deposit.toLocaleString()}</p>
         </div>
-
-        {/* Transfer */}
         <div className="flex flex-col items-center">
           <p className="text-sm font-medium">Transfer</p>
-          <p className="text-md font-semibold">₱1000.00</p>
+          <p className="text-md font-semibold">₱{data.transfer.toLocaleString()}</p>
         </div>
       </div>
     </div>
   );
 };
 
-const transferData = [
-  { name: "Deposit", value: 55, color: "#3A6953" },  // Dark Green
-  { name: "Income", value: 35, color: "#6A8C73" }, // Medium Green
-  { name: "Transfer", value: 10, color: "#99C6A9" } // Light Green
-];
+// 🔥 Transfer Chart (different center label)
+export const TransferChart = () => {
+  const [data, setData] = useState(null);
 
-const TransferChart = () => {
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      fetchTransactionData(userId).then(setData);
+    }
+  }, []);
+
+  if (!data) return null;
+
+  const transferData = [
+    { name: "Deposit", value: data.deposit, color: COLORS.Deposit },
+    { name: "Income", value: data.income, color: COLORS.Income },
+    { name: "Transfer", value: data.transfer, color: COLORS.Transfer },
+  ];
+
   return (
     <div className="w-[375px] bg-white rounded-2xl shadow-lg p-6 mt-6 flex flex-col items-center relative">
-      {/* Pie Chart */}
       <div className="relative flex items-center justify-center">
         <PieChart width={200} height={200}>
           <Pie
@@ -314,37 +467,30 @@ const TransferChart = () => {
             endAngle={-270}
             dataKey="value"
           >
-            {transferData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
+            {transferData.map((entry, idx) => (
+              <Cell key={`cell-${idx}`} fill={entry.color} />
             ))}
           </Pie>
         </PieChart>
 
-        {/* Centered Text Inside Pie Chart */}
         <div className="absolute flex flex-col items-center text-green-900 font-semibold">
-          <p className="text-lg">10%</p>
+          <p className="text-lg">{data.transferPercent}%</p>
           <p className="text-sm">Transfer</p>
         </div>
       </div>
 
-      {/* Summary Section Below Chart */}
       <div className="flex justify-between w-full mt-6 text-[#5B5B5B]">
-        {/* Income */}
-        <div className="flex flex-col items-center ">
+        <div className="flex flex-col items-center">
           <p className="text-sm font-medium">Income</p>
-          <p className="text-md font-semibold">₱5000.00</p>
+          <p className="text-md font-semibold">₱{data.income.toLocaleString()}</p>
         </div>
-
-        {/* Deposit - Highlighted */}
         <div className="flex flex-col items-center">
           <p className="text-sm font-medium">Deposit</p>
-          <p className="text-md font-semibold">₱15000.00</p>
+          <p className="text-md font-semibold">₱{data.deposit.toLocaleString()}</p>
         </div>
-
-        {/* Transfer */}
         <div className="flex flex-col items-center bg-[#99C6A9] text-white px-4 py-1 rounded-lg">
           <p className="text-sm font-medium">Transfer</p>
-          <p className="text-md font-semibold">₱1000.00</p>
+          <p className="text-md font-semibold">₱{data.transfer.toLocaleString()}</p>
         </div>
       </div>
     </div>

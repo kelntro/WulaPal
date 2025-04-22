@@ -1,17 +1,67 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate, useLocation } from "react-router-dom";
 import { MdPayment } from "react-icons/md";
 import { BsInfoCircle } from "react-icons/bs";
 import { IoIosLock } from "react-icons/io";
 
 export default function PaymentOption() {
-  const [total, setTotal] = useState(16);
-  const [selectedPlan, setSelectedPlan] = useState("annual");
-  const navigate = useNavigate(); // Initialize navigate function
+  const navigate = useNavigate();
+  const location = useLocation();
+  const planFromSubscription = location.state?.plan?.name || "Basic";
+
+  const [selectedPlan, setSelectedPlan] = useState(planFromSubscription);
+  const [loading, setLoading] = useState(false);
+
+  const plans = {
+    Basic: 300,
+    Pro: 500,
+  };
+
+  const handleConfirmPayment = async () => {
+    const userId = localStorage.getItem("userId");
+
+    if (!userId) {
+      alert("User ID missing. Please login again.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch("http://localhost:5050/api/purchase/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: plans[selectedPlan],
+          plan: selectedPlan,
+          userId,
+          successRedirectURL: "http://localhost:5173/purchase/success", // << 🔥 important: Xendit will go here after payment
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.checkout_url) {
+          window.location.href = data.checkout_url; // Redirect to Xendit Checkout
+        } else {
+          throw new Error("Checkout URL missing.");
+        }
+      } else {
+        const errorText = await res.text();
+        console.error("Payment API Error:", errorText);
+        throw new Error("Payment initiation failed.");
+      }
+    } catch (error) {
+      alert("Payment failed: " + error.message);
+      console.error("Payment error:", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-green-50 p-6">
       <div className="flex flex-col lg:flex-row bg-white shadow-lg rounded-2xl p-6 w-[1000px] h-[600px] max-w-full">
+
         {/* Payment Form */}
         <div className="flex-1 pr-8">
           <div className="flex items-center mb-4">
@@ -19,39 +69,21 @@ export default function PaymentOption() {
           </div>
           <div className="flex items-center mb-4">
             <span className="text-green-700 text-xl mr-2"><MdPayment /></span>
-            <h3 className="text-[#3A6953] font-medium">Payment for Starter Plan on WulaPal.</h3>
+            <h3 className="text-[#3A6953] font-medium">Payment for {selectedPlan} Plan on WulaPal.</h3>
           </div>
           <p className="text-sm text-gray-500 mb-6">
             Please, enter your details to confirm the purchase.
           </p>
 
           <div className="mb-4">
-            <label className="text-sm font-medium text-[#3A6953]">Bank Payment</label>
+            <label className="text-sm font-medium text-[#3A6953]">Powered by</label>
             <div className="border rounded-lg p-3 flex items-center mt-2">
-              <img src="/assets/gcashlogo.jpg" alt="Gcash" className="h-[20px] mr-1 ml-[-10px]" />
-              <span className="text-gray-700 font-medium">Gcash</span>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <label className="text-sm font-medium text-[#3A6953] flex items-center">
-              Account Name <span className="ml-1 text-gray-400"><BsInfoCircle /></span>
-            </label>
-            <input type="text" className="w-full p-2 border rounded-md mt-1" placeholder="Enter account name" />
-          </div>
-
-          <div className="mb-4">
-            <label className="text-sm font-medium text-[#3A6953] flex items-center">
-              Account Number <span className="ml-1 text-gray-400"><BsInfoCircle /></span>
-            </label>
-            <div className="flex items-center border rounded-md p-2 mt-1">
-              <span className="text-gray-700 mr-2">+63</span>
-              <input type="text" className="w-full p-1 outline-none" placeholder="- - - -  - - - -  - - - -" />
+              <img src="/assets/xendit-logo.png" alt="Xendit" className="h-[20px] mr-2 ml-[-10px]" />
+              <span className="text-gray-700 font-medium">Xendit Payment Gateway</span>
             </div>
           </div>
 
           <div className="flex space-x-4 mt-[110px]">
-            {/* Cancel Button - Navigate back to Subscription */}
             <button 
               className="w-full bg-gray-100 text-[#3A6953] p-2 rounded-md" 
               onClick={() => navigate("/purchase/subscription")}
@@ -59,48 +91,43 @@ export default function PaymentOption() {
               Cancel
             </button>
 
-            <button className="w-full bg-[#3A6953] text-white p-2 rounded-md"
-                    onClick={() => navigate("/purchase/success")}>Confirm Payment</button>
+            <button
+              className="w-full bg-[#3A6953] text-white p-2 rounded-md"
+              onClick={handleConfirmPayment}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Payment"}
+            </button>
           </div>
         </div>
 
         {/* Plan Details */}
         <div className="flex-1 bg-[#D4E8DB] p-6 rounded-2xl shadow-lg">
-          <h3 className="text-lg font-bold mb-4 text-[#3A6953]">Basic Plan</h3>
+          <h3 className="text-lg font-bold mb-4 text-[#3A6953]">Choose Your Plan</h3>
           <div className="space-y-4">
-            <div 
-              className={`p-4 border border-[#3A6953] rounded-lg flex justify-between items-center ${selectedPlan === "monthly" ? "bg-white" : ""}`}
-              onClick={() => { setTotal(300); setSelectedPlan("monthly"); }}
-            >
-              <label className="cursor-pointer flex items-center space-x-2 text-[#3A6953]">
-                <input type="radio" name="plan" value="monthly" className="form-radio" checked={selectedPlan === "monthly"} readOnly />
-                <span>Pay Monthly</span>
-              </label>
-              <span className="text-[#3A6953]">₱300 / Month / Member</span>
-            </div>
-            
-            <div 
-              className={`p-4 border border-[#3A6953] rounded-lg flex justify-between items-center ${selectedPlan === "annual" ? "bg-white" : ""}`}
-              onClick={() => { setTotal(250); setSelectedPlan("annual"); }}
-            >
-              <label className="cursor-pointer flex items-center space-x-2">
-                <input type="radio" name="plan" value="annual" className="form-radio" checked={selectedPlan === "annual"} readOnly />
-                <span className="text-[#3A6953]">Pay Annual</span>
-              </label>
-              <div className="flex items-center space-x-2">
-                <span className="text-[#3A6953]">₱250 / Month / Member</span>
-                <span className="bg-[#3A6953] text-white px-2 py-1 rounded text-xs">Save 15%</span>
+            {Object.keys(plans).map((planKey) => (
+              <div
+                key={planKey}
+                className={`p-4 border border-[#3A6953] rounded-lg flex justify-between items-center ${selectedPlan === planKey ? "bg-white" : ""}`}
+                onClick={() => setSelectedPlan(planKey)}
+              >
+                <label className="cursor-pointer flex items-center space-x-2 text-[#3A6953]">
+                  <input type="radio" name="plan" value={planKey} className="form-radio" checked={selectedPlan === planKey} readOnly />
+                  <span>{planKey} Plan</span>
+                </label>
+                <span className="text-[#3A6953]">₱{plans[planKey]}.00</span>
               </div>
-            </div>
+            ))}
           </div>
+
           <div className="mt-6 text-xl font-semibold flex justify-between items-center text-[#3A6953]">
             <span>Total</span>
-            <span>₱{total}.00</span>
+            <span>₱{plans[selectedPlan]}.00</span>
           </div>
+
           <div className="mt-[5px] text-gray-500"><IoIosLock /></div> 
           <p className="text-xs text-gray-500 mt-[-16px] ml-6 flex items-center">
-           Guaranteed to be safe & secure, ensuring that all transactions are
-            protected with the highest level of security.
+            Guaranteed to be safe & secure, ensuring that all transactions are protected with the highest level of security.
           </p>
         </div>
       </div>
