@@ -7,25 +7,24 @@ import { FiPlus } from "react-icons/fi";
 import CreateGroupModal from "./CreateGroupModal";
 import io from "socket.io-client";
 
-const SERVER_URL = "http://localhost:5050"; // Replace with your actual backend URL
+const SERVER_URL = "http://localhost:5050";
 
 const PaluwaganGroups = () => {
   const [showModal, setShowModal] = useState(false);
   const [groups, setGroups] = useState([]);
+  const [search, setSearch] = useState(""); // ✅ For search
+  const [organizerId, setOrganizerId] = useState(null);
   const navigate = useNavigate();
+
   const socket = io(SERVER_URL, {
     transports: ["websocket", "polling"],
-    reconnection: true, // Auto-reconnect
-    reconnectionAttempts: 5, // Retry 5 times before failing
-    timeout: 10000, // 10 seconds timeout
+    reconnection: true,
+    reconnectionAttempts: 5,
+    timeout: 10000,
   });
 
-  const [organizerId, setOrganizerId] = useState(null); // Store user ID dynamically
-
   useEffect(() => {
-    // Fetch the current logged-in user from local storage or an API
-    const loggedInUser = JSON.parse(localStorage.getItem("user")); // Assuming user data is stored here
-
+    const loggedInUser = JSON.parse(localStorage.getItem("user"));
     if (loggedInUser && loggedInUser.name) {
       setOrganizerId(loggedInUser.name);
     } else {
@@ -56,7 +55,6 @@ const PaluwaganGroups = () => {
       })
       .catch((error) => console.error("❌ Error fetching groups:", error));
 
-    // Real-time update
     socket.on("groupUpdated", (updatedGroup) => {
       setGroups((prevGroups) =>
         prevGroups.map((group) =>
@@ -65,6 +63,13 @@ const PaluwaganGroups = () => {
       );
     });
   };
+
+  // ✅ Filter based on search
+  const filteredGroups = groups.filter(
+    (group) =>
+      group.name.toLowerCase().includes(search.toLowerCase()) ||
+      group.description?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="p-2 sm:ml-[90px]">
@@ -78,6 +83,8 @@ const PaluwaganGroups = () => {
           </p>
         </div>
       </div>
+
+      {/* Search & Create Button */}
       <div className="flex justify-between items-center mb-6">
         <div className="relative w-3/4">
           <HiOutlineSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
@@ -85,6 +92,8 @@ const PaluwaganGroups = () => {
             type="text"
             placeholder="Quick Search..."
             className="w-[650px] p-2 pl-10 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#6A8C73]"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)} // ✅ Handle search input
           />
         </div>
         <button
@@ -93,11 +102,12 @@ const PaluwaganGroups = () => {
         >
           <span className="mr-1">
             <FiPlus />
-          </span>{" "}
+          </span>
           Create a Paluwagan
         </button>
       </div>
 
+      {/* Create Group Modal */}
       {showModal && (
         <CreateGroupModal
           onClose={() => {
@@ -107,9 +117,10 @@ const PaluwaganGroups = () => {
         />
       )}
 
+      {/* Groups Grid */}
       <div className="flex flex-wrap justify-center gap-[20px] mr-[30px]">
-        {groups.length > 0 ? (
-          groups.map((group) => (
+        {filteredGroups.length > 0 ? (
+          filteredGroups.map((group) => (
             <div
               key={group._id}
               className="bg-white rounded-[20px] shadow-lg p-4 flex-1 min-w-[300px] max-w-[350px]"
@@ -129,7 +140,7 @@ const PaluwaganGroups = () => {
                   {group.description || "No description provided."}
                 </p>
                 <div className="flex items-center text-[#6A8C73] text-sm mb-1">
-                  <FaUsers className="mr-2 text-[#3A6953]" />{" "}
+                  <FaUsers className="mr-2 text-[#3A6953]" />
                   {group.members.length}/{group.slots} Slots
                 </div>
                 <div className="flex items-center text-[#6A8C73] text-sm mb-1">
@@ -137,7 +148,7 @@ const PaluwaganGroups = () => {
                   {group.contributionAmount} {group.frequency}
                 </div>
                 <div className="flex items-center text-[#6A8C73] text-sm mb-4">
-                  <FaCheckCircle className="mr-2 text-[#3A6953]" />{" "}
+                  <FaCheckCircle className="mr-2 text-[#3A6953]" />
                   {group.status}
                 </div>
                 <button

@@ -49,4 +49,31 @@ router.get("/search", async (req, res) => {
     }
   });
   
+  router.patch("/update-plan", async (req, res) => {
+    try {
+      const { userId, plan } = req.body;
+      if (!userId || !plan) return res.status(400).json({ error: "Missing fields" });
+  
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+  
+      const validPlans = ["Free", "Basic", "Pro"];
+      const currentIndex = validPlans.indexOf(user.plan);
+      const newIndex = validPlans.indexOf(plan);
+  
+      if (newIndex === -1 || newIndex <= currentIndex) {
+        return res.status(400).json({ error: "Invalid upgrade. You can't downgrade or re-purchase the same plan." });
+      }
+  
+      user.plan = plan;
+      await user.save();
+  
+      res.json({ success: true, message: `Plan upgraded to ${plan}` });
+    } catch (err) {
+      console.error("❌ Error updating user plan:", err.message);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+  
+  
   module.exports = router;

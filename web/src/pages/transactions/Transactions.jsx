@@ -7,7 +7,7 @@ const Transactions = () => {
   const [dateFilter, setDateFilter] = useState("");
   const [transactions, setTransactions] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(""); // 🌟 added
-  const [selectedYear, setSelectedYear] = useState("");   // 🌟 added
+  const [selectedYear, setSelectedYear] = useState(""); // 🌟 added
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -20,8 +20,19 @@ const Transactions = () => {
   }, []);
 
   const months = [
-    "", "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const currentYear = new Date().getFullYear();
@@ -29,14 +40,16 @@ const Transactions = () => {
   for (let year = 2020; year <= currentYear; year++) {
     years.push(year.toString());
   }
-  
+
   const filteredTransactions = transactions.filter((txn) => {
     const txnDate = new Date(txn.timestamp);
 
     const searchMatch =
       txn.type?.toLowerCase().includes(search.toLowerCase()) ||
       txn.referenceId?.toLowerCase().includes(search.toLowerCase()) ||
-      (txn.metadata?.channel || "").toLowerCase().includes(search.toLowerCase());
+      (txn.metadata?.channel || "")
+        .toLowerCase()
+        .includes(search.toLowerCase());
 
     const dateMatch =
       !dateFilter ||
@@ -44,14 +57,16 @@ const Transactions = () => {
         day: "numeric",
         month: "long",
         year: "numeric",
-      }) === new Date(dateFilter).toLocaleDateString("en-US", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
+      }) ===
+        new Date(dateFilter).toLocaleDateString("en-US", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
 
     const monthMatch =
-      !selectedMonth || txnDate.toLocaleString('default', { month: 'long' }) === selectedMonth;
+      !selectedMonth ||
+      txnDate.toLocaleString("default", { month: "long" }) === selectedMonth;
 
     const yearMatch =
       !selectedYear || txnDate.getFullYear().toString() === selectedYear;
@@ -69,7 +84,9 @@ const Transactions = () => {
 
   return (
     <div className="sm:ml-[90px] col-span-2 p-2">
-      <h1 className="text-4xl font-bold text-[#285236] mb-2">Transaction History</h1>
+      <h1 className="text-4xl font-bold text-[#285236] mb-2">
+        Transaction History
+      </h1>
       <p className="text-[#6A8C73] font-normal mb-6">
         Here’s your transaction of your Paluwagan today.
       </p>
@@ -95,7 +112,9 @@ const Transactions = () => {
               onChange={(e) => setSelectedMonth(e.target.value)}
             >
               {months.map((month, index) => (
-                <option key={index} value={month}>{month || "Select Month"}</option>
+                <option key={index} value={month}>
+                  {month || "Select Month"}
+                </option>
               ))}
             </select>
 
@@ -105,7 +124,9 @@ const Transactions = () => {
               onChange={(e) => setSelectedYear(e.target.value)}
             >
               {years.map((year, index) => (
-                <option key={index} value={year}>{year || "Select Year"}</option>
+                <option key={index} value={year}>
+                  {year || "Select Year"}
+                </option>
               ))}
             </select>
 
@@ -125,7 +146,6 @@ const Transactions = () => {
               <tr className="bg-gray-100 text-gray-600">
                 <th className="p-3 text-left">Transaction ID</th>
                 <th className="p-3 text-left">Type</th>
-                <th className="p-3 text-left">Details</th>
                 <th className="p-3 text-left">Date</th>
                 <th className="p-3 text-left">Time</th>
                 <th className="p-3 text-left">Amount</th>
@@ -135,7 +155,7 @@ const Transactions = () => {
             <tbody>
               {filteredTransactions.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="text-center text-gray-400 py-4">
+                  <td colSpan="6" className="text-center text-gray-400 py-4">
                     No transactions found.
                   </td>
                 </tr>
@@ -156,17 +176,6 @@ const Transactions = () => {
                   <tr key={index} className="border-t">
                     <td className="p-3">{txn.referenceId}</td>
                     <td className="p-3 capitalize">{txn.type}</td>
-                    <td className="p-3">
-                      {txn.metadata?.to
-                        ? `To: ${txn.metadata.to}`
-                        : txn.metadata?.from
-                        ? `From: ${txn.metadata.from}`
-                        : txn.metadata?.mobileNumber
-                        ? `Mobile: ${txn.metadata.mobileNumber}`
-                        : txn.metadata?.channel
-                        ? txn.metadata.channel
-                        : "-"}
-                    </td>
                     <td className="p-3">{date}</td>
                     <td className="p-3">{time.toLowerCase()}</td>
                     <td className="p-3">₱{txn.amount.toFixed(2)}</td>

@@ -41,6 +41,7 @@ export default function PaymentOption() {
       if (res.ok) {
         const data = await res.json();
         if (data.checkout_url) {
+          localStorage.setItem("selectedPlan", selectedPlan);
           window.location.href = data.checkout_url; // Redirect to Xendit Checkout
         } else {
           throw new Error("Checkout URL missing.");

@@ -333,19 +333,18 @@ const AnalyticsChart = () => {
             <option value="yearly">Yearly</option>
           </select>
           <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-          <svg
-  className="w-4 h-4 text-[#3a6953]"
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  strokeWidth="2"
-  strokeLinecap="round"
-  strokeLinejoin="round"
->
-  <polyline points="6 9 12 15 18 9" />
-</svg>
-
+            <svg
+              className="w-4 h-4 text-[#3a6953]"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </div>
         </div>
       </div>
@@ -506,7 +505,7 @@ const Dashboard = () => {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
-  
+
   useEffect(() => {
     fetchWalletSummary();
     fetchGroupSummary();
@@ -604,7 +603,7 @@ const Dashboard = () => {
             <div className="w-full bg-white rounded-[20px] shadow-md p-6 flex items-center justify-between">
               <div className="flex items-center">
                 <div className="w-[45px] h-[45px] flex items-center justify-center bg-[#6a8c73] rounded-[10px]">
-                  <GoArrowDownLeft className="w-5 h-5 text-white" />
+                  <GoArrowUpRight className="w-5 h-5 text-white" />
                 </div>
                 <div className="ml-5">
                   <div className="text-[#285236] text-base font-normal">
@@ -662,30 +661,34 @@ const Dashboard = () => {
         <div className="mt-6 flex flex-col items-center">
           {/* Search Box at the Top of Sidebar */}
           <div className="relative w-[375px]">
-  {/* Search Icon */}
-  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-    <svg
-      className="w-5 h-5 text-[#6A8C73]"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2.35a7.5 7.5 0 010 14.3z" />
-    </svg>
-  </div>
+            {/* Search Icon */}
+            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+              <svg
+                className="w-5 h-5 text-[#6A8C73]"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2.35a7.5 7.5 0 010 14.3z"
+                />
+              </svg>
+            </div>
 
-  {/* Search Input */}
-  <input
-    type="text"
-    placeholder="Search users by name, email, or ID..."
-    className="w-full border border-[#99C6A9] rounded-full pl-12 pr-4 py-2 text-sm focus:outline-none"
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    onKeyDown={handleKeyDown}
-  />
-</div>
-
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Search users by name, email, or ID..."
+              className="w-full border border-[#99C6A9] rounded-full pl-12 pr-4 py-2 text-sm focus:outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
 
           {/* Then Account Balance */}
           <div className="mt-8">

@@ -84,17 +84,33 @@ const NotificationScreen = () => {
   const renderItem = ({ item }) => {
     const handlePress = () => {
       markAsRead(item._id);
-      if (item.type === "confirmation_request") {
+    
+      if (item.type === "member_invite") {
+        Alert.alert(
+          "Group Invitation",
+          item.message,
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Join",
+              onPress: () => confirmJoin(item),
+            },
+          ]
+        );
+      } else if (item.type === "confirmation_request") {
         Alert.alert(
           "Confirm Contribution",
           "Confirm your contribution for this group?",
           [
             { text: "Cancel", style: "cancel" },
-            { text: "Confirm", onPress: () => confirmContribution(item) },
+            {
+              text: "Confirm",
+              onPress: () => confirmContribution(item),
+            },
           ]
         );
       }
-    };
+    };    
 
     return (
       <TouchableOpacity
@@ -129,6 +145,26 @@ const NotificationScreen = () => {
     }
   };
 
+  const confirmJoin = async (notification) => {
+    try {
+      const user = await AsyncStorage.getItem("user");
+      const parsed = user ? JSON.parse(user) : null;
+      if (!parsed?._id || !notification.groupId) return;
+  
+      const res = await axios.post(`http://10.0.2.2:5050/api/groups/${notification.groupId}/confirm-member`, {
+        userId: parsed._id,
+      });
+  
+      if (res.data.success) {
+        Alert.alert("✅ Joined", "You have successfully joined the group!");
+        fetchNotifications(selectedFilter);
+      }
+    } catch (err) {
+      console.error("❌ Joining group failed:", err.message);
+      Alert.alert("Error", "Failed to join the group.");
+    }
+  };
+  
   useEffect(() => {
     fetchNotifications();
   }, []);

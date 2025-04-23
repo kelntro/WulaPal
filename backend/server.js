@@ -94,6 +94,24 @@ app.post("/api/create-group", async (req, res) => {
       return res.status(404).json({ error: "Organizer not found" });
     }
     
+    // ✅ ENFORCE GROUP CREATION LIMIT BASED ON PLAN
+    const activeGroups = await Group.find({
+      handler: organizerUser._id,
+      status: { $in: ["open", "active"] }
+    });
+
+    if (organizerUser.plan === "Free" && activeGroups.length >= 1) {
+      return res.status(403).json({
+        error: "Free plan limit reached. Complete your existing group or upgrade."
+      });
+    }
+
+    if (organizerUser.plan === "Basic" && activeGroups.length >= 6) {
+      return res.status(403).json({
+        error: "Basic plan limit reached. Please upgrade to Pro or manage your existing groups."
+      });
+    }
+
     console.log("🚀 Deploying contract to blockchain...");
     const blockchainResult = await createGroup(
       contributionAmount,
@@ -276,191 +294,151 @@ app.post("/api/groups/:groupId/add-member", async (req, res) => {
     const { groupId } = req.params;
 
     if (!accountNumber || !groupId) {
-      return res
-        .status(400)
-        .json({ error: "Account Number and Group ID are required" });
+      return res.status(400).json({ error: "Account Number and Group ID are required" });
     }
 
-    // ✅ Find the user by account number
     const user = await User.findOne({ email: accountNumber });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // ✅ Find the group
     const group = await Group.findById(groupId);
     if (!group) {
       return res.status(404).json({ error: "Group not found" });
     }
 
-    // 🔥 Clean members array
-    group.members = group.members.filter(
-      (member) => member.userId !== null && member.userId !== undefined
-    );
+    // Check if already invited and pending
+    const existingInvite = await MemberNotification.findOne({
+      userId: user._id,
+      groupId,
+      type: "member_invite",
+      processed: false
+    });
+
+    if (existingInvite) {
+      return res.status(400).json({ error: "User already invited and waiting for confirmation." });
+    }
+
+    // Check if already in the group
+    const isMember = group.members.some((m) => m.userId.toString() === user._id.toString());
+    if (isMember) {
+      return res.status(400).json({ error: "User already joined this group" });
+    }
 
     // Check if full
     if (group.members.length >= group.requiredMembers) {
       return res.status(400).json({ error: "Group is already full" });
     }
 
-    // Prevent duplicates
-    if (
-      group.members.some(
-        (member) => member.userId.toString() === user._id.toString()
-      )
-    ) {
-      return res.status(400).json({ error: "User already joined this group" });
-    }
-
-    // ✅ Add user
-    group.members.push({
+    // ✅ Create invitation notification
+    const message = `📢 You've been invited to join the group "${group.name}". Tap to confirm.`;
+    await MemberNotification.create({
       userId: user._id,
-      joinDate: new Date(),
+      groupId,
+      type: "member_invite",
+      message,
+      processed: false,
     });
 
-    // ✅ Handle full group logic
-    if (group.members.length >= group.requiredMembers) {
-      group.status = "active";
-      group.startDate = new Date();
-      group.lastContributionDate = new Date(Date.now() - 5 * 60 * 1000);
-      group.hasStarted = false;
+    // ✅ Emit real-time notification
+    const io = req.app.get("io");
+    io.emit("memberNotification", {
+      userId: user._id.toString(),
+      message,
+      date: new Date()
+    });
 
-      // ✅ Trigger contribution check after 5 minutes
-      setTimeout(async () => {
-        const Group = require("./models/Group");
-        const { handleAutoContribution } = require("./jobs/tasks");
-
-        const freshGroup = await Group.findById(group._id);
-        if (freshGroup && !freshGroup.hasStarted) {
-          console.log(`⏰ [${freshGroup.name}] 5 minutes passed. Triggering first contribution check...`);
-          await handleAutoContribution();
-        }
-      }, 5 * 60 * 1000);
-
-      let frequencyDays;
-      switch (group.frequency) {
-        case "Bi-Weekly":
-          frequencyDays = 14;
-          break;
-        case "Weekly":
-          frequencyDays = 7;
-          break;
-        case "Monthly":
-          frequencyDays = 30;
-          break;
-        default:
-          frequencyDays = 7;
-      }
-
-      const now = new Date();
-      const shuffled = [...group.members].sort(() => Math.random() - 0.5);
-
-      group.payouts = shuffled.map((member, index) => ({
-        recipientId: member.userId,
-        payoutDate: new Date(now.getTime() + index * frequencyDays * 24 * 60 * 60 * 1000),
-      }));
-
-      group.nextPayoutDate = group.payouts[0].payoutDate;
-
-      // ✅ Notify each member about their personal payout schedule
-      for (const payout of group.payouts) {
-        const user = await User.findById(payout.recipientId);
-        const formattedDate = new Date(payout.payoutDate).toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-
-        const message = `🗓️ Your payout for group "${group.name}" is scheduled on ${formattedDate}.`;
-
-        await MemberNotification.create({
-          userId: user._id,
-          message,
-          type: "payout_schedule",
-          groupId: group._id,
-        });
-
-        io.emit("memberNotification", {
-          userId: user._id.toString(),
-          message,
-          date: new Date(),
-        });
-      }
- // ✅ Notify the organizer that group started
-      await Notification.create({
-        organizerId: organizer._id,
-        message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
-      });
-      
-      io.emit("groupUpdated", {
-        organizerId: organizer._id.toString(),
-        message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
-        date: new Date(),
-      });
-      
-      // ✅ Notify all members that group started
-      for (const member of group.members) {
-        await MemberNotification.create({
-          userId: member.userId,
-          message: `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`,
-          type: "group_started",
-          groupId: group._id,
-        });
-
-        io.emit("memberNotification", {
-          userId: member.userId.toString(),
-          message: `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`,
-          date: new Date(),
-        });
-      }
-    }
-
-
-    await group.save();
-
-    // ✅ Save notification to DB
+    // ✅ Notify organizer that invite has been sent
     const organizer = await User.findById(group.handler);
     if (organizer) {
+      const notifMessage = `⏳ Invite sent to "${user.name}" to join group "${group.name}". Waiting for confirmation.`;
       await Notification.create({
         organizerId: organizer._id,
-        message: `New member "${user.name}" joined group "${group.name}".`,
+        message: notifMessage,
       });
 
       io.emit("groupUpdated", {
         organizerId: organizer._id.toString(),
-        message: `New member "${user.name}" joined group "${group.name}".`,
+        message: notifMessage,
         date: new Date(),
       });
     }
-
-    // ✅ Send updated members back
-    const membersDetails = await Promise.all(
-      group.members.map(async (member) => {
-        const userDetails = await User.findById(member.userId, {
-          _id: 1,
-          name: 1,
-          userId: 1,
-        });
-        return {
-          id: userDetails._id.toString(),
-          userId: userDetails.userId || "N/A",
-          name: userDetails.name || "Unknown",
-          dateJoined: new Date(member.joinDate).toLocaleDateString(),
-          timeJoined: new Date(member.joinDate).toLocaleTimeString(),
-        };
-      })
-    );
 
     res.json({
       success: true,
-      members: membersDetails,
-      payouts: group.payouts,
+      message: `Invite sent to "${user.name}". Awaiting confirmation.`,
     });
+
   } catch (error) {
-    console.error("❌ Error adding member:", error);
-    res.status(500).json({ error: error.message });
+    console.error("❌ Error sending invite:", error.message);
+    res.status(500).json({ error: "Server error while sending invite" });
   }
+});
+
+app.post("/api/groups/:groupId/confirm-member", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const { groupId } = req.params;
+
+    const group = await Group.findById(groupId);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    // prevent double joins
+    if (group.members.some((m) => m.userId.toString() === userId)) {
+      return res.status(400).json({ error: "Already joined" });
+    }
+
+    group.members.push({ userId, joinDate: new Date() });
+    await group.save();
+
+    // ✅ Mark the invite notification as processed
+    await MemberNotification.updateMany(
+      { userId, groupId, type: "member_invite", processed: false },
+      { processed: true }
+    );
+
+    // ✅ Confirm message
+    await MemberNotification.create({
+      userId,
+      groupId,
+      type: "member_confirmed",
+      message: `✅ You joined the group "${group.name}".`,
+      processed: true
+    });
+
+    const io = req.app.get("io");
+    io.emit("memberNotification", {
+      userId,
+      message: `✅ You joined the group "${group.name}".`,
+      date: new Date()
+    });
+
+    res.json({ success: true, message: "Member confirmed and added to group." });
+  } catch (err) {
+    console.error("❌ Confirm member error:", err.message);
+    res.status(500).json({ error: "Server error while confirming membership." });
+  }
+  // ✅ Notify organizer that the member joined the group
+const groupHandler = await User.findById(group.handler);
+if (groupHandler) {
+  const organizerMessage = `✅ "${userId}" confirmed and joined the group "${group.name}".`;
+  
+  // Save notification to DB
+  const organizerNotif = await Notification.create({
+    organizerId: groupHandler._id,
+    message: organizerMessage,
+  });
+
+  // Emit real-time notification to organizer
+  io.emit("groupUpdated", {
+    organizerId: groupHandler._id.toString(),
+    message: organizerMessage,
+    date: new Date(),
+    _id: organizerNotif._id,
+    read: organizerNotif.read
+  });
+}
+
 });
 
 
@@ -906,10 +884,8 @@ app.get("/api/organizer-groups", async (req, res) => {
     const groups = await Group.find({ handler: organizer._id });
 
     if (groups.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No groups found for this organizer" });
-    }
+      return res.status(200).json([]); // ✅ Return empty array
+    }    
 
     // Format the response properly
     const formattedGroups = groups.map((group) => ({
@@ -1075,6 +1051,31 @@ app.patch("/api/member-notifications/:id/read", async (req, res) => {
   await MemberNotification.findByIdAndUpdate(req.params.id, { read: true });
   res.json({ success: true });
 });
+
+// ✅ PATCH to mark organizer notification as read
+app.patch("/api/notifications/:id/read", async (req, res) => {
+  try {
+    const updated = await Notification.findByIdAndUpdate(req.params.id, { read: true });
+    if (!updated) return res.status(404).json({ error: "Notification not found" });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error marking notification as read:", err.message);
+    res.status(500).json({ error: "Failed to update notification" });
+  }
+});
+
+// ✅ DELETE organizer notification
+app.delete("/api/notifications/:id", async (req, res) => {
+  try {
+    const deleted = await Notification.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: "Notification not found" });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error deleting notification:", err.message);
+    res.status(500).json({ error: "Failed to delete notification" });
+  }
+});
+
 
 app.post("/api/confirm-contribution", async (req, res) => {
   try {

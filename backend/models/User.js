@@ -19,6 +19,12 @@ const userSchema = new mongoose.Schema(
     verificationToken: { type: String, default: null },
     otp: { type: String, default: null },
     otpExpires: { type: Date, default: null },
+    plan: {
+      type: String,
+      enum: ["Free", "Basic", "Pro"],
+      default: "Free",
+    }
+    
   },
   { timestamps: true }
 );
