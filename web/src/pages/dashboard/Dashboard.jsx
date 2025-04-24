@@ -7,7 +7,7 @@ import { PieChart } from "@mui/x-charts/PieChart";
 import { GoArrowDownLeft, GoArrowUpRight } from "react-icons/go";
 import { HiChevronRight } from "react-icons/hi";
 import { MessageCircle } from "lucide-react";
-import { UserContext } from "../../context/UserContext.jsx";
+import { AuthContext } from "../../context/AuthContext.jsx";
 import {
   BarChart,
   Bar,
@@ -488,7 +488,7 @@ const RecentTransactions = () => {
 };
 
 const Dashboard = () => {
-  const { user } = useContext(UserContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState("");

@@ -22,6 +22,8 @@ const Transaction = require("./models/Transaction");
 const purchaseRoutes = require('./routes/purchaseRoutes');
 const userRoutes = require("./routes/userRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const uploadRoutes = require('./routes/upload');
+const verifyToken = require("./middleware/auth");
 // 🔌 Connect to MongoDB here
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -1178,6 +1180,12 @@ app.use(
   express.static(path.join(__dirname, "uploads/profile"))
 );
 
+app.get("/api/secure-data", verifyToken, async (req, res) => {
+  res.json({ message: "🔐 Secure route accessed", user: req.user });
+});
+
 app.use('/api/purchase', purchaseRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
+app.use('/api', uploadRoutes);
+app.use('/uploads', express.static('uploads'));

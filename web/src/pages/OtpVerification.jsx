@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const OtpVerification = () => {
   const { state } = useLocation();
@@ -10,6 +11,7 @@ const OtpVerification = () => {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpResendDisabled, setOtpResendDisabled] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(60);
+  const { login } = useAuth();
 
   useEffect(() => {
     let timer;
@@ -44,9 +46,7 @@ const OtpVerification = () => {
       if (!response.ok) {
         throw new Error(data.error || "OTP verification failed");
       }
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("userId", data.user._id);
+      login(data.token, data.user); // ✅ updates context and localStorage
       navigate("/dashboard");
     } catch (err) {
       setOtpError(err.message);

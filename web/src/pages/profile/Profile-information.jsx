@@ -1,9 +1,9 @@
 import { useContext, useEffect, useState } from "react";
 import { FaEdit, FaSave, FaRegCopy } from "react-icons/fa";
-import { UserContext } from "../../context/UserContext.jsx";
+import { AuthContext } from "../../context/AuthContext.jsx";
 
 const ProfileInformation = () => {
-  const { user: contextUser, setUser: setContextUser } = useContext(UserContext);
+  const { setUser: setContextUser } = useContext(AuthContext);
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({});
   const [isEditing, setIsEditing] = useState(false);

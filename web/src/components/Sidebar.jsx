@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { UserContext } from "../context/UserContext.jsx";
+import { AuthContext } from "../context/AuthContext.jsx";
 import { FaQuestionCircle } from "react-icons/fa";
 import { RxDashboard } from "react-icons/rx";
 import {
@@ -15,7 +15,7 @@ import { HiChevronRight } from "react-icons/hi";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
-  const { user } = useContext(UserContext); // ✅ real-time context user
+  const { user } = useContext(AuthContext); // ✅ real-time context user
 
   const isActive = (path) => location.pathname === path;
 

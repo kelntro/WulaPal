@@ -1,17 +1,15 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiLogOut } from "react-icons/fi";
 import { HiChevronRight } from "react-icons/hi";
+import { AuthContext } from "../../context/AuthContext"; // ✅ Adjust the path as needed
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { logout } = useContext(AuthContext); // ✅ Use logout from context
 
   const handleLogout = () => {
-    // ✅ Clear authentication data
-    localStorage.removeItem("token"); // Remove stored token
-    localStorage.removeItem("user"); // Remove stored user data
-
-    // ✅ Redirect to login page
+    logout(); // ✅ This clears localStorage and user state
     navigate("/login", { replace: true });
   };
 
@@ -20,7 +18,7 @@ const Settings = () => {
       <div className="w-[calc(100%-0.1rem)] max-w-7xl">
         <h1 className="text-4xl font-bold text-[#285236] mb-2">Settings</h1>
         <p className="text-[#6A8C73] font-normal mb-6">Here’s your settings for security.</p>
-        
+
         <div className="rounded-2xl p-6 w-full flex flex-col space-y-4">
           <button 
             className="bg-[#FFFFFF] hover:bg-[#285236] hover:bg-opacity-20 text-[#285236] font-medium py-4 px-6 rounded-2xl text-left flex justify-between items-center shadow-md"
@@ -43,10 +41,10 @@ const Settings = () => {
             Privacy Policy
             <HiChevronRight className="text-[#285236] opacity-60 text-xl" />
           </button>
-          
+
           <button 
             className="bg-[#6A8C73] hover:bg-[#285236] text-white font-medium py-4 px-6 rounded-2xl flex items-center justify-between"
-            onClick={handleLogout} // ✅ Call logout function
+            onClick={handleLogout} // ✅ Centralized logout
           >
             Log out
             <FiLogOut className="text-xl" />

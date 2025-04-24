@@ -80,7 +80,7 @@ exports.markMessagesRead = async (req, res) => {
 
   try {
     const room = await GroupChatRoom.findOne({ groupId });
-    if (!room) return res.sendStatus(404);
+    if (!room) return res.status(200).json({ message: "No room yet." });
 
     await ChatMessage.updateMany(
       { roomId: room._id, seenBy: { $ne: userId } },

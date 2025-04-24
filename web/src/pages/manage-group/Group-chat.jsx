@@ -103,60 +103,76 @@ const GroupChat = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-6 bg-white shadow-lg rounded-lg flex flex-col">
-      <div className="p-4 border-b text-xl font-bold text-green-800">Group Chat</div>
+    <div className="fixed top-[100px] left-1/2 transform -translate-x-1/2 w-[800px] h-[600px] bg-white shadow-xl rounded-3xl flex flex-col border border-green-200 overflow-hidden">
+  {/* Header */}
+  <div className="px-6 py-4 border-b border-green-200 text-2xl font-semibold text-[#3A6953]">
+    Group Chat
+  </div>
 
-      <div className="h-[400px] overflow-y-scroll p-4 space-y-2 bg-gray-50 flex-1">
-        {messages.map((msg) => (
-          <div
-            key={msg._id}
-            className={`p-2 rounded-lg max-w-[70%] break-words whitespace-pre-wrap ${
-              msg.sender === user._id ? "bg-green-100 ml-auto" : "bg-white"
-            }`}
+  {/* Messages Area */}
+  <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-[#F0F8F4] scroll-smooth">
+    {messages.map((msg) => (
+      <div
+        key={msg._id}
+        className={`p-3 rounded-xl text-sm max-w-[70%] break-words whitespace-pre-wrap ${
+          msg.sender === user._id || msg.sender?._id === user._id
+            ? "bg-[#C9EDD7] ml-auto text-right"
+            : "bg-white border border-gray-200"
+        }`}
+      >
+        {msg.type === "file" ? (
+          <a
+            href={msg.content}
+            target="_blank"
+            rel="noreferrer"
+            className="text-blue-600 underline"
           >
-            {msg.type === "file" ? (
-              <a
-                href={msg.content}
-                target="_blank"
-                rel="noreferrer"
-                className="text-blue-500 underline break-words"
-              >
-                📎 View Attachment
-              </a>
-            ) : (
-              <div className="text-sm text-gray-700">{msg.content}</div>
-            )}
-          </div>
-        ))}
-        <div ref={chatRef} />
+            📎 View Attachment
+          </a>
+        ) : (
+          <span className="text-gray-800">{msg.content}</span>
+        )}
       </div>
+    ))}
+    <div ref={chatRef} />
+  </div>
 
-      {typingUsers.length > 0 && (
-        <div className="text-sm text-gray-500 pl-4 mb-2">
-          {typingUsers.join(", ")} {typingUsers.length > 1 ? "are" : "is"} typing...
-        </div>
-      )}
-
-      <div className="p-4 border-t flex flex-col sm:flex-row items-center gap-2">
-        <input
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            handleTyping();
-          }}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          className="flex-1 border rounded-lg p-2 w-full"
-          placeholder="Type a message..."
-        />
-        <input type="file" onChange={handleFileChange} className="text-sm" />
-        <button
-          onClick={sendMessage}
-          className="px-4 py-2 rounded-lg text-white bg-green-600 hover:bg-green-700"
-        >
-          Send
-        </button>
-      </div>
+  {/* Typing Indicator */}
+  {typingUsers.length > 0 && (
+    <div className="text-sm text-gray-500 px-6 py-1">
+      {typingUsers.join(", ")} {typingUsers.length > 1 ? "are" : "is"} typing...
     </div>
+  )}
+
+  {/* Input Area */}
+  <div className="px-6 py-4 border-t border-green-200 flex gap-3 bg-white items-center">
+    <input
+      value={input}
+      onChange={(e) => {
+        setInput(e.target.value);
+        handleTyping();
+      }}
+      onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+      className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-green-600"
+      placeholder="Type a message..."
+    />
+
+    <label className="text-sm text-gray-700 cursor-pointer">
+      <input type="file" onChange={handleFileChange} className="hidden" />
+      <span className="px-3 py-1 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200">
+        Choose File
+      </span>
+      {file && <span className="ml-2 text-green-600 font-medium">{file.name}</span>}
+    </label>
+
+    <button
+      onClick={sendMessage}
+      className="px-6 py-2 rounded-full bg-[#3A6953] text-white font-semibold hover:bg-green-800 transition-all"
+    >
+      Send
+    </button>
+  </div>
+</div>
   );
 };
 

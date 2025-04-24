@@ -5,6 +5,7 @@ import { FcGoogle } from "react-icons/fc";
 import { Link } from "react-router-dom";
 import { auth, provider } from "../firebase-config";
 import { signInWithPopup } from "firebase/auth";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,6 +17,7 @@ const Login = () => {
   const [resendMessage, setResendMessage] = useState(null);
   const [countdown, setCountdown] = useState(60);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     let timer;
@@ -125,11 +127,7 @@ const Login = () => {
         throw new Error(data.error || "Google sign-in failed");
       }
   
-      // ✅ Save JWT + User
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("userId", data.user._id);
-  
+      login(data.token, data.user);
       navigate("/dashboard");
     } catch (err) {
       console.error("Google Sign-In Error:", err.message);
