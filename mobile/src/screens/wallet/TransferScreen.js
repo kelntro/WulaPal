@@ -3,8 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-
-const API_BASE_URL = 'http://10.0.2.2:5050/api/wallet';
+import { API_BASE_URL } from '@env';
 
 const TransferScreen = () => {
   const navigation = useNavigation();
@@ -32,7 +31,7 @@ const TransferScreen = () => {
         amount: Number(amount)
       };
 
-      const response = await axios.post(`${API_BASE_URL}/transfer`, payload);
+      const response = await axios.post(`${API_BASE_URL}/api/wallet/transfer`, payload);
 
       Alert.alert("Success", "Transfer completed.");
       navigation.goBack();

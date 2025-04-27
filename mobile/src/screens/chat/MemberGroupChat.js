@@ -15,9 +15,9 @@ import DocumentPicker from 'react-native-document-picker';
 import { useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
+import { API_BASE_URL } from '@env';
 
-const BASE_URL = "http://10.0.2.2:5050"; // ✅ Use this for mobile connection
-const socket = io(BASE_URL);
+const socket = io(API_BASE_URL);
 
 const MemberGroupChat = () => {
   const route = useRoute();
@@ -36,14 +36,14 @@ const MemberGroupChat = () => {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
 
-      fetch(`${BASE_URL}/api/chat/group/${groupId}`)
+      fetch(`${API_BASE_URL}/api/chat/group/${groupId}`)
         .then(res => res.json())
         .then(data => {
           console.log("📩 Loaded messages:", data);
           setMessages(data);
         });
 
-      fetch(`${BASE_URL}/api/chat/group/${groupId}/mark-read`, {
+      fetch(`${API_BASE_URL}/api/chat/group/${groupId}/mark-read`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: parsedUser._id }),
@@ -85,7 +85,7 @@ const MemberGroupChat = () => {
   const sendMessage = async () => {
     if (!input.trim() || !user) return;
 
-    await fetch(`${BASE_URL}/api/chat/group/${groupId}/send`, {
+    await fetch(`${API_BASE_URL}/api/chat/group/${groupId}/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -110,7 +110,7 @@ const MemberGroupChat = () => {
         name: res.name,
       });
 
-      const upload = await fetch(`${BASE_URL}/api/upload-chat-file`, {
+      const upload = await fetch(`${API_BASE_URL}/api/upload-chat-file`, {
         method: 'POST',
         body: formData,
       });
@@ -118,7 +118,7 @@ const MemberGroupChat = () => {
       const data = await upload.json();
 
       if (data.url) {
-        await fetch(`${BASE_URL}/api/chat/group/${groupId}/send`, {
+        await fetch(`${API_BASE_URL}/api/chat/group/${groupId}/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

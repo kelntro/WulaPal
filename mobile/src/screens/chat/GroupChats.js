@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '@env';
 
 const GroupChats = () => {
   const [joinedGroups, setJoinedGroups] = useState([]);
@@ -18,7 +19,7 @@ const GroupChats = () => {
         const userObj = JSON.parse(storedUser);
         setUser(userObj);
 
-        const res = await fetch(`http://10.0.2.2:5050/api/groups`);
+        const res = await fetch(`${API_BASE_URL}/api/groups`);
         const groups = await res.json();
 
         const filtered = groups.filter(group =>

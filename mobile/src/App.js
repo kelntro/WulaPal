@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMessaging } from '@react-native-firebase/messaging';
 import { getApp } from '@react-native-firebase/app';
 import notifee, { AndroidImportance } from '@notifee/react-native';
+import { API_BASE_URL } from '@env';
 
 // Screens
 import SignUpScreen from './screens/SignUpScreen';
@@ -73,31 +74,32 @@ const App = () => {
     const checkSession = async () => {
       const token = await AsyncStorage.getItem("token");
       const user = await AsyncStorage.getItem("user");
-
+    
       if (token && user) {
         console.log("✅ Session found. Auto login...");
         setIsAuthenticated(true);
-
+    
         await setupNotifications();
-
+    
         const fcmToken = await getMessaging(getApp()).getToken();
         if (fcmToken) {
           const userObj = JSON.parse(user);
-          await fetch("http://10.0.2.2:5050/api/users/save-fcm-token", {
+          await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: userObj._id, fcmToken }),
           });
-
+    
           console.log("🔁 FCM token refreshed for existing session.");
         }
       } else {
         console.log("🔒 No session found. Redirecting to login.");
         setIsAuthenticated(false);
       }
-
+    
       setLoading(false);
     };
+    
 
     checkSession();
 

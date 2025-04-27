@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '@env';
 
 const MessageUserScreen = () => {
   const route = useRoute();
@@ -33,7 +34,7 @@ const MessageUserScreen = () => {
   const fetchMessages = async () => {
     try {
       const res = await fetch(
-        `http://10.0.2.2:5050/api/messages/conversation/${userId}`
+        `${API_BASE_URL}/api/messages/conversation/${userId}`
       );
       const data = await res.json();
       setMessages(data);
@@ -46,7 +47,7 @@ const MessageUserScreen = () => {
     if (!message.trim() || !currentUserId) return;
 
     try {
-      const res = await fetch("http://10.0.2.2:5050/api/messages/send", {
+      const res = await fetch('${API_BASE_URL}/api/messages/send', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { View, TextInput, FlatList, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { API_BASE_URL } from '@env';
 
 const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -12,7 +13,7 @@ const SearchScreen = () => {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     try {
-      const res = await fetch(`http://10.0.2.2:5050/api/users/search?q=${searchQuery.trim()}`);
+      const res = await fetch(`${API_BASE_URL}/api/users/search?q=${searchQuery.trim()}`);
       const data = await res.json();
       setResults(data);
     } catch (err) {

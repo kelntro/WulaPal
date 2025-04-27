@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-nat
 import { styled } from 'nativewind';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import logo from '../assets/logo-mobile.png';
+import { API_BASE_URL } from '@env';
 
 const StyledText = styled(Text);
 const StyledView = styled(View);
@@ -18,8 +19,6 @@ const SignUpScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-
-  const API_BASE_URL = "http://10.0.2.2:5050"; // Replace with your local network IP
 
   const requestOTP = async () => {
     if (!email) {

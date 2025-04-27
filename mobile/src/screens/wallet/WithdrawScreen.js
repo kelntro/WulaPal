@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_BASE_URL = 'http://10.0.2.2:5050/api/wallet';
+import { API_BASE_URL } from '@env';
 
 const WithdrawScreen = () => {
   const [amount, setAmount] = useState('');
@@ -34,7 +33,7 @@ const WithdrawScreen = () => {
         throw new Error('User ID is missing. Please log in again.');
       }
 
-      const response = await axios.post(`${API_BASE_URL}/withdraw`, {
+      const response = await axios.post(`${API_BASE_URL}/api/wallet/withdraw`, {
         amount,
         mobileNumber,
         userId: parsedUser._id,

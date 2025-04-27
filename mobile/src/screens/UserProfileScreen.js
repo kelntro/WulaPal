@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
+import { API_BASE_URL } from '@env';
 
 const UserProfileScreen = () => {
   const route = useRoute();
@@ -22,7 +23,7 @@ const UserProfileScreen = () => {
 
   const fetchUser = async () => {
     try {
-      const res = await fetch(`http://10.0.2.2:5050/api/users/${userId}`);
+      const res = await fetch(`${API_BASE_URL}/api/users/${userId}`);
       const data = await res.json();
       setUser(data);
     } catch (err) {

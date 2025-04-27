@@ -8,7 +8,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
 import { getMessaging } from '@react-native-firebase/messaging';
 import { getApp } from '@react-native-firebase/app';
-
+import { API_BASE_URL } from '@env';
 
 const StyledText = styled(Text);
 const StyledView = styled(View);
@@ -20,8 +20,6 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const API_BASE_URL = "http://10.0.2.2:5050"; // Replace with your local network IP
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -112,40 +110,76 @@ const handleGoogleLogin = async () => {
   console.log("🚀 Google login started");
 
   try {
-    // Check if Play Services are available
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
     console.log("✅ Play services available");
 
-    // Trigger Google Sign-In flow
-    const { idToken, user } = await GoogleSignin.signIn();
-    console.log("✅ Google sign-in success. ID Token:", idToken);
-    console.log("👤 Google user info:", user);
+    const userInfo = await GoogleSignin.signIn();
+    console.log("✅ Google Sign-In Success:", JSON.stringify(userInfo, null, 2));
 
-    // Get credential from Google ID token
+    const { idToken, user } = userInfo.data; // ✅ Make sure it's `.data`
+
+    if (!idToken) {
+      console.warn("⚠️ No idToken received, but user info available.");
+
+      if (user) {
+        await AsyncStorage.setItem("user", JSON.stringify(user));
+        console.log("💾 Saved Google user info (without Firebase).");
+      } else {
+        console.warn("❌ No user info found too.");
+      }
+
+      return;
+    }
+
+    console.log("🔑 idToken received:", idToken);
+
+    // ✅ Proceed with Firebase authentication
     const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-    console.log("🔑 Google credential created");
-
-    // Sign in with Firebase Authentication
     const userCredential = await auth().signInWithCredential(googleCredential);
-    console.log("✅ Firebase sign-in success:", JSON.stringify(userCredential.user, null, 2));
+    console.log("✅ Firebase Auth Success:", JSON.stringify(userCredential.user, null, 2));
 
-    // Save token and user to AsyncStorage
     const firebaseToken = await userCredential.user.getIdToken();
-    console.log("📥 Firebase Auth Token fetched:", firebaseToken);
-
     await AsyncStorage.setItem("token", firebaseToken);
     await AsyncStorage.setItem("user", JSON.stringify(userCredential.user));
-    console.log("💾 Token and user saved to AsyncStorage");
+    console.log("💾 Firebase token and user saved to AsyncStorage");
 
-    // Navigate to MainApp
-    console.log("🚀 Navigating to MainApp screen");
+    // ✅ NOW POST to your backend to register/login member
+    const response = await fetch(`${API_BASE_URL}/api/auth/google-login-member`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: user.name || user.displayName || "Unnamed User", // ✅ fallback safe
+        email: user.email,
+        profileImage: user.photo || null, // ✅ fallback safe
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("❌ Backend error:", result.error);
+      Alert.alert("Backend Error", result.error || "Failed to register/login.");
+      return;
+    }
+
+    console.log("✅ Backend member login/register success:", result.user);
+
+    // ✅ Update local storage from backend confirmed user
+    await AsyncStorage.setItem("user", JSON.stringify(result.user));
+    console.log("💾 Updated user saved from backend.");
+
     navigation.reset({
       index: 0,
-      routes: [{ name: "Main", params: { screen: "Home" } }],
+      routes: [{ name: "Main", params: { screen: "Home" }}],
     });
 
   } catch (error) {
     console.error("❌ Google Sign-In Error Details:", error);
+    console.log("📛 Error Code:", error.code);
+    console.log("📛 Error Message:", error.message);
+
     Alert.alert("Google Sign-In Error", error.message || "Unknown error during Google login.");
   }
 };

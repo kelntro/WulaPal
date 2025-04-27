@@ -2,13 +2,12 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import { styled } from "nativewind";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from '@env';
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
 const StyledTextInput = styled(TextInput);
 const StyledTouchableOpacity = styled(TouchableOpacity);
-
-const API_BASE_URL = "http://10.0.2.2:5050"; // Update with your server IP
 
 const OTPVerificationScreen = ({ navigation, route }) => {
   const { name, email, password } = route.params; // Get name, email, and password from SignUpScreen

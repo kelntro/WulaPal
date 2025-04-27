@@ -501,41 +501,80 @@ router.post("/google-login-member", async (req, res) => {
       return res.status(400).json({ error: "Email is required" });
     }
 
-    let user = await User.findOne({ email, role: "member" });
-    console.log("🔍 Found user:", user ? user._id : "None");
+    let member = await User.findOne({ email, role: "member" });
+    console.log("🔍 Found member user:", member ? member._id : "None");
 
-    if (!user) {
-      console.log("🆕 Creating new member account...");
+    if (member) {
+      console.log("✅ Member already exists, logging in...");
 
-      const userId = await generateUserId();
-      user = await User.create({
-        userId,
-        name,
-        email,
-        profileImage,
-        password: "google_oauth",
-        role: "member",
-        isVerified: true,
-      });
+      const token = jwt.sign(
+        { id: member._id, role: member.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" }
+      );
 
-      console.log(`✅ New user created: ${user._id} (${user.email})`);
-
-      await Wallet.create({ userId: user._id, balance: 0 });
-      console.log(`✅ Wallet created for ${user.email}`);
+      return res.json({ token, user: member });
     }
 
+    // 🔍 Check if same email exists for other role (organizer)
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser && existingUser.role !== "member") {
+      console.log("⚠️ Same email used by different role (organizer), creating separate member account...");
+    }
+
+    console.log("🆕 Creating new member account...");
+    const userId = await generateUserId();
+    const newUser = await User.create({
+      userId,
+      name,
+      email,
+      profileImage,
+      password: "google_oauth", // placeholder
+      role: "member",
+      isVerified: true,
+    });
+
+    await Wallet.create({ userId: newUser._id, balance: 0 });
+    console.log(`✅ Wallet created for ${newUser.email}`);
+
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: newUser._id, role: newUser.role },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    console.log("✅ JWT Token generated");
+    console.log("✅ JWT Token generated for new user");
 
-    res.json({ token, user });
+    res.json({ token, user: newUser });
+
   } catch (error) {
     console.error("❌ Google Login Member Error:", error);
     res.status(500).json({ error: "Login failed. Try again later." });
+  }
+});
+
+router.post("/users/check-email-role", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required." });
+    }
+
+    const organizer = await User.findOne({ email, role: "organizer" });
+    if (organizer) {
+      return res.json({ role: "organizer" });
+    }
+
+    const member = await User.findOne({ email, role: "member" });
+    if (member) {
+      return res.json({ role: "member" });
+    }
+
+    return res.json({ role: "none" }); // Email not used yet
+  } catch (error) {
+    console.error("❌ Error checking email role:", error);
+    res.status(500).json({ error: "Server error checking email." });
   }
 });
 

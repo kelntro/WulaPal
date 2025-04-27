@@ -7,6 +7,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { API_BASE_URL } from '@env';
 
 const NotificationScreen = () => {
   const [notifications, setNotifications] = useState([]);
@@ -37,8 +38,7 @@ const NotificationScreen = () => {
       const parsed = user ? JSON.parse(user) : null;
       if (!parsed?._id) throw new Error("User ID not found");
 
-      let url = `http://10.0.2.2:5050/api/member-notifications/${parsed._id}`;
-      if (filter !== "all") url += `?filter=${filter}`;
+      let url = `${API_BASE_URL}/api/member-notifications/${parsed._id}`;      if (filter !== "all") url += `?filter=${filter}`;
       if (from && to) url += `&from=${from}&to=${to}`;
 
 
@@ -54,7 +54,7 @@ const NotificationScreen = () => {
 
   const markAsRead = async (id) => {
     try {
-      await axios.patch(`http://10.0.2.2:5050/api/member-notifications/${id}/read`);
+      await axios.patch(`${API_BASE_URL}/api/member-notifications/${id}/read`);
       setNotifications((prev) =>
         prev.map((n) => (n._id === id ? { ...n, read: true } : n))
       );
@@ -71,7 +71,7 @@ const NotificationScreen = () => {
         style: "destructive",
         onPress: async () => {
           try {
-            await axios.delete(`http://10.0.2.2:5050/api/member-notifications/${id}`);
+            await axios.delete(`${API_BASE_URL}/api/member-notifications/${id}`);
             setNotifications((prev) => prev.filter((n) => n._id !== id));
           } catch (err) {
             console.error("❌ Failed to delete notification:", err.message);
@@ -130,7 +130,7 @@ const NotificationScreen = () => {
       const parsed = user ? JSON.parse(user) : null;
       if (!parsed?._id || !notification.groupId) return;
 
-      const res = await axios.post("http://10.0.2.2:5050/api/confirm-contribution", {
+      const res = await axios.post("${API_BASE_URL}/api/confirm-contribution", {
         userId: parsed._id,
         groupId: notification.groupId
       });
@@ -151,7 +151,7 @@ const NotificationScreen = () => {
       const parsed = user ? JSON.parse(user) : null;
       if (!parsed?._id || !notification.groupId) return;
   
-      const res = await axios.post(`http://10.0.2.2:5050/api/groups/${notification.groupId}/confirm-member`, {
+      const res = await axios.post(`${API_BASE_URL}/api/groups/${notification.groupId}/confirm-member`, {
         userId: parsed._id,
       });
   

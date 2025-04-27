@@ -1,38 +1,79 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView } from 'react-native'; // 🔥 TextInput added
-import { useNavigation } from '@react-navigation/native';
+import React, {useEffect, useState} from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import AnimatedButton from '../../components/Button';
+import {useNavigation} from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { Dimensions } from 'react-native';
+import { API_BASE_URL } from '@env';
 
+const screenHeight = Dimensions.get('window').height;
 const HomeScreen = () => {
   const navigation = useNavigation();
 
   const [loading, setLoading] = useState(true);
   const [upcomingContributions, setUpcomingContributions] = useState([]);
-  const [payoutSchedule, setPayoutSchedule] = useState([]);
-  const [groupStats, setGroupStats] = useState(null); // null until fetched
+  const [balance, setBalance] = useState(0); 
+  const [userName, setUserName] = useState('');
+
+  const fetchDashboardData = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem('user');
+      const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+      if (!parsedUser || !parsedUser._id) {
+        console.warn('User ID not found in AsyncStorage');
+        return;
+      }
+      
+      setUserName(parsedUser.name || 'User');
+      // Fetch Contributions
+      const contributionsRes = await axios.get(
+        `${API_BASE_URL}/api/member-notifications/${parsedUser._id}`,
+        {
+          params: {
+            type: 'contribution_reminder',
+          },
+        },
+      );
+
+      const contributions = contributionsRes.data.map((item, index) => ({
+        id: item._id || index.toString(),
+        group: item.groupName || 'Unnamed Group',
+        time: new Date(item.date).toLocaleString(),
+        frequency: 'Monthly',
+        amount: item.amount ? `₱${item.amount.toLocaleString()}` : '₱1,000',
+      }));
+
+      setUpcomingContributions(contributions);
+
+      // Fetch Balance 🔥
+      const balanceRes = await axios.get(`${API_BASE_URL}/api/wallet/balance`, {
+        params: {userId: parsedUser._id},
+      });
+
+      if (balanceRes.data && typeof balanceRes.data.balance === 'number') {
+        setBalance(balanceRes.data.balance);
+      } else {
+        console.warn('No balance field in response.');
+        setBalance(0);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching dashboard data:', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        // Replace with real API calls to your backend
-        // Example:
-        // const contributionsRes = await fetch('https://your-api.com/contributions');
-        // const payoutsRes = await fetch('https://your-api.com/payouts');
-        // const statsRes = await fetch('https://your-api.com/group-stats');
-
-        // setUpcomingContributions(await contributionsRes.json());
-        // setPayoutSchedule(await payoutsRes.json());
-        // setGroupStats(await statsRes.json());
-
-        // For now just set loading false if API integration isn't done yet
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        setLoading(false);
-      }
-    };
-
     fetchDashboardData();
   }, []);
 
@@ -46,109 +87,126 @@ const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with notification bell */}
+      {/* Header */}
       <View style={styles.header}>
-  <Text style={styles.greeting}>Welcome to WulaPal 👋</Text>
-  <View style={{ flexDirection: 'row', gap: 15 }}>
-    <TouchableOpacity onPress={() => navigation.navigate('GroupChats')}>
-      <Icon name="chatbubbles-outline" size={26} color="#2E7D32" />
-    </TouchableOpacity>
-    <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
-      <Icon name="notifications-outline" size={26} color="#2E7D32" />
-    </TouchableOpacity>
-  </View>
-</View>
-{/* Search Bar */}
-<View style={styles.searchContainer}>
-  <TextInput
-    placeholder="Search users by name, email, or ID..."
-    style={styles.searchInput}
-    onFocus={() => navigation.navigate('SearchScreen')}
-  />
-</View>
-
-
-      {/* Group Status Summary */}
-      {groupStats && (
-        <View style={styles.summaryCard}>
-          <Text style={styles.sectionTitle}>Your Groups</Text>
-          <Text>Total Joined: {groupStats.totalGroups}</Text>
-          <Text>Active: {groupStats.activeGroups}</Text>
-          <Text>Completed: {groupStats.completedGroups}</Text>
+      <Text style={styles.greeting}>Hi, {userName}!</Text>
+      <View style={{flexDirection: 'row', gap: 15}}>
+          <TouchableOpacity onPress={() => navigation.navigate('GroupChats')}>
+            <Icon name="chatbubbles-outline" size={26} color="#3A6953" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Notifications')}>
+            <Icon name="notifications-outline" size={26} color="#3A6953" />
+          </TouchableOpacity>
         </View>
-      )}
+      </View>
 
-      {/* Upcoming Contributions */}
-      <Text style={styles.sectionTitle}>Upcoming Contributions</Text>
-      {upcomingContributions.length > 0 ? (
-        <FlatList
-          data={upcomingContributions}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.listItem}>
-              <Text style={styles.groupName}>{item.group}</Text>
-              <Text style={styles.date}>{item.date}</Text>
-              <Text style={styles.amount}>{item.amount}</Text>
-            </View>
-          )}
+      {/* Search */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          placeholder="Search users by name, email, or ID..."
+          style={styles.searchInput}
+          onFocus={() => navigation.navigate('SearchScreen')}
         />
-      ) : (
-        <Text style={styles.emptyText}>No upcoming contributions.</Text>
-      )}
+      </View>
 
-      {/* Scheduled Payouts */}
-      <Text style={styles.sectionTitle}>Scheduled Payouts</Text>
-      {payoutSchedule.length > 0 ? (
-        <FlatList
-          data={payoutSchedule}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.listItem}>
-              <Text style={styles.groupName}>{item.group}</Text>
-              <Text style={styles.date}>{item.payoutDate}</Text>
-              <Text style={styles.amount}>{item.amount}</Text>
-            </View>
-          )}
-        />
-      ) : (
-        <Text style={styles.emptyText}>No scheduled payouts.</Text>
-      )}
+      {/* Balance */}
+      <View style={styles.balanceSection}>
+        <Text style={styles.subtitle}>Here’s Your Balance</Text>
+        <Text style={styles.balance}>
+          ₱{balance.toLocaleString(undefined, {minimumFractionDigits: 2})}
+        </Text>
+        <View style={styles.progressBar}>
+          <View style={styles.progressFill} />
+        </View>
+      </View>
 
-      {/* Wallet Navigation */}
+      {/* Contributions */}
+      <ScrollView
+        style={styles.scrollBody}
+        contentContainerStyle={{paddingBottom: 70}}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.contributionsContainer}>
+          <View style={styles.whiteArcFix} />
+          <View style={styles.contributionsHeader}>
+            <Text style={styles.contributionsTitleText}>
+              Upcoming Contributions
+            </Text>
+            <TouchableOpacity>
+              <Text style={styles.monthText}>Month Of April ›</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.contributionList}>
+            {upcomingContributions.length === 0 ? (
+              <Text style={{textAlign: 'center', color: '#888'}}>
+                No upcoming contributions.
+              </Text>
+            ) : (
+              upcomingContributions.map((item, index) => (
+                <View key={index} style={styles.contributionItem}>
+                  <View style={styles.contributionIcon}>
+                    <Icon name="people" size={24} color="#3A6953" />
+                  </View>
+                  <View style={styles.contributionInfo}>
+                    <Text style={styles.groupName}>{item.group}</Text>
+                    <Text style={styles.groupTime}>{item.time}</Text>
+                  </View>
+                  <View style={styles.contributionDetails}>
+                    <Text style={styles.frequencyText}>{item.frequency}</Text>
+                    <Text style={styles.amountText}>{item.amount}</Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#F4F8F7' },
+  container: {flex: 1, backgroundColor: '#ffffff'},
   header: {
+    paddingTop: 50,
+    paddingHorizontal: 15,
+    paddingBottom: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
   },
-  greeting: { fontSize: 20, fontWeight: 'bold', color: '#2E7D32' },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginTop: 20, marginBottom: 10 },
-  listItem: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+  greeting: {fontSize: 28, fontWeight: 'bold', color: '#3A6953'},
+  subtitle: {
+    fontSize: 16,
+    color: '#333333',
+    marginBottom: 5,
   },
-  groupName: { fontWeight: 'bold' },
-  date: { color: '#888' },
-  amount: { fontWeight: 'bold', color: '#2E7D32' },
-  summaryCard: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  emptyText: { color: '#999', fontStyle: 'italic' },
-  searchContainer: {
+  balanceSection: {
+    marginHorizontal: 15,
     marginBottom: 20,
+  },
+  balance: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    color: '#3A6953',
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: '#D4E8DB',
+    borderRadius: 50,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    width: '45%',
+    height: '100%',
+    backgroundColor: '#8BC29E',
+    borderTopLeftRadius: 50,
+    borderBottomLeftRadius: 50,
+  },
+  searchContainer: {
+    marginHorizontal: 15,
+    marginTop: 10,
   },
   searchInput: {
     backgroundColor: '#fff',
@@ -157,7 +215,97 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     fontSize: 14,
-  },  
+  },
+  scrollBody: {
+    flex: 1,
+  },
+  contributionsContainer: {
+    marginTop: 15,
+    backgroundColor: '#DBE7DF',
+    borderTopLeftRadius: 110,
+    borderTopRightRadius: 110,
+    paddingHorizontal: 15,
+    paddingBottom: 40,
+    position: 'relative',
+    minHeight: screenHeight * 0.6,  },
+    justifyContent: 'flex-start',
+  whiteArcFix: {
+    position: 'absolute',
+    top: -20,
+    left: 0,
+    right: 0,
+    height: 20,
+    backgroundColor: '#ffffff',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    zIndex: 2,
+  },
+  contributionsHeader: {
+    alignItems: 'center',
+    marginBottom: 15,
+    marginTop: 25,
+  },
+  contributionsTitleText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    backgroundColor: '#3A6953',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 30,
+    overflow: 'hidden',
+    marginBottom: 15,
+  },
+  monthText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3A6953',
+  },
+  contributionList: {
+    marginTop: 2,
+    paddingBottom: 120,
+  },
+  contributionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 12,
+  },
+  contributionIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#D4E8DB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contributionInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  groupName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333333',
+  },
+  groupTime: {
+    fontSize: 13,
+    color: '#666666',
+  },
+  contributionDetails: {
+    alignItems: 'flex-end',
+  },
+  frequencyText: {
+    fontSize: 14,
+    color: '#666666',
+  },
+  amountText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#3A6953',
+  },
 });
 
 export default HomeScreen;

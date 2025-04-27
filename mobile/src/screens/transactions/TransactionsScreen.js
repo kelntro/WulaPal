@@ -1,45 +1,41 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from 'react-native';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { API_BASE_URL } from '@env';
 
 const TransactionsScreen = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('week');
+  const [activeTab, setActiveTab] = useState('month');
   const navigation = useNavigation();
 
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-
       const user = await AsyncStorage.getItem('user');
       const parsedUser = user ? JSON.parse(user) : null;
+      if (!parsedUser || !parsedUser._id) throw new Error('Missing user ID');
 
-      if (!parsedUser || !parsedUser._id) {
-        throw new Error('User ID is missing from AsyncStorage');
-      }
+      const res = await axios.get(`${API_BASE_URL}/api/wallet/transactions?userId=${parsedUser._id}`);
 
-      const res = await axios.get(
-        `http://10.0.2.2:5050/api/wallet/transactions?userId=${parsedUser._id}`,
-      );
-
-      const formatted = res.data.map((tx, index) => {
-        const date = new Date(tx.timestamp);
+      const formatted = res.data.map((tx) => {
+        const date = new Date(tx.timestamp || tx.createdAt);
         return {
           id: tx._id,
           name: tx.metadata?.from || tx.metadata?.to || 'You',
-          amount: `₱${tx.amount.toFixed(2)}`,
+          amount: tx.amount.toFixed(2),
           status: tx.status,
           referenceId: tx.referenceId,
           type: tx.type,
@@ -51,19 +47,14 @@ const TransactionsScreen = () => {
 
       setTransactions(formatted);
     } catch (err) {
-      console.error('[TRANSACTIONS] Error fetching:', err.message);
-      Alert.alert('Error', 'Failed to load transactions.');
+      console.error('[TRANSACTIONS] Error:', err.message);
+      Alert.alert('Error', 'Failed to fetch transactions.');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Reload when screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      fetchTransactions();
-    }, []),
-  );
+  useFocusEffect(useCallback(() => { fetchTransactions(); }, []));
 
   const renderTypeText = (type, name) => {
     switch (type) {
@@ -80,10 +71,10 @@ const TransactionsScreen = () => {
     }
   };
 
-  const filteredTransactions = transactions.filter(tx => {
+  const filteredTransactions = transactions.filter((tx) => {
     if (activeTab === 'week') {
       const now = new Date();
-      const txDate = new Date(tx.raw.timestamp);
+      const txDate = new Date(tx.raw.timestamp || tx.raw.createdAt);
       const diffInDays = (now - txDate) / (1000 * 60 * 60 * 24);
       return diffInDays <= 7;
     }
@@ -92,104 +83,150 @@ const TransactionsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Transaction History</Text>
+      <Text style={styles.title}>Transaction History</Text>
 
       {/* Tabs */}
-      <View style={styles.tabContainer}>
+      <View style={styles.filters}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'week' && styles.activeTab]}
+          style={[styles.filterButton, activeTab === 'week' && styles.activeFilter]}
           onPress={() => setActiveTab('week')}>
-          <Text style={styles.tabText}>This week</Text>
+          <Text style={[styles.filterText, activeTab === 'week' && styles.activeFilterText]}>
+            This week
+          </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'month' && styles.activeTab]}
+          style={[styles.filterButton, activeTab === 'month' && styles.activeFilter]}
           onPress={() => setActiveTab('month')}>
-          <Text style={styles.tabText}>This month</Text>
+          <Text style={[styles.filterText, activeTab === 'month' && styles.activeFilterText]}>
+            This month
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.sortButton}>
+          <Ionicons name="filter" size={22} color="#3A6953" />
         </TouchableOpacity>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator size="large" color="#3A6953" style={{ marginTop: 20 }} />
       ) : (
-        <FlatList
-          data={filteredTransactions}
-          keyExtractor={item => item.id}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              style={styles.transactionCard}
-              onPress={() =>
-                navigation.navigate('TransactionDetails', {transaction: item})
-              }>
-              <Image
-                source={require('../../assets/transaction-icon.png')}
-                style={styles.icon}
-              />
-              <View style={styles.details}>
-                <Text style={styles.name}>
-                  {renderTypeText(item.type, item.name)}
-                </Text>
-                <Text style={styles.transactionId}>
-                  Reference No: {item.referenceId}
-                </Text>
-                <Text style={styles.date}>
-                  {item.date} • {item.time}
-                </Text>
+        <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+          {filteredTransactions.map((item) => (
+            <View key={item.id} style={styles.transactionCard}>
+              {/* Left Icon */}
+              <View style={styles.iconContainer}>
+                <Ionicons name="card" size={28} color="#ffffff" />
               </View>
-              <View style={styles.amountContainer}>
-                <Text style={styles.amount}>{item.amount}</Text>
-                <Text style={styles.status}>{item.status}</Text>
+
+              {/* Details */}
+              <View style={styles.transactionDetails}>
+                <Text style={styles.transactionName}>{renderTypeText(item.type, item.name)}</Text>
+                <Text style={styles.transactionId}>Transaction ID</Text>
+                <Text style={styles.transactionIdNumber}>{item.referenceId}</Text>
+                <View style={styles.dateTimeRow}>
+                  <Text style={styles.transactionDate}>{item.date}</Text>
+                  <Text style={styles.transactionTime}>{item.time}</Text>
+                </View>
               </View>
-            </TouchableOpacity>
-          )}
-        />
+
+              {/* Right Side */}
+              <View style={styles.amountStatus}>
+                <Text style={styles.amountText}>₱ {item.amount}</Text>
+                <View style={styles.statusBadge}>
+                  <Text style={styles.statusBadgeText}>{item.status}</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F4F8F7', padding: 16},
-  header: {
+  container: { flex: 1, backgroundColor: '#ffffff', paddingHorizontal: 20, paddingTop: 60 },
+  title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: '#3A6953',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 20,
   },
-  tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    backgroundColor: '#D3E6D4',
+  filters: { flexDirection: 'row', marginBottom: 15 },
+  filterButton: {
+    backgroundColor: '#F0F4F3',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 10,
     marginHorizontal: 5,
+    left: -5,
   },
-  activeTab: {backgroundColor: '#4CAF50'},
-  tabText: {color: '#FFF', fontWeight: 'bold'},
+  activeFilter: { backgroundColor: '#6A8C73' },
+  filterText: { fontSize: 14, fontWeight: '600', color: '#3A6953' },
+  activeFilterText: { color: '#ffffff' },
+  sortButton: {
+    marginLeft: 60,
+    backgroundColor: '#ffffff',
+    padding: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#3A6953',
+  },
   transactionCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFF',
-    borderRadius: 10,
+    backgroundColor: '#DBE7DF',
+    borderRadius: 12,
     padding: 10,
-    marginBottom: 10,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#9BB3A7',
   },
-  icon: {width: 40, height: 40, marginRight: 10},
-  details: {flex: 1},
-  name: {fontSize: 16, fontWeight: 'bold', color: '#2E7D32'},
-  transactionId: {fontSize: 12, color: '#666'},
-  date: {fontSize: 12, color: '#999'},
-  amountContainer: {alignItems: 'flex-end'},
-  amount: {fontSize: 16, fontWeight: 'bold', color: '#2E7D32'},
-  status: {fontSize: 12, color: '#4CAF50'},
+  iconContainer: {
+    backgroundColor: '#3A6953',
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  transactionDetails: { flex: 1 },
+  transactionName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 2,
+  },
+  transactionId: { fontSize: 12, color: '#777' },
+  transactionIdNumber: { fontSize: 12, color: '#333333', fontWeight: '600', marginBottom: 5 },
+  dateTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%',
+  },
+  transactionDate: { fontSize: 12, color: '#777' },
+  transactionTime: { fontSize: 12, color: '#777' },
+  amountStatus: { alignItems: 'flex-end' },
+  amountText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  statusBadge: {
+    backgroundColor: '#A8E6CF',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3A6953',
+  },
 });
 
 export default TransactionsScreen;

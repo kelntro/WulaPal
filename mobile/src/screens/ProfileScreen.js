@@ -1,8 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Alert,
+} from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import Feather from 'react-native-vector-icons/Feather';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMessaging } from '@react-native-firebase/messaging';
 import { getApp } from '@react-native-firebase/app';
+import { Dimensions } from 'react-native';
+import { API_BASE_URL } from '@env';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import auth from '@react-native-firebase/auth';
+import { ActivityIndicator } from 'react-native';
 
 const ProfileScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('info');
@@ -11,17 +28,21 @@ const ProfileScreen = ({ navigation }) => {
     <View style={styles.container}>
       <Text style={styles.header}>Profile</Text>
 
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
+      {/* Toggle Tabs */}
+      <View style={styles.toggleContainer}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'info' && styles.activeTab]}
+          style={[styles.toggleBtn, activeTab === 'info' && styles.toggleActive]}
           onPress={() => setActiveTab('info')}>
-          <Text style={styles.tabText}>👤 Info</Text>
+          <Text style={[styles.toggleText, activeTab === 'info' && styles.toggleTextActive]}>
+            Info
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'settings' && styles.activeTab]}
+          style={[styles.toggleBtn, activeTab === 'settings' && styles.toggleActive]}
           onPress={() => setActiveTab('settings')}>
-          <Text style={styles.tabText}>⚙️ Settings</Text>
+          <Text style={[styles.toggleText, activeTab === 'settings' && styles.toggleTextActive]}>
+            Settings
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -30,114 +51,289 @@ const ProfileScreen = ({ navigation }) => {
   );
 };
 
-// Profile Information Section (No Vertical Centering)
 const ProfileInfo = () => {
   const [userId, setUserId] = useState('');
+
   useEffect(() => {
-    const fetchUserId = async () => {
-      const user = await AsyncStorage.getItem("user");
+    const loadUserId = async () => {
+      const user = await AsyncStorage.getItem('user');
       if (user) {
         const parsedUser = JSON.parse(user);
-        setUserId(parsedUser._id); // Use .userId if that's your field instead
+        setUserId(parsedUser._id);
       }
     };
-    fetchUserId();
+    loadUserId();
   }, []);
 
   return (
-    <ScrollView style={styles.profileContainer}>
-      <View style={styles.avatarContainer}>
-        <Image source={require('../assets/Profile.jpg')} style={styles.avatar} />
-      </View>
+    <ScrollView style={styles.scrollBody} contentContainerStyle={{ paddingBottom: 30 }}>
+      <View style={styles.section}>
+        <View style={styles.profilePicture}>
+          <Image
+            source={require('../assets/Profile.jpg')} // ✅ replace with your actual image path
+            style={styles.profileImage}
+          />
+          <TouchableOpacity style={styles.editPic}>
+            <MaterialCommunityIcons name="circle-edit-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
 
-      <Text style={styles.sectionTitle}>Account Information</Text>
-      <View style={styles.inputBox}>
-        <Text style={styles.label}>Account Number</Text>
-        <TextInput value={userId} editable={false} style={styles.input} />
+        <View style={styles.infoBlock}>
+          <Text style={styles.sectionTitle}>Account Information</Text>
+          <View style={styles.infoRow}>
+            <View style={styles.infoField}>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Account Number</Text>
+                <Text style={styles.infoValue}>{userId}</Text>
+              </View>
+              <Feather name="copy" size={20} color="#3A6953" />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.infoPerBlock}>
+          <Text style={styles.sectionTitle}>Personal Information</Text>
+
+          {[
+            { label: 'Full Name', value: 'Michael Santos' },
+            { label: 'Date of Birth', value: 'May 25, 2000' },
+            { label: 'Country of Birth', value: 'Philippines' },
+            { label: 'Username', value: 'MicSantos' },
+            { label: 'Mobile Number', value: '+63 915 222 1568', editable: true },
+            { label: 'Email Address', value: 'Mainideas@gmail.com', editable: true },
+            { label: 'Home Address', value: '34 Veloso St. Obrero, Buhangin, Davao del Sur', editable: true },
+          ].map((item, index) => (
+            <View key={index} style={styles.infoRow}>
+              <View style={styles.infoField}>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>{item.label}</Text>
+                  <Text style={styles.infoValue}>{item.value}</Text>
+                </View>
+                {item.editable && (
+                  <MaterialCommunityIcons name="circle-edit-outline" size={20} color="#3A6953" />
+                )}
+              </View>
+            </View>
+          ))}
+        </View>
       </View>
-      <Text style={styles.sectionTitle}>Personal Information</Text>
-      <View style={styles.inputBox}><Text style={styles.label}>Full Name</Text><TextInput value="Michael Santos" editable={false} style={styles.input} /></View>
-      <View style={styles.inputBox}><Text style={styles.label}>Date of Birth</Text><TextInput value="May 25, 2000" editable={false} style={styles.input} /></View>
-      <View style={styles.inputBox}><Text style={styles.label}>Country</Text><TextInput value="Philippines" editable={false} style={styles.input} /></View>
-      <View style={styles.inputBox}><Text style={styles.label}>Username</Text><TextInput value="MicSantos" editable={false} style={styles.input} /></View>
-      <View style={styles.inputBox}><Text style={styles.label}>Mobile Number</Text><TextInput value="+63 915 222 1568" editable={false} style={styles.input} /></View>
-      <View style={styles.inputBox}><Text style={styles.label}>Email</Text><TextInput value="Mainideas@gmail.com" editable={false} style={styles.input} /></View>
-      <View style={styles.inputBox}><Text style={styles.label}>Home Address</Text><TextInput value="34 Veloso St. Obrero, Buhangin, Davao del Sur" editable={false} style={styles.input} /></View>
     </ScrollView>
   );
 };
 
-// Profile Settings Section with Functional Logout
 const ProfileSettings = ({ navigation }) => {
+  const [loadingLogout, setLoadingLogout] = useState(false);
+  
   const handleLogout = async () => {
+    console.log("🚪 Logging out...");
+    setLoadingLogout(true); // ✅ Start Loading
     try {
-      // Get current FCM token
       const fcmToken = await getMessaging(getApp()).getToken();
-  
-      // 🚫 Remove token from backend
-      await fetch("http://10.0.2.2:5050/api/users/remove-fcm-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fcmToken }),
-      });
-  
-      // 🧹 Optionally delete token on device
-      await getMessaging(getApp()).deleteToken();
-  
-      // 🧼 Clear session
-      await AsyncStorage.removeItem("token");
-      await AsyncStorage.removeItem("user");
-  
-      Alert.alert("Logged Out", "You have been successfully logged out.", [
-        { text: "OK", onPress: () => navigation.reset({ index: 0, routes: [{ name: "Login" }] }) },
-      ]);
+      if (fcmToken) {
+        await fetch(`${API_BASE_URL}/api/users/remove-fcm-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fcmToken }),
+        });
+        console.log("✅ FCM token deleted");
+      }
+
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('user');
+      console.log("✅ AsyncStorage cleared");
+
+      try {
+        await auth().signOut();
+        console.log("✅ Firebase sign-out complete");
+      } catch (error) {
+        if (error.code === 'auth/no-current-user') {
+          console.warn("⚠️ No current user in Firebase Auth (already signed out)");
+        } else {
+          console.error("❌ Firebase SignOut Error:", error);
+        }
+      }
+
+      try {
+        await GoogleSignin.revokeAccess();
+        await GoogleSignin.signOut();
+        console.log("✅ Google sign-out and revoke access complete");
+      } catch (error) {
+        console.error("❌ Google SignOut Error:", error);
+      }
+
     } catch (error) {
-      console.error("Logout error:", error);
-      Alert.alert("Error", "Failed to log out. Try again.");
+      console.error("❌ Logout error:", error);
+    } finally {
+      setLoadingLogout(false); // ✅ Stop loading after everything
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
     }
   };
 
   return (
-    <ScrollView style={styles.settingsContainer}>
-      <Text style={styles.sectionTitle}>Security</Text>
-      {['Change Pin Code', 'Change Password', 'Link to Bank', 'Terms and Conditions', 'Privacy Policy'].map((item, index) => (
-        <TouchableOpacity key={index} style={styles.settingButton}>
-          <Text style={styles.settingText}>{item}</Text>
-          <Text style={styles.arrow}>›</Text>
-        </TouchableOpacity>
-      ))}
+    <ScrollView style={styles.scrollBody} contentContainerStyle={{ paddingBottom: 30 }}>
+      <View style={styles.sectionSettings}>
+        <View style={styles.infoSetBlock}>
+          <Text style={styles.sectionTitle}>Security</Text>
+          {['Change Pin Code', 'Change Password', 'Link to Bank', 'Terms and Condition', 'Privacy Policy'].map((item, index) => (
+            <View key={index} style={styles.settingRow}>
+              <Text style={styles.settingLabel}>{item}</Text>
+              <Ionicons name="chevron-forward-outline" size={20} color="#3A6953" />
+            </View>
+          ))}
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Log out</Text>
-      </TouchableOpacity>
+<TouchableOpacity style={styles.logoutButton} onPress={handleLogout} disabled={loadingLogout}>
+            {loadingLogout ? (
+              <ActivityIndicator size="small" color="#fff" /> // ✅ Show spinner if logging out
+            ) : (
+              <Text style={styles.logoutText}>Log out</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F8F7', padding: 16 },
-  header: { fontSize: 24, fontWeight: 'bold', color: '#2E7D32', textAlign: 'center', marginBottom: 10 },
-  tabContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 10 },
-  tab: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, backgroundColor: '#D3E6D4', marginHorizontal: 5 },
-  activeTab: { backgroundColor: '#4CAF50' },
-  tabText: { color: '#FFF', fontWeight: 'bold' },
-
-  // Profile Info Styles
-  profileContainer: { paddingVertical: 10 }, // ✅ Removed Vertical Centering
-  avatarContainer: { alignItems: 'center', marginBottom: 15 },
-  avatar: { width: 100, height: 100, borderRadius: 50 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#2E7D32', marginTop: 10, marginBottom: 5 },
-  inputBox: { backgroundColor: '#FFF', padding: 10, borderRadius: 5, marginBottom: 5 },
-  label: { fontSize: 14, color: '#666' },
-  input: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-
-  // Settings Styles
-  settingsContainer: { paddingVertical: 10 }, // ✅ Removed Vertical Centering
-  settingButton: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#FFF', padding: 12, borderRadius: 5, marginBottom: 5 },
-  settingText: { fontSize: 16, color: '#333' },
-  arrow: { fontSize: 18, color: '#666' },
-  logoutButton: { backgroundColor: '#2E7D32', paddingVertical: 10, alignItems: 'center', borderRadius: 5, marginTop: 10 },
-  logoutText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  container: { flex: 1, backgroundColor: '#ffffff' },
+  header: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#3A6953',
+    textAlign: 'center',
+    marginTop: 60,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F0F4F3',
+    borderRadius: 30,
+    padding: 4,
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  toggleBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 45,
+    borderRadius: 30,
+  },
+  toggleActive: {
+    backgroundColor: '#6A8C73',
+  },
+  toggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3A6953',
+  },
+  toggleTextActive: {
+    color: '#ffffff',
+  },
+  scrollBody: {
+    flex: 1,
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginTop: 0,
+    backgroundColor: '#DBE7DF',
+  },
+  sectionSettings: {
+    paddingHorizontal: 20,
+    backgroundColor: '#DBE7DF',
+  },
+  profilePicture: {
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: 20,
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  editPic: {
+    position: 'absolute',
+    bottom: 0,
+    right: Dimensions?.get('window')?.width / 2 - 60,
+    backgroundColor: '#3A6953',
+    borderRadius: 20,
+    padding: 6,
+  },
+  infoBlock: {
+    marginBottom: 15,
+  },
+  infoSetBlock: {
+    marginBottom: 200,
+    marginTop: 20,
+  },
+  infoPerBlock: {
+    marginBottom: 70,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#3A6953',
+    marginBottom: 10,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F0F4F3',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#9BB3A7',
+  },
+  infoField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  infoContent: {
+    flexDirection: 'column',
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: '#777',
+  },
+  infoValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F0F4F3',
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#9BB3A7',
+  },
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  logoutButton: {
+    marginTop: 20,
+    backgroundColor: '#3A6953',
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  logoutText: {
+    textAlign: 'center',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
 
 export default ProfileScreen;

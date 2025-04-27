@@ -198,7 +198,7 @@ app.get("/api/get-balance", async (req, res) => {
 // Fetch all groups
 app.get("/api/groups", async (req, res) => {
   try {
-    const groups = await Group.find();
+    const groups = await Group.find().populate('handler', 'name');
 
     // ✅ Ensure image URLs are complete
     const updatedGroups = groups.map((group) => ({

@@ -7,6 +7,7 @@ import TransactionsScreen from '../screens/transactions/TransactionsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import GroupsScreen from '../screens/groups/GroupsScreen';
 import Icon from 'react-native-vector-icons/FontAwesome6';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const Tab = createBottomTabNavigator();
 
@@ -35,15 +36,93 @@ const AnimatedTabIcon = ({ name, label, focused }) => {
   );
 };
 
+const CustomTabBar = ({ state, navigation }) => {
+  return (
+    <View style={styles.tabBarWrapper}>
+      <View style={styles.tabBar}>
+        {/* Groups */}
+        <TouchableOpacity
+          style={styles.tabButton}
+          onPress={() => navigation.navigate('Groups')}
+        >
+          <Ionicons
+            name={state.index === 0 ? 'people' : 'people-outline'}
+            size={28}
+            color={state.index === 0 ? '#3A6953' : '#B0B0B0'}
+          />
+        </TouchableOpacity>
+
+        {/* Wallet */}
+        <TouchableOpacity
+          style={styles.tabButton}
+          onPress={() => navigation.navigate('Wallet')}
+        >
+          <Ionicons
+            name={state.index === 1 ? 'wallet' : 'wallet-outline'}
+            size={28}
+            color={state.index === 1 ? '#3A6953' : '#B0B0B0'}
+          />
+        </TouchableOpacity>
+
+        {/* Empty space */}
+        <View style={{ width: 70 }} />
+
+        {/* Transactions */}
+        <TouchableOpacity
+          style={styles.tabButton}
+          onPress={() => navigation.navigate('Transactions')}
+        >
+          <Ionicons
+            name={state.index === 3 ? 'swap-horizontal' : 'swap-horizontal-outline'}
+            size={28}
+            color={state.index === 3 ? '#3A6953' : '#B0B0B0'}
+          />
+        </TouchableOpacity>
+
+        {/* Profile */}
+        <TouchableOpacity
+          style={styles.tabButton}
+          onPress={() => navigation.navigate('Profile')}
+        >
+          <Ionicons
+            name={state.index === 4 ? 'person' : 'person-outline'}
+            size={28}
+            color={state.index === 4 ? '#3A6953' : '#B0B0B0'}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Floating Home Button */}
+      <TouchableOpacity
+        style={styles.homeButtonWrapper}
+        onPress={() => navigation.navigate('Home')}
+        activeOpacity={0.8}
+      >
+        <View style={styles.homeButton}>
+          <Image
+            source={require('../assets/4.png')} // 🟢 Update with your actual home logo path
+            style={{
+              width: 58,
+              height: 58,
+              tintColor: state.index === 2 ? '#ffffff' : '#B0B0B0',
+            }}
+            resizeMode="contain"
+          />
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+
 const BottomTabNavigator = () => {
   return (
     <Tab.Navigator
-    initialRouteName="Home"
-      screenOptions={{
-        tabBarShowLabel: false,
-        tabBarStyle: styles.tabBar,
-      }}
-    >
+  initialRouteName="Home"
+  tabBar={(props) => <CustomTabBar {...props} />}
+  screenOptions={{ headerShown: false }}
+>
+
       <Tab.Screen
         name="Groups"
         component={GroupsScreen}
@@ -148,23 +227,52 @@ const CustomTabBarButton = ({ children, onPress }) => {
 };
 
 const styles = StyleSheet.create({
+  tabBarWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
   tabBar: {
-  position: 'absolute',
-  left: 20,
-  right: 20,
-  height: 70, // Ensure correct height
-  backgroundColor: '#FFFFFF', // Make sure only one background exists
-  borderTopLeftRadius: 16, // Keep top corners rounded
-  borderTopRightRadius: 16,
-  borderBottomLeftRadius: 0, // REMOVE bottom left rounding
-  borderBottomRightRadius: 0, // REMOVE bottom right rounding
-  elevation: 5,
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-evenly',
-  paddingBottom: 16,
-  overflow: 'hidden', // Fix overlapping issues
-},
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    height: 70,
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: -3 },
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  homeButtonWrapper: {
+    position: 'absolute',
+    top: -30,
+    alignSelf: 'center',
+    zIndex: 10,
+  },
+  homeButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#3A6953',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+  },
   iconWrapper: {
     alignItems: 'center',
     justifyContent: 'center',

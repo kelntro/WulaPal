@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:841356244009:android:ea2a074d9c48d4caa15838",
+        "mobilesdk_app_id": "1:841356244009:android:3e725565f9045df7a15838",
         "android_client_info": {
-          "package_name": "com.mobile"
+          "package_name": "com.wulapal.mobile"
         }
       },
       "oauth_client": [
@@ -17,8 +17,8 @@
           "client_id": "841356244009-g5cojd899iqh6cf6rppl4cs95eb8kban.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.mobile",
-            "certificate_hash": "cce24dcf2889c8775a0aa037727da67b110feaa7"
+            "package_name": "com.wulapal.mobile",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
           }
         },
         {
