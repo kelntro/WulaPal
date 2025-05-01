@@ -26,6 +26,7 @@ import GroupChats from './screens/chat/GroupChats';
 import MemberGroupChat from './screens/chat/MemberGroupChat'; 
 import SearchScreen from './screens/SearchScreen';
 import UserProfileScreen from './screens/UserProfileScreen';
+import ProfileScreen from './screens/ProfileScreen';
 import MessageUserScreen from './screens/MessageUserScreen';
 
 const Stack = createStackNavigator();
@@ -171,6 +172,8 @@ const App = () => {
       <Stack.Screen name="MemberGroupChat" component={MemberGroupChat} />
       <Stack.Screen name="SearchScreen" component={SearchScreen} />
       <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
+      <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+
       <Stack.Screen name="MessageUserScreen" component={MessageUserScreen} />
       <Stack.Screen name="Main" component={BottomTabNavigator} />
     </Stack.Navigator>

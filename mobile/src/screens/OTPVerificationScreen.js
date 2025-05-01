@@ -21,15 +21,18 @@ const OTPVerificationScreen = ({ navigation, route }) => {
     }
   
     setLoading(true);
+    console.log("📩 Verifying OTP with:", { name, email, password, otp });
   
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role: "member", otp }), // Ensure role is sent
+        body: JSON.stringify({ name, email, password, role: "member", otp }),
       });
   
       const data = await response.json();
+      console.log("📥 Register response:", data);
+  
       if (!response.ok) {
         throw new Error(data.error || "OTP verification failed.");
       }
@@ -37,36 +40,39 @@ const OTPVerificationScreen = ({ navigation, route }) => {
       Alert.alert("Success", "Your account is registered! Please log in.");
       navigation.replace("LoginScreen");
     } catch (error) {
+      console.error("❌ OTP Verification Error:", error.message);
       Alert.alert("Error", error.message);
     } finally {
       setLoading(false);
     }
   };
   
-
   const handleResendOTP = async () => {
     setLoading(true);
-
+    console.log("🔁 Resending OTP to:", email);
+  
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/resend-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-
+  
       const data = await response.json();
-
+      console.log("📥 Resend OTP response:", data);
+  
       if (!response.ok) {
         throw new Error(data.error || "Failed to resend OTP.");
       }
-
+  
       Alert.alert("Success", "New OTP has been sent to your email.");
     } catch (error) {
+      console.error("❌ Resend OTP Error:", error.message);
       Alert.alert("Error", error.message);
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   return (
     <StyledView className="flex-1 justify-center bg-white px-6">

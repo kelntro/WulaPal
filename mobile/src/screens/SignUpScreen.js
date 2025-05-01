@@ -26,16 +26,34 @@ const SignUpScreen = ({ navigation }) => {
       return;
     }
   
+    if (!name || !password || !confirmPassword) {
+      Alert.alert("Error", "Please fill out all fields.");
+      return;
+    }
+  
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match.");
+      return;
+    }
+  
+    if (!agree) {
+      Alert.alert("Agreement Required", "You must agree to the Terms and Conditions.");
+      return;
+    }
+  
     setLoading(true);
+    console.log("📤 Requesting OTP for:", { name, email, password });
   
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/request-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role: "member" }), // Include role
+        body: JSON.stringify({ email, role: "member" }),
       });
   
       const data = await response.json();
+      console.log("📥 OTP Response:", data);
+  
       if (!response.ok) {
         throw new Error(data.error || "Failed to request OTP.");
       }
@@ -43,11 +61,12 @@ const SignUpScreen = ({ navigation }) => {
       Alert.alert("Success", "OTP sent! Check your email.");
       navigation.navigate("OTPVerificationScreen", { name, email, password });
     } catch (error) {
+      console.error("❌ OTP Request Error:", error.message);
       Alert.alert("Error", error.message);
     } finally {
       setLoading(false);
     }
-  };
+  };  
   
   
 

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   SafeAreaView,
   ScrollView,
+  Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
@@ -25,6 +26,9 @@ const HomeScreen = () => {
   const [balance, setBalance] = useState(0); 
   const [userName, setUserName] = useState('');
 
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  const [user, setUser] = useState(null); // Add this
+
   const fetchDashboardData = async () => {
     try {
       const storedUser = await AsyncStorage.getItem('user');
@@ -34,8 +38,16 @@ const HomeScreen = () => {
         return;
       }
       
+      setUser(parsedUser); // ✅ move this up
       setUserName(parsedUser.name || 'User');
-      // Fetch Contributions
+
+          // 🔍 Check profile completeness
+    const requiredFields = ['dateofBirth', 'country', 'mobile', 'address'];
+    const isIncomplete = requiredFields.some(field => !parsedUser[field]);
+    if (isIncomplete) {
+      setShowIncompleteModal(true);
+    }
+
       const contributionsRes = await axios.get(
         `${API_BASE_URL}/api/member-notifications/${parsedUser._id}`,
         {
@@ -162,6 +174,26 @@ const HomeScreen = () => {
           </View>
         </View>
       </ScrollView>
+      <Modal visible={showIncompleteModal} transparent animationType="fade">
+  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{ width: '80%', backgroundColor: 'white', borderRadius: 20, padding: 24, alignItems: 'center' }}>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#3A6953' }}>Complete Your Profile</Text>
+      <Text style={{ fontSize: 14, color: '#555', textAlign: 'center' }}>
+        To use WulaPal features, please complete your profile information.
+      </Text>
+
+      <TouchableOpacity
+        onPress={() => {
+          setShowIncompleteModal(false);
+          navigation.navigate('ProfileScreen', { userId: user?._id }); // ✅ make sure this screen is wired
+        }}
+        style={{ marginTop: 20, backgroundColor: '#3A6953', padding: 12, borderRadius: 10, width: '80%' }}
+      >
+        <Text style={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>Go to Profile</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
     </SafeAreaView>
   );
 };

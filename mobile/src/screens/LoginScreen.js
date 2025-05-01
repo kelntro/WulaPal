@@ -30,81 +30,86 @@ const LoginScreen = ({ navigation }) => {
   
   const handleLogin = async () => {
     setLoading(true);
-
+    console.log("🔐 Starting email/password login...");
+  
     if (!email || !password) {
-        Alert.alert("Error", "Please enter both email and password.");
-        setLoading(false);
-        return;
+      Alert.alert("Error", "Please enter both email and password.");
+      setLoading(false);
+      return;
     }
-
+  
+    console.log("📤 Sending login request with:", { email });
+  
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password, role: "member" }), // Ensure only members log in
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role: "member" }),
+      });
+  
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Invalid server response. Please check backend.");
+      }
+  
+      const data = await response.json();
+      console.log("📥 Login response:", data);
+  
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed.");
+      }
+  
+      if (!data.user || !data.user._id) {
+        console.error("⚠️ Missing user ID in response:", data.user);
+        throw new Error("User ID is missing. Please try again.");
+      }
+  
+      if (data.user.role !== "member") {
+        throw new Error("Only members can log in here.");
+      }
+  
+      await AsyncStorage.setItem("token", data.token);
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      console.log("💾 Token and user saved to AsyncStorage");
+  
+      const fcmToken = await getMessaging(getApp()).getToken();
+      console.log("📲 FCM Token:", fcmToken);
+  
+      if (fcmToken) {
+        const res = await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: data.user._id, fcmToken }),
         });
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("Invalid server response. Please check backend.");
-        }
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || "Login failed.");
-        }
-
-        if (!data.user || !data.user._id) {
-            console.error("[LOGIN] Missing user ID:", data.user); // Debugging
-            throw new Error("User ID is missing. Please try again.");
-        }
-
-        if (data.user.role !== "member") {
-            throw new Error("Only members can log in here.");
-        }
-
-        // ✅ Store token & user ID in AsyncStorage for wallet & other API requests
-        await AsyncStorage.setItem("token", data.token);
-        await AsyncStorage.setItem("user", JSON.stringify(data.user));
-
-        console.log("[LOGIN] User logged in successfully:", data.user);
-        // ✅ Save FCM token
-        const fcmToken = await getMessaging(getApp()).getToken();
-
-        if (fcmToken) {
-          const res = await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: data.user._id, fcmToken }),
-          });
-        
-          if (!res.ok) {
-            throw new Error("FCM token failed to save");
-          }
-        
-          console.log("✅ FCM token saved:", fcmToken);
-        } else {
-          console.log("⚠️ Failed to get FCM token");
-        }
-
-        Alert.alert("Success", "Login successful!", [
-            {
-                text: "OK",
-                onPress: () =>
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: "Main", params: { screen: "Home" } }], // ✅ Redirect to Home inside MainApp
-                    }),
-            },
-        ]);
+  
+        const fcmResult = await res.json();
+        console.log("📥 FCM save response:", fcmResult);
+  
+        if (!res.ok) throw new Error("FCM token failed to save");
+  
+        console.log("✅ FCM token saved successfully");
+      } else {
+        console.warn("⚠️ No FCM token received");
+      }
+  
+      Alert.alert("Success", "Login successful!", [
+        {
+          text: "OK",
+          onPress: () =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Main", params: { screen: "Home" } }],
+            }),
+        },
+      ]);
     } catch (error) {
-        console.error("[LOGIN] Error:", error.message);
-        Alert.alert("Error", error.message);
+      console.error("❌ Login Error:", error.message);
+      Alert.alert("Login Error", error.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
+  
 
 const handleGoogleLogin = async () => {
   console.log("🚀 Google login started");
