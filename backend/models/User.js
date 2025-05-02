@@ -9,7 +9,13 @@ const userSchema = new mongoose.Schema(
     country: { type: String, default: null },
     mobile: { type: String, default: null },
     email: { type: String, required: true, trim: true },
-    address: { type: String, default: null },
+    address: {
+      street: { type: String, default: null },
+      barangay: { type: String, default: null },
+      city: { type: String, default: null },
+      province: { type: String, default: null },
+      zipCode: { type: String, default: null },
+    },    
     password: { type: String, required: true },
     fcmToken: { type: String, default: null },
     createdAt: { type: Date, default: Date.now },
@@ -19,6 +25,14 @@ const userSchema = new mongoose.Schema(
     verificationToken: { type: String, default: null },
     otp: { type: String, default: null },
     otpExpires: { type: Date, default: null },
+    gender: { type: String, enum: ['Male', 'Female', 'Other'], default: null },
+    occupation: { type: String, default: null },
+    sourceOfFunds: { type: String, default: null },
+    nationalIdNumber: { type: String, default: null },
+    emergencyContact: {
+      name: { type: String, default: null },
+      mobile: { type: String, default: null }
+    },
     plan: {
       type: String,
       enum: ["Free", "Basic", "Pro"],

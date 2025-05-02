@@ -25,6 +25,7 @@ const LoginScreen = ({ navigation }) => {
     GoogleSignin.configure({
       webClientId: '841356244009-icpfsekev3ptc9r73qmee7tn68orqpii.apps.googleusercontent.com',      
       offlineAccess: true,
+      prompt: 'select_account'
     });
   }, []);
   

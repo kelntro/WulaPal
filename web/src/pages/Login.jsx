@@ -51,7 +51,7 @@ const Login = () => {
       const response = await fetch("http://localhost:5050/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role: "organizer" }),
+        body: JSON.stringify({ name: displayName,email, profileImage: photoURL, role: "organizer" }),
       });
 
       const data = await response.json();
@@ -118,6 +118,7 @@ const Login = () => {
           name: displayName,
           email,
           profileImage: photoURL,
+          role: "organizer",
         }),
       });
   

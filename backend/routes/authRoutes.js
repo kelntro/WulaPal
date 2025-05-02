@@ -430,52 +430,38 @@ router.post("/change-password", async (req, res) => {
 // ✅ Google Sign-In for Organizer (Web Only)
 router.post("/google-login", async (req, res) => {
   try {
-    const { name, email, profileImage } = req.body;
+    const { name, email, profileImage, role } = req.body;
 
-    if (!email) return res.status(400).json({ error: "Email is required" });
+    if (!email || !role) {
+      return res.status(400).json({ error: "Email and role are required." });
+    }
 
-    let user = await User.findOne({ email, role: "organizer" });
+    if (!["organizer", "member"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role." });
+    }
 
+    // 🔍 Look for user with same email AND role
+    let user = await User.findOne({ email, role });
+
+    // 🆕 If not found, create new user with this role
     if (!user) {
-      const emailUsed = await User.findOne({ email });
-      if (emailUsed && emailUsed.role !== "organizer") {
-        console.log("⚠️ Same email exists for different role, continuing to create new organizer...");
-      }
-    
       const userId = await generateUserId();
+
       user = await User.create({
         userId,
         name,
         email,
         profileImage,
-        password: "google_oauth",
-        role: "organizer",
-        isVerified: true,
-      });
-    
-      await Wallet.create({ userId: user._id, balance: 0 });
-      console.log(`✅ Organizer wallet created via Google Sign-In`);
-    }
-    
-    // Create new user if not exists
-    if (!user) {
-      const userId = await generateUserId();
-      user = await User.create({
-        userId,
-        name,
-        email,
-        profileImage,
-        password: "google_oauth", // Placeholder
-        role: "organizer",
+        password: "google_oauth", // placeholder
+        role,
         isVerified: true,
       });
 
-      // Create wallet
       await Wallet.create({ userId: user._id, balance: 0 });
-      console.log(`✅ Organizer wallet created via Google Sign-In`);
+      console.log(`✅ ${role} wallet created via Google Sign-In for ${email}`);
     }
 
-    // Generate JWT Token
+    // 🔐 Generate JWT
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -483,11 +469,14 @@ router.post("/google-login", async (req, res) => {
     );
 
     res.json({ token, user });
+
   } catch (error) {
     console.error("❌ Google Login error:", error.message);
     res.status(500).json({ error: "Login failed. Try again later." });
   }
 });
+
+
 
 // ✅ Google Sign-In for Member (Mobile Only)
 router.post("/google-login-member", async (req, res) => {

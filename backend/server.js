@@ -24,6 +24,7 @@ const userRoutes = require("./routes/userRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const uploadRoutes = require('./routes/upload');
 const verifyToken = require("./middleware/auth");
+const Wallet = require("./models/Wallet");
 // 🔌 Connect to MongoDB here
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -60,8 +61,10 @@ const getLocalIp = () => {
   return "localhost"; // Fallback to localhost
 };
 
-const SERVER_IP = "192.168.56.1"; // ✅ Use only the IP, without "http://" and ":5050"
+const SERVER_IP = getLocalIp();
 const SERVER_URL = `http://${SERVER_IP}:5050`;
+console.log(`🌐 Server IP: ${getLocalIp()}`);
+console.log(`✅ Server running at http://${getLocalIp()}:5050`);
 
 const Group = require("./models/Group");
 
@@ -91,7 +94,7 @@ app.post("/api/create-group", async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const organizerUser = await User.findOne({ name: handler }); // or { email: handler } if preferred
+    const organizerUser = await User.findOne({ name: handler, role: "organizer" });
     if (!organizerUser) {
       return res.status(404).json({ error: "Organizer not found" });
     }
@@ -527,6 +530,18 @@ app.post("/api/join-group", async (req, res) => {
       return res.status(400).json({ error: "User already joined" });
     }
 
+    // Check member’s wallet balance
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      return res.status(404).json({ error: "Wallet not found" });
+    }
+
+    const contributionAmount = Number(group.contributionAmount);
+    if (wallet.balance < contributionAmount) {
+      return res.status(400).json({
+        error: `Insufficient balance. You need ₱${contributionAmount} to join.`,
+      });
+    }
     // ✅ Add new member
     group.members.push({
       userId: new mongoose.Types.ObjectId(userId),
@@ -1150,14 +1165,19 @@ app.post('/api/users/save-fcm-token', async (req, res) => {
 
 app.post('/api/users/remove-fcm-token', async (req, res) => {
   try {
-    const { fcmToken } = req.body;
+    const { fcmToken, userId } = req.body;
 
-    if (!fcmToken) {
-      return res.status(400).json({ error: 'Missing fcmToken' });
+    if (!fcmToken || !userId) {
+      return res.status(400).json({ error: 'Missing fcmToken or userId' });
     }
 
-    const user = await User.findOne({ fcmToken });
-    if (!user) return res.status(404).json({ error: 'User not found with this token' });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Optional: double-check token matches before clearing
+    if (user.fcmToken !== fcmToken) {
+      console.warn(`⚠️ Token mismatch for user ${user.email}`);
+    }
 
     user.fcmToken = null;
     await user.save();

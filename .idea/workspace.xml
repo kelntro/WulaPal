@@ -5,30 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="72ed7d27-63e3-4bfc-9e29-cafd36c20ba5" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/backend/routes/authRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/routes/authRoutes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/routes/userRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/routes/userRoutes.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/server.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/babel.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/babel.config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/navigation/BottomTabNavigator.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/navigation/BottomTabNavigator.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/GroupsScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/GroupsScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/LoginScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/LoginScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/MessageUserScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/MessageUserScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/OTPVerificationScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/OTPVerificationScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/ProfileScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/ProfileScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/SearchScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/SearchScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/SignUpScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/SignUpScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/UserProfileScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/UserProfileScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/chat/GroupChats.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/chat/GroupChats.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/chat/MemberGroupChat.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/chat/MemberGroupChat.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/dashboard/HomeScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/dashboard/HomeScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/groups/GroupDetailsScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/groups/GroupDetailsScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/groups/GroupsScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/groups/GroupsScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/notifications/NotificationScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/notifications/NotificationScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/transactions/TransactionsScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/transactions/TransactionsScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/wallet/DepositScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/wallet/DepositScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/wallet/TransferScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/wallet/TransferScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/wallet/WalletScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/wallet/WalletScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/src/screens/wallet/WithdrawScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/wallet/WithdrawScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/pages/Login.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/pages/Login.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
