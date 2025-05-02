@@ -2,7 +2,6 @@ import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
@@ -18,6 +17,7 @@ import {Dimensions} from 'react-native';
 import {API_BASE_URL} from '@env';
 
 const screenHeight = Dimensions.get('window').height;
+
 const HomeScreen = () => {
   const navigation = useNavigation();
 
@@ -25,9 +25,8 @@ const HomeScreen = () => {
   const [upcomingContributions, setUpcomingContributions] = useState([]);
   const [balance, setBalance] = useState(0);
   const [userName, setUserName] = useState('');
-
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
-  const [user, setUser] = useState(null); // Add this
+  const [user, setUser] = useState(null);
 
   const fetchDashboardData = async () => {
     try {
@@ -38,11 +37,10 @@ const HomeScreen = () => {
         return;
       }
 
-      setUser(parsedUser); // ✅ move this up
+      setUser(parsedUser);
       const firstName = parsedUser.name?.split(' ')[0] || 'User';
       setUserName(firstName);
 
-      // 🔍 Check profile completeness
       const requiredFields = ['dateofBirth', 'country', 'mobile', 'address'];
       const isIncomplete = requiredFields.some(field => !parsedUser[field]);
       if (isIncomplete) {
@@ -68,7 +66,6 @@ const HomeScreen = () => {
 
       setUpcomingContributions(contributions);
 
-      // Fetch Balance 🔥
       const balanceRes = await axios.get(`${API_BASE_URL}/api/wallet/balance`, {
         params: {userId: parsedUser._id},
       });
@@ -100,27 +97,22 @@ const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      {/* Header Icons */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hi, {userName}!</Text>
-        <View style={{flexDirection: 'row', gap: 15}}>
+        <View style={styles.iconRow}>
           <TouchableOpacity onPress={() => navigation.navigate('GroupChats')}>
-            <Icon name="chatbubbles-outline" size={26} color="#3A6953" />
+            <Icon name="chatbubbles" size={26} color="#3A6953" />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => navigation.navigate('Notifications')}>
-            <Icon name="notifications-outline" size={26} color="#3A6953" />
+            <Icon name="notifications" size={26} color="#3A6953" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          placeholder="Search users by name, email, or ID..."
-          style={styles.searchInput}
-          onFocus={() => navigation.navigate('SearchScreen')}
-        />
+      {/* Greeting */}
+      <View style={styles.greetingContainer}>
+        <Text style={styles.greeting}>Hi, {userName}!</Text>
       </View>
 
       {/* Balance */}
@@ -175,6 +167,8 @@ const HomeScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      {/* Modal for incomplete profile */}
       <Modal visible={showIncompleteModal} transparent animationType="fade">
         <View
           style={{
@@ -207,7 +201,7 @@ const HomeScreen = () => {
             <TouchableOpacity
               onPress={() => {
                 setShowIncompleteModal(false);
-                navigation.navigate('ProfileScreen', {userId: user?._id}); // ✅ make sure this screen is wired
+                navigation.navigate('ProfileScreen', {userId: user?._id});
               }}
               style={{
                 marginTop: 20,
@@ -235,26 +229,37 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#ffffff'},
   header: {
-    paddingTop: 50,
+    paddingTop: 20,
     paddingHorizontal: 15,
-    paddingBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingBottom: 0,
+    alignItems: 'flex-end',
   },
-  greeting: {fontSize: 28, fontWeight: 'bold', color: '#3A6953'},
+  iconRow: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  greetingContainer: {
+    marginTop: 20,
+    marginHorizontal: 15,
+    marginBottom: 5,
+  },
+  greeting: {
+    fontSize: 30,
+    fontWeight: '900',
+    color: '#3A6953',
+  },
   subtitle: {
     fontSize: 16,
     color: '#333333',
-    marginBottom: 5,
+    marginBottom: 15,
   },
   balanceSection: {
     marginHorizontal: 15,
-    marginBottom: 20,
+    marginBottom: 25,
   },
   balance: {
-    fontSize: 42,
-    fontWeight: 'bold',
+    fontSize: 48,
+    fontWeight: '800',
     color: '#3A6953',
   },
   progressBar: {
@@ -270,23 +275,11 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 50,
     borderBottomLeftRadius: 50,
   },
-  searchContainer: {
-    marginHorizontal: 15,
-    marginTop: 10,
-  },
-  searchInput: {
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    fontSize: 14,
-  },
   scrollBody: {
     flex: 1,
   },
   contributionsContainer: {
-    marginTop: 15,
+    marginTop: 10,
     backgroundColor: '#DBE7DF',
     borderTopLeftRadius: 110,
     borderTopRightRadius: 110,
@@ -295,7 +288,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     minHeight: screenHeight * 0.6,
   },
-  justifyContent: 'flex-start',
   whiteArcFix: {
     position: 'absolute',
     top: -20,
@@ -309,24 +301,27 @@ const styles = StyleSheet.create({
   },
   contributionsHeader: {
     alignItems: 'center',
-    marginBottom: 15,
-    marginTop: 25,
+    marginTop: 0,
+    marginBottom: 20,
   },
+  
   contributionsTitleText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600', // Replace with fontFamily if using Poppins
     color: '#ffffff',
     backgroundColor: '#3A6953',
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderRadius: 30,
+    paddingHorizontal: 32,
+    paddingVertical: 10,
+    borderRadius: 999, // Pill shape
     overflow: 'hidden',
-    marginBottom: 15,
+    textAlign: 'center',
   },
+  
   monthText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#3A6953',
+    marginTop: 10,
   },
   contributionList: {
     marginTop: 2,
