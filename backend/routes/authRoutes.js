@@ -568,4 +568,45 @@ router.post("/users/check-email-role", async (req, res) => {
 });
 
 
+router.post('/set-pin', async (req, res) => {
+  const { userId, pinCode } = req.body;
+  if (!userId || !pinCode || pinCode.length !== 6) {
+    return res.status(400).json({ error: 'Invalid input' });
+  }
+
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const hashedPin = await bcrypt.hash(pinCode, 10);
+  user.pinCode = hashedPin;
+  await user.save();
+
+  res.json({ success: true, message: 'PIN code saved' });
+});
+
+// 🔐 Verify PIN
+router.post('/verify-pin', async (req, res) => {
+  const { userId, pinCode } = req.body;
+  if (!userId || !pinCode) {
+    return res.status(400).json({ error: 'Missing data' });
+  }
+
+  const user = await User.findById(userId);
+  if (!user || !user.pinCode) {
+    return res.status(400).json({ error: 'PIN not set' });
+  }
+
+  const isMatch = await bcrypt.compare(pinCode, user.pinCode);
+  if (!isMatch) {
+    return res.status(401).json({ error: 'Incorrect PIN' });
+  }
+
+  // Return existing session data
+  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+    expiresIn: '7d',
+  });
+
+  res.json({ success: true, token, user });
+});
+
 module.exports = router;

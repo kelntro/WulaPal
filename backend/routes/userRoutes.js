@@ -103,7 +103,7 @@ router.get("/search", async (req, res) => {
   
     try {
       const user = await User.findById(userId)
-      .select("name email profileImage role dateofBirth country mobile address plan createdAt userId gender occupation sourceOfFunds nationalIdNumber emergencyContact")
+      .select("name email profileImage role dateofBirth country mobile address plan createdAt userId gender occupation sourceOfFunds nationalIdNumber emergencyContact pinCode")
       .lean();
     
   

@@ -23,6 +23,7 @@ import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
 import {Picker} from '@react-native-picker/picker';
 import {launchCamera} from 'react-native-image-picker';
+import Modal from 'react-native-modal';
 import {API_BASE_URL} from '@env';
 
 const ProfileScreen = ({navigation}) => {
@@ -95,21 +96,30 @@ const ProfileInfo = () => {
           email: data.email || '',
           mobile: data.mobile || '',
           dateofBirth: data.dateofBirth ? data.dateofBirth.slice(0, 10) : '',
-          address: typeof data.address === 'string' ? JSON.parse(data.address) : data.address || {
-            street: '', barangay: '', city: '', province: '', zipCode: ''
-          },
+          address:
+            typeof data.address === 'string'
+              ? JSON.parse(data.address)
+              : data.address || {
+                  street: '',
+                  barangay: '',
+                  city: '',
+                  province: '',
+                  zipCode: '',
+                },
           country: data.country || '',
           gender: data.gender || '',
           occupation: data.occupation || '',
           sourceOfFunds: data.sourceOfFunds || '',
           nationalIdNumber: data.nationalIdNumber || '',
-          emergencyContactName: typeof data.emergencyContact === 'string'
-            ? JSON.parse(data.emergencyContact).name || ''
-            : data.emergencyContact?.name || '',
-          emergencyContactMobile: typeof data.emergencyContact === 'string'
-            ? JSON.parse(data.emergencyContact).mobile || ''
-            : data.emergencyContact?.mobile || '',
-        });        
+          emergencyContactName:
+            typeof data.emergencyContact === 'string'
+              ? JSON.parse(data.emergencyContact).name || ''
+              : data.emergencyContact?.name || '',
+          emergencyContactMobile:
+            typeof data.emergencyContact === 'string'
+              ? JSON.parse(data.emergencyContact).mobile || ''
+              : data.emergencyContact?.mobile || '',
+        });
       } catch (err) {
         Alert.alert('Error', 'Failed to load user info.');
       } finally {
@@ -164,7 +174,7 @@ const ProfileInfo = () => {
         );
         return;
       }
-    }    
+    }
 
     // National ID format validation
     const nationalIdRegex = /^[0-9]{12}$/;
@@ -241,45 +251,40 @@ const ProfileInfo = () => {
       contentContainerStyle={{paddingBottom: 120}}>
       <View style={styles.section}>
         <View style={styles.profilePicture}>
-        <Image
-  source={
-    profileImage?.uri
-      ? { uri: profileImage.uri }
-      : user?.profileImage
-      ? { uri: `${API_BASE_URL}${user.profileImage}` }
-      : require('../assets/Profile.jpg')
-  }
-  style={styles.profileImage}
-  onError={() => console.log('⚠️ Failed to load profile image')}
-  resizeMode="cover"
-/>
+          <Image
+            source={
+              profileImage?.uri
+                ? {uri: profileImage.uri}
+                : user?.profileImage
+                ? {uri: `${API_BASE_URL}${user.profileImage}`}
+                : require('../assets/Profile.jpg')
+            }
+            style={styles.profileImage}
+            onError={() => console.log('⚠️ Failed to load profile image')}
+            resizeMode="cover"
+          />
 
+          <TouchableOpacity
+            style={styles.editPic}
+            onPress={editMode ? handleCapturePhoto : () => setEditMode(true)}>
+            <MaterialCommunityIcons
+              name={editMode ? 'camera' : 'circle-edit-outline'}
+              size={20}
+              color="#fff"
+            />
+          </TouchableOpacity>
 
-<TouchableOpacity
-  style={styles.editPic}
-  onPress={editMode ? handleCapturePhoto : () => setEditMode(true)}
->
-  <MaterialCommunityIcons
-    name={editMode ? 'camera' : 'circle-edit-outline'}
-    size={20}
-    color="#fff"
-  />
-</TouchableOpacity>
-
-
-{editMode && (
-  <TouchableOpacity
-    style={[styles.editPic, { right: 30 }]} // offset to avoid overlap
-    onPress={handleSave}
-  >
-    <MaterialCommunityIcons
-      name="check-circle-outline"
-      size={20}
-      color="#fff"
-    />
-  </TouchableOpacity>
-)}
-
+          {editMode && (
+            <TouchableOpacity
+              style={[styles.editPic, {right: 30}]} // offset to avoid overlap
+              onPress={handleSave}>
+              <MaterialCommunityIcons
+                name="check-circle-outline"
+                size={20}
+                color="#fff"
+              />
+            </TouchableOpacity>
+          )}
         </View>
 
         <Text style={styles.sectionTitle}>Account Information</Text>
@@ -487,6 +492,10 @@ const ProfileInfo = () => {
 
 const ProfileSettings = ({navigation}) => {
   const [loadingLogout, setLoadingLogout] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinCode, setPinCode] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [changingPin, setChangingPin] = useState(false);
 
   const handleLogout = async () => {
     console.log('🚪 Logging out...');
@@ -568,22 +577,124 @@ const ProfileSettings = ({navigation}) => {
       contentContainerStyle={{paddingBottom: 30}}>
       <View style={styles.sectionSettings}>
         <Text style={styles.sectionTitle}>Security</Text>
-        {[
-          'Change Pin Code',
-          'Change Password',
-          'Link to Bank',
-          'Terms and Condition',
-          'Privacy Policy',
-        ].map((item, index) => (
-          <View key={index} style={styles.settingRow}>
-            <Text style={styles.settingLabel}>{item}</Text>
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>Change Pin Code</Text>
+          <TouchableOpacity onPress={() => setShowPinModal(true)}>
             <Ionicons
               name="chevron-forward-outline"
               size={20}
               color="#3A6953"
             />
-          </View>
-        ))}
+          </TouchableOpacity>
+          <Modal
+            isVisible={showPinModal}
+            onBackdropPress={() => setShowPinModal(false)}>
+            <View
+              style={{
+                backgroundColor: 'white',
+                borderRadius: 10,
+                padding: 20,
+              }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: 'bold',
+                  marginBottom: 10,
+                  color: '#3A6953',
+                }}>
+                Set 6-digit PIN Code
+              </Text>
+
+              <TextInput
+                placeholder="Enter PIN"
+                keyboardType="numeric"
+                secureTextEntry
+                maxLength={6}
+                value={pinCode}
+                onChangeText={setPinCode}
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                  borderRadius: 8,
+                  padding: 10,
+                  marginBottom: 10,
+                }}
+              />
+
+              <TextInput
+                placeholder="Confirm PIN"
+                keyboardType="numeric"
+                secureTextEntry
+                maxLength={6}
+                value={confirmPin}
+                onChangeText={setConfirmPin}
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                  borderRadius: 8,
+                  padding: 10,
+                  marginBottom: 20,
+                }}
+              />
+
+              <TouchableOpacity
+                disabled={changingPin}
+                onPress={async () => {
+                  if (pinCode.length !== 6 || confirmPin.length !== 6) {
+                    Alert.alert('Invalid', 'PIN must be exactly 6 digits.');
+                    return;
+                  }
+
+                  if (pinCode !== confirmPin) {
+                    Alert.alert('Mismatch', 'PIN codes do not match.');
+                    return;
+                  }
+
+                  try {
+                    setChangingPin(true);
+                    const storedUser = await AsyncStorage.getItem('user');
+                    const parsedUser = JSON.parse(storedUser);
+
+                    const res = await fetch(
+                      `${API_BASE_URL}/api/auth/set-pin`,
+                      {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({userId: parsedUser._id, pinCode}),
+                      },
+                    );
+
+                    const result = await res.json();
+                    if (!res.ok)
+                      throw new Error(result.error || 'Failed to set PIN');
+
+                    Alert.alert('Success', 'PIN updated successfully');
+                    setShowPinModal(false);
+                  } catch (err) {
+                    Alert.alert('Error', err.message);
+                  } finally {
+                    setChangingPin(false);
+                    setPinCode('');
+                    setConfirmPin('');
+                  }
+                }}
+                style={{
+                  backgroundColor: '#3A6953',
+                  padding: 12,
+                  borderRadius: 10,
+                }}>
+                <Text
+                  style={{
+                    color: 'white',
+                    textAlign: 'center',
+                    fontWeight: 'bold',
+                  }}>
+                  {changingPin ? 'Saving...' : 'Save PIN'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Modal>
+        </View>
 
         <TouchableOpacity
           style={styles.logoutButton}

@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import React, {useEffect, useState} from 'react';
+import {Alert, ActivityIndicator, View} from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import {createStackNavigator} from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getMessaging } from '@react-native-firebase/messaging';
-import { getApp } from '@react-native-firebase/app';
-import notifee, { AndroidImportance } from '@notifee/react-native';
-import { API_BASE_URL } from '@env';
+import {getMessaging} from '@react-native-firebase/messaging';
+import {getApp} from '@react-native-firebase/app';
+import notifee, {AndroidImportance} from '@notifee/react-native';
+import {API_BASE_URL} from '@env';
 
 // Screens
 import SignUpScreen from './screens/SignUpScreen';
@@ -17,17 +17,19 @@ import OnboardingThree from './screens/onboarding/onboarding-three';
 import BottomTabNavigator from './navigation/BottomTabNavigator';
 import GroupDetailsScreen from './screens/groups/GroupDetailsScreen';
 import TransactionDetailsScreen from './screens/transactions/TransactionDetailsScreen';
-import OTPVerificationScreen from "./screens/OTPVerificationScreen";
+import OTPVerificationScreen from './screens/OTPVerificationScreen';
 import DepositScreen from './screens/wallet/DepositScreen';
 import TransferScreen from './screens/wallet/TransferScreen';
 import WithdrawScreen from './screens/wallet/WithdrawScreen';
 import NotificationScreen from './screens/notifications/NotificationScreen';
 import GroupChats from './screens/chat/GroupChats';
-import MemberGroupChat from './screens/chat/MemberGroupChat'; 
+import MemberGroupChat from './screens/chat/MemberGroupChat';
 import SearchScreen from './screens/SearchScreen';
 import UserProfileScreen from './screens/UserProfileScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import MessageUserScreen from './screens/MessageUserScreen';
+import PinCodeScreen from './screens/PinCodeScreen';
+
 
 const Stack = createStackNavigator();
 
@@ -43,14 +45,16 @@ getMessaging(getApp()).setBackgroundMessageHandler(async remoteMessage => {
       smallIcon: 'ic_notification',
       importance: AndroidImportance.HIGH,
     },
-  });  
+  });
 });
 
 const App = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showPinScreen, setShowPinScreen] = useState(false);
+const [storedUserId, setStoredUserId] = useState(null);
 
-  useEffect(() => {
+  +useEffect(() => {
     const setupNotifications = async () => {
       try {
         await notifee.requestPermission();
@@ -65,61 +69,89 @@ const App = () => {
         const enabled = authStatus === 1 || authStatus === 2;
 
         if (!enabled) {
-          Alert.alert("Notifications Disabled", "Please enable notifications.");
+          Alert.alert('Notifications Disabled', 'Please enable notifications.');
         }
       } catch (err) {
-        console.error("❌ FCM Setup Error:", err.message);
+        console.error('❌ FCM Setup Error:', err.message);
       }
     };
 
     const checkSession = async () => {
-      const token = await AsyncStorage.getItem("token");
-      const user = await AsyncStorage.getItem("user");
+      const token = await AsyncStorage.getItem('token');
+      const user = await AsyncStorage.getItem('user');
     
       if (token && user) {
-        console.log("✅ Session found. Auto login...");
-        setIsAuthenticated(true);
+        const parsedUser = JSON.parse(user);
     
-        await setupNotifications();
+        try {
+          // 🔍 Fetch latest user data (to check pinCode existence)
+          const res = await fetch(`${API_BASE_URL}/api/users/${parsedUser._id}`);
+          const freshUser = await res.json();
     
-        const fcmToken = await getMessaging(getApp()).getToken();
-        if (fcmToken) {
-          const userObj = JSON.parse(user);
-          await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: userObj._id, fcmToken }),
-          });
+          if (!res.ok || !freshUser) {
+            console.warn('⚠️ Failed to fetch user profile.');
+            setIsAuthenticated(false);
+            return;
+          }
     
-          console.log("🔁 FCM token refreshed for existing session.");
+          await AsyncStorage.setItem('user', JSON.stringify(freshUser));
+    
+          console.log('🔍 Received pinCode value:', freshUser.pinCode);
+
+          if (freshUser.pinCode && freshUser.pinCode !== 'null') {
+          console.log('🔐 PIN is set. Requiring verification.');
+          setStoredUserId(freshUser._id);
+          setShowPinScreen(true);
+        } else {
+          console.log('✅ No PIN set. Logging in directly.');
+          setIsAuthenticated(true);
+        }
+    
+          // 🔄 Refresh notifications
+          await setupNotifications();
+          const fcmToken = await getMessaging(getApp()).getToken();
+          if (fcmToken) {
+            await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: freshUser._id, fcmToken }),
+            });
+          }
+        } catch (err) {
+          console.error('❌ Session check failed:', err.message);
+          setIsAuthenticated(false);
         }
       } else {
-        console.log("🔒 No session found. Redirecting to login.");
+        console.log('🔒 No session found. Redirecting to login.');
         setIsAuthenticated(false);
       }
     
       setLoading(false);
-    };
+    };    
     
 
     checkSession();
 
-    
     // ✅ Foreground listener
-    const unsubscribe = getMessaging(getApp()).onMessage(async remoteMessage => {
-      console.log('🔔 [Foreground] Received message:', JSON.stringify(remoteMessage, null, 2));
-      console.log('🔔 [Foreground] onMessage triggered for:', remoteMessage);
-      await notifee.displayNotification({
-        id: `${Date.now()}`, // 🔥 unique per message
-        title: remoteMessage.notification?.title || 'WulaPal',
-        body: remoteMessage.notification?.body || '',
-        android: {
-          channelId: 'default',
-          smallIcon: 'ic_notification',
-          importance: AndroidImportance.HIGH,
-        },
-      });      
-    });
+    const unsubscribe = getMessaging(getApp()).onMessage(
+      async remoteMessage => {
+        console.log(
+          '🔔 [Foreground] Received message:',
+          JSON.stringify(remoteMessage, null, 2),
+        );
+        console.log('🔔 [Foreground] onMessage triggered for:', remoteMessage);
+        await notifee.displayNotification({
+          id: `${Date.now()}`, // 🔥 unique per message
+          title: remoteMessage.notification?.title || 'WulaPal',
+          body: remoteMessage.notification?.body || '',
+          android: {
+            channelId: 'default',
+            smallIcon: 'ic_notification',
+            importance: AndroidImportance.HIGH,
+          },
+        });
+      },
+    );
 
     // ✅ Background when app is resumed by clicking notification
     getMessaging(getApp()).onNotificationOpenedApp(remoteMessage => {
@@ -131,7 +163,10 @@ const App = () => {
       .getInitialNotification()
       .then(remoteMessage => {
         if (remoteMessage) {
-          console.log('💥 [Opened from quit state]:', remoteMessage.notification);
+          console.log(
+            '💥 [Opened from quit state]:',
+            remoteMessage.notification,
+          );
         }
       });
 
@@ -140,45 +175,66 @@ const App = () => {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
         <ActivityIndicator size="large" color="#2E7D32" />
       </View>
     );
   }
 
   return (
-  <NavigationContainer>
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {isAuthenticated ? (
-        <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-      ) : (
-        <>
-          <Stack.Screen name="LoginScreen" component={LoginScreen} />
-          <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
-          <Stack.Screen name="OnboardingOne" component={OnboardingOne} />
-          <Stack.Screen name="OnboardingTwo" component={OnboardingTwo} />
-          <Stack.Screen name="OnboardingThree" component={OnboardingThree} />
-        </>
-      )}
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
-      <Stack.Screen name="TransactionDetails" component={TransactionDetailsScreen} />
-      <Stack.Screen name="DepositScreen" component={DepositScreen} />
-      <Stack.Screen name="TransferScreen" component={TransferScreen} />
-      <Stack.Screen name="WithdrawScreen" component={WithdrawScreen} />
-      <Stack.Screen name="OTPVerificationScreen" component={OTPVerificationScreen} />
-      <Stack.Screen name="Notifications" component={NotificationScreen} />
-      <Stack.Screen name="GroupChats" component={GroupChats} />
-      <Stack.Screen name="MemberGroupChat" component={MemberGroupChat} />
-      <Stack.Screen name="SearchScreen" component={SearchScreen} />
-      <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
-      <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{headerShown: false}}>
+        {showPinScreen ? (
+ <Stack.Screen
+ name="PinCodeScreen"
+ options={{ headerShown: false }}
+ initialParams={{
+   userId: storedUserId,
+   onSuccess: () => {
+     setShowPinScreen(false);
+     setIsAuthenticated(true);
+   },
+ }}
+>
+ {props => <PinCodeScreen {...props} />}
+</Stack.Screen>
 
-      <Stack.Screen name="MessageUserScreen" component={MessageUserScreen} />
-      <Stack.Screen name="Main" component={BottomTabNavigator} />
-    </Stack.Navigator>
-  </NavigationContainer>
-);
+        ) : isAuthenticated ? (
+          <Stack.Screen name="MainApp" component={BottomTabNavigator} />
+        ) : (
+          <>
+            <Stack.Screen name="LoginScreen" component={LoginScreen} />
+            <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
+            <Stack.Screen name="OnboardingOne" component={OnboardingOne} />
+            <Stack.Screen name="OnboardingTwo" component={OnboardingTwo} />
+            <Stack.Screen name="OnboardingThree" component={OnboardingThree} />
+          </>
+        )}
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
+        <Stack.Screen
+          name="TransactionDetails"
+          component={TransactionDetailsScreen}
+        />
+        <Stack.Screen name="DepositScreen" component={DepositScreen} />
+        <Stack.Screen name="TransferScreen" component={TransferScreen} />
+        <Stack.Screen name="WithdrawScreen" component={WithdrawScreen} />
+        <Stack.Screen
+          name="OTPVerificationScreen"
+          component={OTPVerificationScreen}
+        />
+        <Stack.Screen name="Notifications" component={NotificationScreen} />
+        <Stack.Screen name="GroupChats" component={GroupChats} />
+        <Stack.Screen name="MemberGroupChat" component={MemberGroupChat} />
+        <Stack.Screen name="SearchScreen" component={SearchScreen} />
+        <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
+        <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+
+        <Stack.Screen name="MessageUserScreen" component={MessageUserScreen} />
+        <Stack.Screen name="Main" component={BottomTabNavigator} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
 };
 
 export default App;

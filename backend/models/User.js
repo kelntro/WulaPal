@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     country: { type: String, default: null },
     mobile: { type: String, default: null },
     email: { type: String, required: true, trim: true },
+    pinCode: { type: String, default: null },
     address: {
       street: { type: String, default: null },
       barangay: { type: String, default: null },
