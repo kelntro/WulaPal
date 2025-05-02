@@ -14,8 +14,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { Dimensions } from 'react-native';
-import { API_BASE_URL } from '@env';
+import {Dimensions} from 'react-native';
+import {API_BASE_URL} from '@env';
 
 const screenHeight = Dimensions.get('window').height;
 const HomeScreen = () => {
@@ -23,7 +23,7 @@ const HomeScreen = () => {
 
   const [loading, setLoading] = useState(true);
   const [upcomingContributions, setUpcomingContributions] = useState([]);
-  const [balance, setBalance] = useState(0); 
+  const [balance, setBalance] = useState(0);
   const [userName, setUserName] = useState('');
 
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
@@ -37,16 +37,17 @@ const HomeScreen = () => {
         console.warn('User ID not found in AsyncStorage');
         return;
       }
-      
-      setUser(parsedUser); // ✅ move this up
-      setUserName(parsedUser.name || 'User');
 
-          // 🔍 Check profile completeness
-    const requiredFields = ['dateofBirth', 'country', 'mobile', 'address'];
-    const isIncomplete = requiredFields.some(field => !parsedUser[field]);
-    if (isIncomplete) {
-      setShowIncompleteModal(true);
-    }
+      setUser(parsedUser); // ✅ move this up
+      const firstName = parsedUser.name?.split(' ')[0] || 'User';
+      setUserName(firstName);
+
+      // 🔍 Check profile completeness
+      const requiredFields = ['dateofBirth', 'country', 'mobile', 'address'];
+      const isIncomplete = requiredFields.some(field => !parsedUser[field]);
+      if (isIncomplete) {
+        setShowIncompleteModal(true);
+      }
 
       const contributionsRes = await axios.get(
         `${API_BASE_URL}/api/member-notifications/${parsedUser._id}`,
@@ -101,8 +102,8 @@ const HomeScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-      <Text style={styles.greeting}>Hi, {userName}!</Text>
-      <View style={{flexDirection: 'row', gap: 15}}>
+        <Text style={styles.greeting}>Hi, {userName}!</Text>
+        <View style={{flexDirection: 'row', gap: 15}}>
           <TouchableOpacity onPress={() => navigation.navigate('GroupChats')}>
             <Icon name="chatbubbles-outline" size={26} color="#3A6953" />
           </TouchableOpacity>
@@ -175,25 +176,58 @@ const HomeScreen = () => {
         </View>
       </ScrollView>
       <Modal visible={showIncompleteModal} transparent animationType="fade">
-  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
-    <View style={{ width: '80%', backgroundColor: 'white', borderRadius: 20, padding: 24, alignItems: 'center' }}>
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#3A6953' }}>Complete Your Profile</Text>
-      <Text style={{ fontSize: 14, color: '#555', textAlign: 'center' }}>
-        To use WulaPal features, please complete your profile information.
-      </Text>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <View
+            style={{
+              width: '80%',
+              backgroundColor: 'white',
+              borderRadius: 20,
+              padding: 24,
+              alignItems: 'center',
+            }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: 'bold',
+                marginBottom: 10,
+                color: '#3A6953',
+              }}>
+              Complete Your Profile
+            </Text>
+            <Text style={{fontSize: 14, color: '#555', textAlign: 'center'}}>
+              To use WulaPal features, please complete your profile information.
+            </Text>
 
-      <TouchableOpacity
-        onPress={() => {
-          setShowIncompleteModal(false);
-          navigation.navigate('ProfileScreen', { userId: user?._id }); // ✅ make sure this screen is wired
-        }}
-        style={{ marginTop: 20, backgroundColor: '#3A6953', padding: 12, borderRadius: 10, width: '80%' }}
-      >
-        <Text style={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>Go to Profile</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
+            <TouchableOpacity
+              onPress={() => {
+                setShowIncompleteModal(false);
+                navigation.navigate('ProfileScreen', {userId: user?._id}); // ✅ make sure this screen is wired
+              }}
+              style={{
+                marginTop: 20,
+                backgroundColor: '#3A6953',
+                padding: 12,
+                borderRadius: 10,
+                width: '80%',
+              }}>
+              <Text
+                style={{
+                  color: 'white',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                }}>
+                Go to Profile
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -259,8 +293,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingBottom: 40,
     position: 'relative',
-    minHeight: screenHeight * 0.6,  },
-    justifyContent: 'flex-start',
+    minHeight: screenHeight * 0.6,
+  },
+  justifyContent: 'flex-start',
   whiteArcFix: {
     position: 'absolute',
     top: -20,
