@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  TextInput,
   ScrollView,
   Modal,
 } from 'react-native';
@@ -26,7 +27,67 @@ const GroupDetailsScreen = ({route}) => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
+  const [depositModalVisible, setDepositModalVisible] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  
+  const initiateJoin = async () => {
+    const userData = await AsyncStorage.getItem('user');
+    if (!userData) {
+      setModalMessage('❌ Please log in first.');
+      setModalVisible(true);
+      return;
+    }
+  
+    const user = JSON.parse(userData);
+    const userId = user._id;
+  
+    const groupResponse = await fetch(`${API_BASE_URL}/api/groups/${groupId}`);
+    const groupData = await groupResponse.json();
+  
+    const isMember = groupData.members.some(
+      (m) => (typeof m === 'string' ? m : m.userId)?.toString() === userId
+    );
+  
+    if (isMember) {
+      setModalMessage('❌ You already joined this group.');
+      setModalVisible(true);
+      return;
+    }
+  
+    // Show deposit modal
+    setDepositModalVisible(true);
+  };
 
+  const confirmJoinWithDeposit = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('user');
+      const user = JSON.parse(userData);
+      const userId = user._id;
+  
+      const response = await fetch(`${API_BASE_URL}/api/join-group`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, groupId, depositAmount: Number(depositAmount) }),
+      });
+  
+      const data = await response.json();
+  
+      if (!data.success) {
+        setModalMessage(`❌ ${data.error}`);
+        setModalVisible(true);
+      } else {
+        setModalMessage(`✅ Successfully joined the group!`);
+        setModalVisible(true);
+        setDepositModalVisible(false);
+      }
+    } catch (error) {
+      console.error('❌ Join Error:', error);
+      setModalMessage('❌ Something went wrong.');
+      setModalVisible(true);
+    }
+  };
+
+  
   const joinGroup = async (groupId) => {
     try {
       const userData = await AsyncStorage.getItem('user');
@@ -117,11 +178,9 @@ const GroupDetailsScreen = ({route}) => {
           {description || 'No description provided.'}
         </Text>
 
-        <TouchableOpacity
-          style={styles.joinButton}
-          onPress={() => joinGroup(groupId)}>
-          <Text style={styles.joinButtonText}>Join Group</Text>
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.joinButton} onPress={initiateJoin}>
+        <Text style={styles.joinButtonText}>Join Group</Text>
+      </TouchableOpacity>
       </View>
 
       <Modal
@@ -150,7 +209,40 @@ const GroupDetailsScreen = ({route}) => {
       </TouchableOpacity>
     </View>
   </View>
-</Modal>;
+</Modal>
+<Modal
+  visible={depositModalVisible}
+  transparent
+  animationType="slide"
+  onRequestClose={() => setDepositModalVisible(false)}
+>
+  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 12, width: 300 }}>
+      <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 10 }}>
+        💰 Initial Deposit Required
+      </Text>
+      <Text style={{ fontSize: 14, marginBottom: 10 }}>
+        To prevent fraud, a deposit is required to join this group. Your deposit will be refunded once the group completes.
+      </Text>
+
+      <TextInput
+        placeholder="Enter deposit amount"
+        value={depositAmount}
+        onChangeText={setDepositAmount}
+        keyboardType="numeric"
+        style={{ borderColor: '#CCC', borderWidth: 1, borderRadius: 8, padding: 8, marginBottom: 12 }}
+      />
+
+      <TouchableOpacity onPress={confirmJoinWithDeposit} style={{ backgroundColor: '#3A6953', padding: 10, borderRadius: 8, marginBottom: 8 }}>
+        <Text style={{ color: 'white', textAlign: 'center' }}>Confirm Join</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => setDepositModalVisible(false)}>
+        <Text style={{ color: '#285236', textAlign: 'center' }}>Cancel</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
     </ScrollView>
   );
 };

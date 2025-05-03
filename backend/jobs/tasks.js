@@ -25,7 +25,7 @@ const handleAutoContribution = async () => {
       if (!group.hasStarted) {
         const minuteDifference = Math.floor((now - (group.lastContributionDate || group.createdAt)) / (1000 * 60));
         
-        if (minuteDifference >= 5) {
+        if (minuteDifference >= 1) {
           console.log(`🚀 [Group: ${group.name}] First contribution cycle is starting now.`);
           group.hasStarted = true;
           await group.save();
@@ -293,10 +293,48 @@ const handleAutoContribution = async () => {
       group.currentCycleContributions = 0;
       group.currentPayoutIndex += 1;
   
-      if (group.currentPayoutIndex >= group.payouts.length) {
+      // ✅ Check if group is done
+      const isCompleted = group.currentPayoutIndex >= group.payouts.length;
+      if (isCompleted) {
         group.status = "completed";
   
         for (const member of group.members) {
+          // 💸 Refund each member’s deposit
+          if (member.depositAmount > 0) {
+            const wallet = await Wallet.findOne({ userId: member.userId });
+            if (wallet) {
+              wallet.balance += member.depositAmount;
+              await wallet.save();
+  
+              await Transaction.create({
+                userId: member.userId,
+                type: "refund",
+                amount: member.depositAmount,
+                metadata: {
+                  groupId: group._id.toString(),
+                  type: "deposit_refund"
+                },
+                status: "confirmed"
+              });
+  
+              await MemberNotification.create({
+                userId: member.userId,
+                groupId: group._id,
+                message: `💰 Your ₱${member.depositAmount} deposit was refunded after group "${group.name}" completed.`,
+                type: "deposit_refunded"
+              });
+  
+              await sendPushToUser(
+                member.userId.toString(),
+                "WulaPal",
+                `💰 Your ₱${member.depositAmount} deposit for group "${group.name}" was refunded.`
+              );
+  
+              console.log(`↩️ [Refund] ₱${member.depositAmount} refunded to ${member.userId}`);
+            }
+          }
+  
+          // 📨 Final notification
           await MemberNotification.create({
             userId: member.userId,
             groupId: group._id,
@@ -314,19 +352,19 @@ const handleAutoContribution = async () => {
         console.log(`🏁 [Group: ${group.name}] All payout cycles completed. Group marked as completed.`);
       }
   
-      // ✅ Use proper interval based on group frequency
+      // ✅ Update group status/timing
       let intervalDays = 7;
       if (group.frequency === "Bi-Weekly") intervalDays = 14;
       if (group.frequency === "Monthly") intervalDays = 30;
   
-      group.lastContributionDate = new Date(); // reset to now
+      group.lastContributionDate = new Date();
       group.hasStarted = true;
   
       await group.save();
     }
   
     console.log("✅ [AutoPayouts] Finished processing all groups.\n");
-  };
+  };  
   
   
   const sendUpcomingContributionReminders = async () => {
@@ -340,7 +378,7 @@ const handleAutoContribution = async () => {
       const oneDayBefore = new Date(nextDueDate);
       oneDayBefore.setDate(oneDayBefore.getDate() - 1);
   
-      const isReminderDay =
+      const isReminderDay = true;
         now.getFullYear() === oneDayBefore.getFullYear() &&
         now.getMonth() === oneDayBefore.getMonth() &&
         now.getDate() === oneDayBefore.getDate();

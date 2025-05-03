@@ -25,9 +25,41 @@ import {Picker} from '@react-native-picker/picker';
 import {launchCamera} from 'react-native-image-picker';
 import Modal from 'react-native-modal';
 import {API_BASE_URL} from '@env';
+import {useFocusEffect} from '@react-navigation/native';
+import {BackHandler} from 'react-native';
 
 const ProfileScreen = ({navigation}) => {
   const [activeTab, setActiveTab] = useState('info');
+  const [form, setForm] = useState({});
+
+  const canAccessSettings = () => {
+    const requiredFields = [
+      'name',
+      'email',
+      'mobile',
+      'dateofBirth',
+      'country',
+      'gender',
+      'occupation',
+      'sourceOfFunds',
+      'nationalIdNumber',
+      'emergencyContactName',
+      'emergencyContactMobile',
+      'address.street',
+      'address.barangay',
+      'address.city',
+      'address.province',
+      'address.zipCode',
+    ];
+
+    const getNested = (obj, path) =>
+      path.split('.').reduce((acc, key) => acc?.[key], obj);
+
+    return requiredFields.every(field => {
+      const value = getNested(form, field);
+      return value && value.trim?.() !== '';
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -53,7 +85,16 @@ const ProfileScreen = ({navigation}) => {
             styles.toggleBtn,
             activeTab === 'settings' && styles.toggleActive,
           ]}
-          onPress={() => setActiveTab('settings')}>
+          onPress={() => {
+            if (!canAccessSettings()) {
+              Alert.alert(
+                'Complete Your Profile',
+                'You must complete all required info before accessing settings.',
+              );
+              return;
+            }
+            setActiveTab('settings');
+          }}>
           <Text
             style={[
               styles.toggleText,
@@ -65,7 +106,7 @@ const ProfileScreen = ({navigation}) => {
       </View>
 
       {activeTab === 'info' ? (
-        <ProfileInfo />
+        <ProfileInfo setForm={setForm} form={form} navigation={navigation} />
       ) : (
         <ProfileSettings navigation={navigation} />
       )}
@@ -73,13 +114,33 @@ const ProfileScreen = ({navigation}) => {
   );
 };
 
-const ProfileInfo = () => {
+const ProfileInfo = ({form, setForm, navigation}) => {
   const [user, setUser] = useState(null);
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        if (editMode) {
+          Alert.alert(
+            'Complete Required Info',
+            'You must complete your profile before exiting.',
+          );
+          return true; // Prevent back action
+        }
+        return false;
+      };
+
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => subscription.remove(); // ✅ modern cleanup
+    }, [editMode]),
+  );
 
   useEffect(() => {
     const loadUser = async () => {
@@ -90,6 +151,8 @@ const ProfileInfo = () => {
 
         const res = await fetch(`${API_BASE_URL}/api/users/${parsed._id}`);
         const data = await res.json();
+
+        await AsyncStorage.setItem('user', JSON.stringify(data));
         setUser(data);
         setForm({
           name: data.name || '',
@@ -160,6 +223,20 @@ const ProfileInfo = () => {
       'address.province',
       'address.zipCode',
     ];
+
+    const isDefaultImage =
+      !profileImage &&
+      (!user?.profileImage ||
+        user.profileImage.includes('profile.png') ||
+        user.profileImage === 'null' ||
+        user.profileImage === '');
+    if (isDefaultImage) {
+      Alert.alert(
+        'Missing Profile Image',
+        'You must capture a live profile photo before saving.',
+      );
+      return;
+    }
 
     const getNestedValue = (obj, path) => {
       return path.split('.').reduce((acc, key) => acc?.[key], obj);
@@ -234,8 +311,23 @@ const ProfileInfo = () => {
 
       setUser(updated);
       setEditMode(false);
-      await AsyncStorage.setItem('user', JSON.stringify(updated));
-      Alert.alert('Success', 'Profile updated.');
+
+      Alert.alert('Success', 'Profile updated.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            setEditMode(false);
+            if (!updated.pinCode || updated.pinCode === '') {
+              navigation.reset({
+                index: 0,
+                routes: [{name: 'SetPinScreen', params: {userId: updated._id}}],
+              });
+            } else {
+              console.log('✅ PIN already set, staying on profile');
+            }
+          },
+        },
+      ]);
     } catch (err) {
       Alert.alert('Error', err.message);
     }
@@ -254,13 +346,34 @@ const ProfileInfo = () => {
           <Image
             source={
               profileImage?.uri
-                ? {uri: profileImage.uri}
-                : user?.profileImage
-                ? {uri: `${API_BASE_URL}${user.profileImage}`}
-                : require('../assets/Profile.jpg')
+                ? (() => {
+                    console.log(
+                      '📷 Using camera-captured image:',
+                      profileImage.uri,
+                    );
+                    return {uri: profileImage.uri};
+                  })()
+                : user?.profileImage &&
+                  user.profileImage !== 'null' &&
+                  user.profileImage !== ''
+                ? (() => {
+                    const isExternal = user.profileImage.startsWith('http');
+                    const remoteUrl = isExternal
+                      ? user.profileImage
+                      : `${API_BASE_URL}${user.profileImage}`;
+                    console.log('🌐 Using remote image URL:', remoteUrl);
+                    return {uri: remoteUrl};
+                  })()
+                : (() => {
+                    console.log('🖼️ Using default profile image');
+                    return require('../assets/Profile.jpg');
+                  })()
             }
             style={styles.profileImage}
-            onError={() => console.log('⚠️ Failed to load profile image')}
+            onLoad={() => console.log('✅ Image loaded successfully')}
+            onError={e =>
+              console.log('❌ Failed to load image:', e.nativeEvent.error)
+            }
             resizeMode="cover"
           />
 
@@ -496,6 +609,11 @@ const ProfileSettings = ({navigation}) => {
   const [pinCode, setPinCode] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [changingPin, setChangingPin] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const handleLogout = async () => {
     console.log('🚪 Logging out...');
@@ -553,8 +671,20 @@ const ProfileSettings = ({navigation}) => {
 
       // ✅ Google Signout and Reset Prompt
       try {
+        GoogleSignin.configure({
+          webClientId:
+            '841356244009-icpfsekev3ptc9r73qmee7tn68orqpii.apps.googleusercontent.com',
+          offlineAccess: true,
+          prompt: 'select_account',
+        });
+
+        const tokens = await GoogleSignin.getTokens();
+        if (tokens.accessToken) {
+          await GoogleSignin.clearCachedAccessToken(tokens.accessToken);
+        }
+
         await GoogleSignin.signOut();
-        await GoogleSignin.clearCachedAccessToken(null);
+
         console.log('✅ Google sign-out and prompt reset complete');
       } catch (error) {
         console.error('❌ Google SignOut Error:', error);
@@ -694,6 +824,163 @@ const ProfileSettings = ({navigation}) => {
               </TouchableOpacity>
             </View>
           </Modal>
+        </View>
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>Change Password</Text>
+          <TouchableOpacity onPress={() => setShowPasswordModal(true)}>
+            <Ionicons
+              name="chevron-forward-outline"
+              size={20}
+              color="#3A6953"
+            />
+          </TouchableOpacity>
+          <Modal
+            isVisible={showPasswordModal}
+            onBackdropPress={() => setShowPasswordModal(false)}>
+            <View
+              style={{backgroundColor: 'white', borderRadius: 10, padding: 20}}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: 'bold',
+                  marginBottom: 10,
+                  color: '#3A6953',
+                }}>
+                Change Password
+              </Text>
+
+              <TextInput
+                placeholder="Current Password"
+                secureTextEntry
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                  borderRadius: 8,
+                  padding: 10,
+                  marginBottom: 10,
+                }}
+              />
+
+              <TextInput
+                placeholder="New Password"
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                  borderRadius: 8,
+                  padding: 10,
+                  marginBottom: 10,
+                }}
+              />
+
+              <TextInput
+                placeholder="Confirm Password"
+                secureTextEntry
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                  borderRadius: 8,
+                  padding: 10,
+                  marginBottom: 20,
+                }}
+              />
+
+              <TouchableOpacity
+                disabled={changingPassword}
+                onPress={async () => {
+                  if (newPassword !== confirmPassword) {
+                    Alert.alert('Mismatch', 'Passwords do not match');
+                    return;
+                  }
+                  try {
+                    setChangingPassword(true);
+                    const user = await AsyncStorage.getItem('user');
+                    const parsed = JSON.parse(user);
+
+                    const res = await fetch(
+                      `${API_BASE_URL}/api/auth/change-password`,
+                      {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                          userId: parsed._id,
+                          currentPassword,
+                          newPassword,
+                        }),
+                      },
+                    );
+
+                    const data = await res.json();
+                    if (!res.ok)
+                      throw new Error(
+                        data.error || 'Failed to change password',
+                      );
+
+                    Alert.alert('Success', 'Password changed successfully');
+                    setShowPasswordModal(false);
+                  } catch (err) {
+                    Alert.alert('Error', err.message);
+                  } finally {
+                    setChangingPassword(false);
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }
+                }}
+                style={{
+                  backgroundColor: '#3A6953',
+                  padding: 12,
+                  borderRadius: 10,
+                }}>
+                <Text
+                  style={{
+                    color: 'white',
+                    textAlign: 'center',
+                    fontWeight: 'bold',
+                  }}>
+                  {changingPassword ? 'Saving...' : 'Save Password'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Modal>
+        </View>
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>Terms and Conditions</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Terms')}>
+            <Ionicons
+              name="chevron-forward-outline"
+              size={20}
+              color="#3A6953"
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>Privacy Policy</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Privacy')}>
+            <Ionicons
+              name="chevron-forward-outline"
+              size={20}
+              color="#3A6953"
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>About WulaPal</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('About')}>
+            <Ionicons
+              name="chevron-forward-outline"
+              size={20}
+              color="#3A6953"
+            />
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity

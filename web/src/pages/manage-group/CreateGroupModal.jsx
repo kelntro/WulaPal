@@ -183,16 +183,28 @@ const [frequency, setFrequency] = useState("Weekly");
           </select>
         </div>
 
-          <div className="flex items-center">
-            <label className="w-1/3 text-[#3A6953] font-medium">Open Slots*</label>
-            <input 
-              type="number" 
-              placeholder="Max. of 12 Slots" 
-              value={slots}
-              onChange={(e) => setSlots(e.target.value)}
-              className="w-2/3 p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#99C6A9]" 
-            />
-          </div>
+        <div className="flex flex-col space-y-1 w-full">
+  <div className="flex items-center">
+    <label className="w-1/3 text-[#3A6953] font-medium">Open Slots*</label>
+    <input 
+      type="number" 
+      placeholder="Min. 2, Max. 12 Slots" 
+      value={slots}
+      onChange={(e) => setSlots(e.target.value)}
+      min={2}
+      max={12}
+      className={`w-2/3 p-3 border rounded-lg focus:outline-none focus:ring-1 ${
+        slots && (slots < 2 || slots > 12)
+          ? 'border-red-500 focus:ring-red-500'
+          : 'focus:ring-[#99C6A9]'
+      }`}
+    />
+  </div>
+  {slots && (slots < 2 || slots > 12) && (
+    <p className="text-red-500 text-sm ml-[33%]">Slots must be between 2 and 12.</p>
+  )}
+</div>
+
 
           <div className="flex items-center">
             <label className="w-1/3 text-[#3A6953] font-medium">Description*</label>

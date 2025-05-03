@@ -19,6 +19,7 @@ import GroupDetailsScreen from './screens/groups/GroupDetailsScreen';
 import TransactionDetailsScreen from './screens/transactions/TransactionDetailsScreen';
 import OTPVerificationScreen from './screens/OTPVerificationScreen';
 import DepositScreen from './screens/wallet/DepositScreen';
+import DepositSuccessScreen from './screens/wallet/DepositSuccessScreen';
 import TransferScreen from './screens/wallet/TransferScreen';
 import WithdrawScreen from './screens/wallet/WithdrawScreen';
 import NotificationScreen from './screens/notifications/NotificationScreen';
@@ -28,8 +29,11 @@ import SearchScreen from './screens/SearchScreen';
 import UserProfileScreen from './screens/UserProfileScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import MessageUserScreen from './screens/MessageUserScreen';
-import PinCodeScreen from './screens/PinCodeScreen';
-
+import PinCodeScreen from './screens/pin/PinCodeScreen';
+import TermsScreen from './screens/settings/TermsScreen';
+import PrivacyPolicyScreen from './screens/settings/PrivacyPolicyScreen';
+import AboutScreen from './screens/settings/AboutScreen';
+import SetPinScreen from './screens/pin/SetPinScreen';
 
 const Stack = createStackNavigator();
 
@@ -88,24 +92,34 @@ const [storedUserId, setStoredUserId] = useState(null);
           const res = await fetch(`${API_BASE_URL}/api/users/${parsedUser._id}`);
           const freshUser = await res.json();
     
-          if (!res.ok || !freshUser) {
-            console.warn('⚠️ Failed to fetch user profile.');
+          if (!res.ok || !freshUser || freshUser.error || !freshUser._id) {
+            console.warn('⚠️ Failed to fetch user profile. Clearing session and redirecting to login.');
+    
+            await AsyncStorage.removeItem('user');
+            await AsyncStorage.removeItem('token');
+    
+            Alert.alert(
+              'Session Expired',
+              'Your account no longer exists or was reset. Please log in again.'
+            );
+    
             setIsAuthenticated(false);
+            setLoading(false); // ✅ Ensure this is before return
             return;
           }
     
           await AsyncStorage.setItem('user', JSON.stringify(freshUser));
     
           console.log('🔍 Received pinCode value:', freshUser.pinCode);
-
+    
           if (freshUser.pinCode && freshUser.pinCode !== 'null') {
-          console.log('🔐 PIN is set. Requiring verification.');
-          setStoredUserId(freshUser._id);
-          setShowPinScreen(true);
-        } else {
-          console.log('✅ No PIN set. Logging in directly.');
-          setIsAuthenticated(true);
-        }
+            console.log('🔐 PIN is set. Requiring verification.');
+            setStoredUserId(freshUser._id);
+            setShowPinScreen(true);
+          } else {
+            console.log('✅ No PIN set. Logging in directly.');
+            setIsAuthenticated(true);
+          }
     
           // 🔄 Refresh notifications
           await setupNotifications();
@@ -117,17 +131,22 @@ const [storedUserId, setStoredUserId] = useState(null);
               body: JSON.stringify({ userId: freshUser._id, fcmToken }),
             });
           }
+    
         } catch (err) {
           console.error('❌ Session check failed:', err.message);
           setIsAuthenticated(false);
+          setLoading(false); // ✅ Catch block sets loading to false
+          return;
         }
       } else {
         console.log('🔒 No session found. Redirecting to login.');
         setIsAuthenticated(false);
+        setLoading(false); // ✅ Handles missing token/user session
+        return;
       }
     
-      setLoading(false);
-    };    
+      setLoading(false); // ✅ Covers successful case
+    };       
     
 
     checkSession();
@@ -204,19 +223,20 @@ const [storedUserId, setStoredUserId] = useState(null);
         ) : (
           <>
             <Stack.Screen name="LoginScreen" component={LoginScreen} />
-            <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
             <Stack.Screen name="OnboardingOne" component={OnboardingOne} />
             <Stack.Screen name="OnboardingTwo" component={OnboardingTwo} />
             <Stack.Screen name="OnboardingThree" component={OnboardingThree} />
           </>
         )}
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
         <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
         <Stack.Screen
           name="TransactionDetails"
           component={TransactionDetailsScreen}
         />
         <Stack.Screen name="DepositScreen" component={DepositScreen} />
+        <Stack.Screen name="DepositSuccessScreen" component={DepositSuccessScreen} />
         <Stack.Screen name="TransferScreen" component={TransferScreen} />
         <Stack.Screen name="WithdrawScreen" component={WithdrawScreen} />
         <Stack.Screen
@@ -229,6 +249,12 @@ const [storedUserId, setStoredUserId] = useState(null);
         <Stack.Screen name="SearchScreen" component={SearchScreen} />
         <Stack.Screen name="UserProfileScreen" component={UserProfileScreen} />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+
+        <Stack.Screen name="Terms" component={TermsScreen} />
+        <Stack.Screen name="Privacy" component={PrivacyPolicyScreen} />
+        <Stack.Screen name="About" component={AboutScreen} />
+
+        <Stack.Screen name="SetPinScreen" component={SetPinScreen} />
 
         <Stack.Screen name="MessageUserScreen" component={MessageUserScreen} />
         <Stack.Screen name="Main" component={BottomTabNavigator} />

@@ -6,7 +6,9 @@ const ProcessingTransaction = () => {
 
   useEffect(() => {
     const savePlan = async () => {
-      const userId = localStorage.getItem("userId");
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      const userId = storedUser?._id;
+
       const selectedPlan = localStorage.getItem("selectedPlan");
 
       if (!userId || !selectedPlan) {
@@ -15,13 +17,16 @@ const ProcessingTransaction = () => {
       }
 
       try {
-        const response = await fetch("http://localhost:5050/api/users/update-plan", {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId, plan: selectedPlan }),
-        });
+        const response = await fetch(
+          "http://localhost:5050/api/users/update-plan",
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userId, plan: selectedPlan }),
+          }
+        );
 
         if (!response.ok) throw new Error("Failed to update plan.");
       } catch (err) {
@@ -40,7 +45,11 @@ const ProcessingTransaction = () => {
         <div className="flex flex-col items-center bg-white shadow-lg rounded-2xl p-6 w-[1000px] h-[600px] max-w-full">
           {/* Logo */}
           <div className="mb-2 mt-[-30px]">
-            <img src="/assets/1.png" alt="Logo" className="w-[300px] h-[300px]" />
+            <img
+              src="/assets/1.png"
+              alt="Logo"
+              className="w-[300px] h-[300px]"
+            />
           </div>
 
           {/* Text */}
@@ -66,12 +75,17 @@ const ProcessingTransaction = () => {
         <div className="flex flex-col items-center bg-white shadow-lg rounded-2xl p-6 w-[1000px] h-[600px] max-w-full">
           {/* Logo */}
           <div className="mb-2 mt-[-30px]">
-            <img src="/assets/1.png" alt="Logo" className="w-[300px] h-[300px]" />
+            <img
+              src="/assets/1.png"
+              alt="Logo"
+              className="w-[300px] h-[300px]"
+            />
           </div>
 
           {/* Success Message */}
           <p className="text-lg text-gray-700 text-center mb-[10px] mt-[-50px]">
-            You had successfully purchased a starter plan on WulaPal. Thank you for purchasing with us!
+            You had successfully purchased a starter plan on WulaPal. Thank you
+            for purchasing with us!
           </p>
 
           {/* Success Icon */}
@@ -79,7 +93,8 @@ const ProcessingTransaction = () => {
 
           {/* Back to Dashboard Link */}
           <a href="/dashboard" className="mt-4 text-[#7C87AA] hover:underline">
-            Back to <span className="font-semibold text-[#3A6953]">Dashboard</span>
+            Back to{" "}
+            <span className="font-semibold text-[#3A6953]">Dashboard</span>
           </a>
         </div>
       )}

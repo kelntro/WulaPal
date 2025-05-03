@@ -18,7 +18,8 @@ const GroupSchema = new mongoose.Schema(
     members: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        joinDate: { type: Date, default: Date.now }
+        joinDate: { type: Date, default: Date.now },
+        depositAmount: { type: Number, default: 0 } 
       }
     ],
 

@@ -172,9 +172,29 @@ const handleGoogleLogin = async () => {
 
     console.log("✅ Backend member login/register success:", result.user);
 
-    // ✅ Update local storage from backend confirmed user
     await AsyncStorage.setItem("user", JSON.stringify(result.user));
     console.log("💾 Updated user saved from backend.");
+
+    // ✅ Save FCM Token after Google login
+    const fcmToken = await getMessaging(getApp()).getToken();
+    console.log("📲 FCM Token:", fcmToken);
+
+    if (fcmToken) {
+      const res = await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: result.user._id, fcmToken }),
+      });
+
+      const fcmResult = await res.json();
+      console.log("📥 FCM save response:", fcmResult);
+
+      if (!res.ok) throw new Error("FCM token failed to save");
+
+      console.log("✅ FCM token saved successfully");
+    } else {
+      console.warn("⚠️ No FCM token received");
+    }
 
     navigation.reset({
       index: 0,

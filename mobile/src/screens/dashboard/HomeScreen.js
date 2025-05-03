@@ -20,6 +20,7 @@ const screenHeight = Dimensions.get('window').height;
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const now = new Date();
 
   const [loading, setLoading] = useState(true);
   const [upcomingContributions, setUpcomingContributions] = useState([]);
@@ -27,6 +28,7 @@ const HomeScreen = () => {
   const [userName, setUserName] = useState('');
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [user, setUser] = useState(null);
+
 
   const fetchDashboardData = async () => {
     try {
@@ -54,17 +56,54 @@ const HomeScreen = () => {
             type: 'contribution_reminder',
           },
         },
-      );
-
-      const contributions = contributionsRes.data.map((item, index) => ({
-        id: item._id || index.toString(),
-        group: item.groupName || 'Unnamed Group',
-        time: new Date(item.date).toLocaleString(),
-        frequency: 'Monthly',
-        amount: item.amount ? `₱${item.amount.toLocaleString()}` : '₱1,000',
-      }));
-
-      setUpcomingContributions(contributions);
+      );const groupsRes = await axios.get(`${API_BASE_URL}/api/groups/member/${parsedUser._id}`);
+      const groupList = groupsRes.data || [];
+      console.log('📦 Raw groups:', groupList);
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const contributions = groupList
+        .filter(group => group.status === 'active' && group.lastContributionDate && group.frequency)
+        .map((group, index) => {
+          const lastDate = new Date(group.lastContributionDate);
+          let nextDate = new Date(lastDate);
+      
+          switch (group.frequency) {
+            case 'Weekly':
+              nextDate.setDate(lastDate.getDate() + 7);
+              break;
+            case 'Bi-Weekly':
+              nextDate.setDate(lastDate.getDate() + 14);
+              break;
+            case 'Monthly':
+              nextDate.setMonth(lastDate.getMonth() + 1);
+              break;
+            default:
+              break;
+          }
+      
+          const isUpcoming = nextDate >= today;
+      
+          console.log('🔍 Group:', group.name, 'Last:', lastDate, 'Next:', nextDate, 'Show:', isUpcoming);
+      
+          return isUpcoming
+            ? {
+                id: group._id || index.toString(),
+                group: group.name,
+                time: nextDate.toLocaleString(),
+                frequency: group.frequency,
+                amount: group.contributionAmount
+                  ? `₱${Number(group.contributionAmount).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}`
+                  : '₱0.00',
+              }
+            : null;
+        })
+        .filter(item => item !== null);
+      
+      setUpcomingContributions(contributions);      
 
       const balanceRes = await axios.get(`${API_BASE_URL}/api/wallet/balance`, {
         params: {userId: parsedUser._id},
@@ -138,8 +177,11 @@ const HomeScreen = () => {
               Upcoming Contributions
             </Text>
             <TouchableOpacity>
-              <Text style={styles.monthText}>Month Of April ›</Text>
-            </TouchableOpacity>
+            <Text style={styles.monthText}>
+              Month of {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()} ›
+            </Text>
+          </TouchableOpacity>
+
           </View>
 
           <View style={styles.contributionList}>
@@ -169,7 +211,7 @@ const HomeScreen = () => {
       </ScrollView>
 
       {/* Modal for incomplete profile */}
-      <Modal visible={showIncompleteModal} transparent animationType="fade">
+      <Modal visible={showIncompleteModal} transparent animationType="fade" onRequestClose={() => {}} hardwareAccelerated>
         <View
           style={{
             flex: 1,

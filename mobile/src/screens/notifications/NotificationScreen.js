@@ -130,7 +130,7 @@ const NotificationScreen = () => {
       const parsed = user ? JSON.parse(user) : null;
       if (!parsed?._id || !notification.groupId) return;
 
-      const res = await axios.post("${API_BASE_URL}/api/confirm-contribution", {
+      const res = await axios.post(`${API_BASE_URL}/api/confirm-contribution`, {
         userId: parsed._id,
         groupId: notification.groupId
       });

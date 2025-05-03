@@ -382,7 +382,7 @@ app.post("/api/groups/:groupId/add-member", async (req, res) => {
 
 app.post("/api/groups/:groupId/confirm-member", async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId, depositAmount } = req.body;
     const { groupId } = req.params;
 
     const group = await Group.findById(groupId);
@@ -393,7 +393,52 @@ app.post("/api/groups/:groupId/confirm-member", async (req, res) => {
       return res.status(400).json({ error: "Already joined" });
     }
 
-    group.members.push({ userId, joinDate: new Date() });
+    if (group.members.length >= group.requiredMembers) {
+      return res.status(400).json({ error: "Group is already full" });
+    }
+
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) return res.status(404).json({ error: "Wallet not found" });
+
+    const minRequired = Number(group.contributionAmount);
+    const parsedDeposit = Number(depositAmount);
+
+    if (isNaN(parsedDeposit) || parsedDeposit <= 0) {
+      return res.status(400).json({ error: "Deposit must be a valid amount" });
+    }
+
+    if (parsedDeposit < minRequired) {
+      return res.status(400).json({
+        error: `Minimum deposit is ₱${minRequired}. You entered ₱${parsedDeposit}`,
+      });
+    }
+
+    if (wallet.balance < parsedDeposit) {
+      return res.status(400).json({
+        error: `Insufficient balance. You need at least ₱${parsedDeposit} to confirm.`,
+      });
+    }
+
+    wallet.balance -= parsedDeposit;
+    await wallet.save();
+
+    await Transaction.create({
+      userId,
+      type: "deposit",
+      amount: parsedDeposit,
+      metadata: {
+        groupId: group._id.toString(),
+        type: "security_deposit"
+      },
+      status: "confirmed",
+    });
+
+    group.members.push({
+      userId: new mongoose.Types.ObjectId(userId),
+      joinDate: new Date(),
+      depositAmount: parsedDeposit
+    });
+
     await group.save();
 
     // ✅ Mark the invite notification as processed
@@ -407,45 +452,42 @@ app.post("/api/groups/:groupId/confirm-member", async (req, res) => {
       userId,
       groupId,
       type: "member_confirmed",
-      message: `✅ You joined the group "${group.name}".`,
+      message: `✅ You joined the group "${group.name}" with a ₱${parsedDeposit} deposit.`,
       processed: true
     });
 
     const io = req.app.get("io");
     io.emit("memberNotification", {
       userId,
-      message: `✅ You joined the group "${group.name}".`,
+      message: `✅ You joined the group "${group.name}" with a ₱${parsedDeposit} deposit.`,
       date: new Date()
     });
 
-    res.json({ success: true, message: "Member confirmed and added to group." });
+    const groupHandler = await User.findById(group.handler);
+    if (groupHandler) {
+      const organizerMessage = `✅ "${userId}" confirmed and joined the group "${group.name}".`;
+
+      const organizerNotif = await Notification.create({
+        organizerId: groupHandler._id,
+        message: organizerMessage,
+      });
+
+      io.emit("groupUpdated", {
+        organizerId: groupHandler._id.toString(),
+        message: organizerMessage,
+        date: new Date(),
+        _id: organizerNotif._id,
+        read: organizerNotif.read
+      });
+    }
+
+    res.json({ success: true, message: "Member confirmed with deposit and added to group." });
+
   } catch (err) {
     console.error("❌ Confirm member error:", err.message);
     res.status(500).json({ error: "Server error while confirming membership." });
   }
-  // ✅ Notify organizer that the member joined the group
-const groupHandler = await User.findById(group.handler);
-if (groupHandler) {
-  const organizerMessage = `✅ "${userId}" confirmed and joined the group "${group.name}".`;
-  
-  // Save notification to DB
-  const organizerNotif = await Notification.create({
-    organizerId: groupHandler._id,
-    message: organizerMessage,
-  });
-
-  // Emit real-time notification to organizer
-  io.emit("groupUpdated", {
-    organizerId: groupHandler._id.toString(),
-    message: organizerMessage,
-    date: new Date(),
-    _id: organizerNotif._id,
-    read: organizerNotif.read
-  });
-}
-
 });
-
 
 app.get("/api/users/find", async (req, res) => {
   try {
@@ -508,92 +550,101 @@ app.get("/api/users/find", async (req, res) => {
 //join groups
 app.post("/api/join-group", async (req, res) => {
   try {
-    const { userId, groupId } = req.body;
+    const { userId, groupId, depositAmount } = req.body;
 
-    if (!userId || !groupId) {
-      return res.status(400).json({ error: "User ID and Group ID are required" });
+    if (!userId || !groupId || !depositAmount) {
+      return res.status(400).json({ error: "User ID, Group ID and deposit amount are required" });
     }
 
     const group = await Group.findById(groupId);
     if (!group) return res.status(404).json({ error: "Group not found" });
 
-    // 🔥 Ensure members array does not contain null values
     group.members = group.members.filter(member => member !== null && member !== undefined);
 
-    // Stop accepting if full
     if (group.members.length >= group.requiredMembers) {
       return res.status(400).json({ error: "Group is already full" });
     }
 
-    // Prevent duplicate joining
     if (group.members.some(member => member.userId.toString() === userId.toString())) {
       return res.status(400).json({ error: "User already joined" });
     }
 
-    // Check member’s wallet balance
     const wallet = await Wallet.findOne({ userId });
-    if (!wallet) {
-      return res.status(404).json({ error: "Wallet not found" });
+    if (!wallet) return res.status(404).json({ error: "Wallet not found" });
+
+    const minRequired = Number(group.contributionAmount);
+    const parsedDeposit = Number(depositAmount);
+
+    if (isNaN(parsedDeposit) || parsedDeposit <= 0) {
+      return res.status(400).json({ error: "Deposit must be a valid amount" });
     }
 
-    const contributionAmount = Number(group.contributionAmount);
-    if (wallet.balance < contributionAmount) {
+    if (parsedDeposit < minRequired) {
       return res.status(400).json({
-        error: `Insufficient balance. You need ₱${contributionAmount} to join.`,
+        error: `Minimum deposit is ₱${minRequired}. You entered ₱${parsedDeposit}`,
       });
     }
-    // ✅ Add new member
-    group.members.push({
-      userId: new mongoose.Types.ObjectId(userId),
-      joinDate: new Date()
+
+    if (wallet.balance < parsedDeposit) {
+      return res.status(400).json({
+        error: `Insufficient balance. You need at least ₱${parsedDeposit} to join.`,
+      });
+    }
+
+    // Deduct
+    wallet.balance -= parsedDeposit;
+    await wallet.save();
+
+    const referenceId = `SECURITY-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+
+    await Transaction.create({
+      userId,
+      type: "deposit",
+      amount: parsedDeposit,
+      referenceId,
+      metadata: {
+        groupId: group._id.toString(),
+        type: "security_deposit"
+      },
+      status: "confirmed",
     });
 
-    // If full, activate group
+    group.members.push({
+      userId: new mongoose.Types.ObjectId(userId),
+      joinDate: new Date(),
+      depositAmount: parsedDeposit
+    });
+
     if (group.members.length >= group.requiredMembers) {
       group.status = "active";
       group.startDate = new Date();
       group.lastContributionDate = new Date(Date.now() - 5 * 60 * 1000);
       group.hasStarted = false;
 
-      // ✅ Trigger contribution check after 5 minutes
       setTimeout(async () => {
         const Group = require("./models/Group");
         const { handleAutoContribution } = require("./jobs/tasks");
-
         const freshGroup = await Group.findById(group._id);
         if (freshGroup && !freshGroup.hasStarted) {
-          console.log(`⏰ [${freshGroup.name}] 5 minutes passed. Triggering first contribution check...`);
           await handleAutoContribution();
         }
       }, 5 * 60 * 1000);
 
-      // ✅ Setup payouts
-      let frequencyDays;
-      switch (group.frequency) {
-        case "Bi-Weekly":
-          frequencyDays = 14;
-          break;
-        case "Weekly":
-          frequencyDays = 7;
-          break;
-        case "Monthly":
-          frequencyDays = 30;
-          break;
-        default:
-          frequencyDays = 7;
-      }
-
+      let frequencyDays = group.frequency === "Bi-Weekly" ? 14 : group.frequency === "Monthly" ? 30 : 7;
       const now = new Date();
-      const shuffled = [...group.members].sort(() => Math.random() - 0.5);
 
-      group.payouts = shuffled.map((member, index) => ({
+      const sorted = [...group.members].sort((a, b) => {
+        if (b.depositAmount !== a.depositAmount) return b.depositAmount - a.depositAmount;
+        return new Date(a.joinDate) - new Date(b.joinDate);
+      });
+
+      group.payouts = sorted.map((member, index) => ({
         recipientId: member.userId,
         payoutDate: new Date(now.getTime() + index * frequencyDays * 24 * 60 * 60 * 1000),
       }));
 
       group.nextPayoutDate = group.payouts[0].payoutDate;
 
-      // ✅ Notify members of their payout schedule
       for (const payout of group.payouts) {
         const user = await User.findById(payout.recipientId);
         const formattedDate = new Date(payout.payoutDate).toLocaleDateString("en-US", {
@@ -618,19 +669,21 @@ app.post("/api/join-group", async (req, res) => {
           date: new Date()
         });
       }
- // ✅ Notify the organizer that group started
-      await Notification.create({
-        organizerId: organizer._id,
-        message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
-      });
-      
-      io.emit("groupUpdated", {
-        organizerId: organizer._id.toString(),
-        message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
-        date: new Date(),
-      });
-      
-      // ✅ Notify all members group started
+
+      const organizer = await User.findById(group.handler);
+      if (organizer) {
+        await Notification.create({
+          organizerId: organizer._id,
+          message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
+        });
+
+        io.emit("groupUpdated", {
+          organizerId: organizer._id.toString(),
+          message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
+          date: new Date(),
+        });
+      }
+
       for (const member of group.members) {
         await MemberNotification.create({
           userId: member.userId,
@@ -649,7 +702,6 @@ app.post("/api/join-group", async (req, res) => {
 
     await group.save();
 
-    // ✅ Notify organizer
     const organizer = await User.findById(group.handler);
     if (organizer) {
       const newNotif = await Notification.create({
@@ -798,39 +850,71 @@ app.post("/api/confirm-contribution", async (req, res) => {
   
             if (group.currentPayoutIndex >= group.payouts.length) {
               group.status = "completed";
-  
+            
               for (const member of group.members) {
+                // 💰 Refund initial deposit
+                const wallet = await Wallet.findOne({ userId: member.userId });
+                if (wallet && member.depositAmount > 0) {
+                  wallet.balance += member.depositAmount;
+                  await wallet.save();
+            
+                  const refundRef = `REFUND-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+                  await Transaction.create({
+                    userId: member.userId,
+                    type: "receive",
+                    amount: member.depositAmount,
+                    referenceId: refundRef,
+                    metadata: {
+                      groupId: group._id.toString(),
+                      type: "deposit_refund"
+                    },
+                    status: "confirmed"
+                  });
+            
+                  // 🛎️ Notify member
+                  await MemberNotification.create({
+                    userId: member.userId,
+                    groupId: group._id,
+                    type: "deposit_refund",
+                    message: `💰 Your initial deposit of ₱${member.depositAmount} for group "${group.name}" has been refunded.`,
+                    processed: true
+                  });
+            
+                  io.emit("memberNotification", {
+                    userId: member.userId.toString(),
+                    message: `💰 Your initial deposit of ₱${member.depositAmount} for group "${group.name}" has been refunded.`,
+                    date: new Date()
+                  });
+                }
+            
+                // 🎉 Notify about group completion
                 await MemberNotification.create({
                   userId: member.userId,
                   groupId: group._id,
                   message: `✅ Group "${group.name}" has completed all payout cycles.`,
                   type: "group_completed",
                 });
-                // 💬 Send real-time notification to organizer
-                await Notification.create({
-                  organizerId: group.handler,
-                  message: `🏁 Group "${group.name}" has completed all payout cycles.`,
-                });
-                
-                io.emit("groupUpdated", {
-                  organizerId: group.handler.toString(),
-                  message: `🏁 Group "${group.name}" has completed all payout cycles.`,
-                  date: new Date(),
-                });
-
-                
-                // 💬 Send real-time notification to members
-                const io = req.app.get("io");
+            
                 io.emit("memberNotification", {
-                userId: member.userId.toString(),
-                message: `✅ Group "${group.name}" has completed all payout cycles.`,
-                date: new Date()
+                  userId: member.userId.toString(),
+                  message: `✅ Group "${group.name}" has completed all payout cycles.`,
+                  date: new Date()
                 });
-
               }
-  
+            
+              await Notification.create({
+                organizerId: group.handler,
+                message: `🏁 Group "${group.name}" has completed all payout cycles.`,
+              });
+            
+              io.emit("groupUpdated", {
+                organizerId: group.handler.toString(),
+                message: `🏁 Group "${group.name}" has completed all payout cycles.`,
+                date: new Date(),
+              });
+            
               console.log(`🏁 Group "${group.name}" is now completed.`);
-            }
+            }            
   
             group.lastContributionDate = new Date();
             await group.save();
@@ -1190,7 +1274,8 @@ app.post('/api/users/remove-fcm-token', async (req, res) => {
 });
 
   
-require("./jobs/roscaScheduler");
+const cronJobs = require("./jobs/roscaScheduler");
+cronJobs(io);
 
 // ✅ Organizer Profile Routes
 const profileRoutes = require("./routes/profileRoutes");
@@ -1209,3 +1294,4 @@ app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
 app.use('/api', uploadRoutes);
 app.use('/uploads', express.static('uploads'));
+app.use('/api', require('./routes/groupRoutes'));
