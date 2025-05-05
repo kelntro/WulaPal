@@ -139,6 +139,9 @@ const HomeScreen = () => {
       {/* Header Icons */}
       <View style={styles.header}>
         <View style={styles.iconRow}>
+        <TouchableOpacity onPress={() => navigation.navigate('SearchScreen')}>
+          <Icon name="search" size={26} color="#3A6953" />
+        </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('GroupChats')}>
             <Icon name="chatbubbles" size={26} color="#3A6953" />
           </TouchableOpacity>

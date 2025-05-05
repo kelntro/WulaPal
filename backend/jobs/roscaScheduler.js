@@ -8,19 +8,19 @@ const {
 
 module.exports = (io) => {
   // Auto-Contribution
-  cron.schedule("*/1 * * * *", async () => {
+  cron.schedule("*/3 * * * *", async () => {
     console.log("🕐 [Cron] Running Auto-Contribution Check...");
     await handleAutoContribution(io);
   });
 
   // Auto-Payout
-  cron.schedule("*/1 * * * *", async () => {
+  cron.schedule("*/3 * * * *", async () => {
     console.log("💸 [Cron] Running Auto-Payout Check...");
     await handleAutoPayouts(io);
   });
 
   // Confirm Payments
-  cron.schedule("*/1 * * * *", async () => {
+  cron.schedule("*/3 * * * *", async () => {
     console.log("🔁 [Cron] Checking pending contribution confirmations...");
     await confirmPendingPayments(io);
   });

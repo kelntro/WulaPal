@@ -1,4 +1,4 @@
-import React from "react";
+import { React, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./styles/global.css";
 
@@ -30,7 +30,21 @@ import MainLayout from "./components/MainLayout";
 
 const App = () => {
   const { user } = useAuth();
+  useEffect(() => {
+    if (!user?._id || user.role !== "organizer") return;
 
+    const interval = setInterval(() => {
+      fetch(`http://localhost:5050/api/users/last-active/${user._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+      }).catch((err) =>
+        console.warn("⚠️ Failed to update lastActive (web):", err.message)
+      );
+    }, 120000); // every 2 minutes
+
+    return () => clearInterval(interval);
+  }, [user?._id, user?.role]);
+  
   if (user === undefined) return <LoadingScreen />; // 🛑 Wait for hydration
 
   return (

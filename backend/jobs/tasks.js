@@ -25,7 +25,7 @@ const handleAutoContribution = async () => {
       if (!group.hasStarted) {
         const minuteDifference = Math.floor((now - (group.lastContributionDate || group.createdAt)) / (1000 * 60));
         
-        if (minuteDifference >= 1) {
+        if (minuteDifference >= 5) {
           console.log(`🚀 [Group: ${group.name}] First contribution cycle is starting now.`);
           group.hasStarted = true;
           await group.save();

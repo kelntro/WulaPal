@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -42,7 +43,8 @@ const ProfileScreen = ({navigation}) => {
       'gender',
       'occupation',
       'sourceOfFunds',
-      'nationalIdNumber',
+      'idType',
+      'idImage',
       'emergencyContactName',
       'emergencyContactMobile',
       'address.street',
@@ -145,15 +147,35 @@ const ProfileInfo = ({form, setForm, navigation}) => {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        console.log("📦 Getting stored user from AsyncStorage...");
         const stored = await AsyncStorage.getItem('user');
         const parsed = stored ? JSON.parse(stored) : null;
-        if (!parsed || !parsed._id) return;
-
-        const res = await fetch(`${API_BASE_URL}/api/users/${parsed._id}`);
+        console.log("🔐 Parsed stored user:", parsed);
+    
+        if (!parsed || !parsed._id) {
+          console.warn("⚠️ Missing or invalid user data in AsyncStorage.");
+          return;
+        }
+    
+        const url = `${API_BASE_URL}/api/users/${parsed._id}`;
+        console.log("🌐 Fetching user from:", url);
+    
+        const res = await fetch(url);
+        console.log("📡 Response status:", res.status);
+    
         const data = await res.json();
-
+        console.log("📥 Response data:", data);
+    
+        if (!res.ok) {
+          console.error("❌ Server responded with error:", data?.message || data?.error);
+          throw new Error(data?.message || data?.error || 'Unknown server error');
+        }
+    
         await AsyncStorage.setItem('user', JSON.stringify(data));
+        console.log("💾 Updated AsyncStorage with fresh user data");
+    
         setUser(data);
+    
         setForm({
           name: data.name || '',
           email: data.email || '',
@@ -173,7 +195,8 @@ const ProfileInfo = ({form, setForm, navigation}) => {
           gender: data.gender || '',
           occupation: data.occupation || '',
           sourceOfFunds: data.sourceOfFunds || '',
-          nationalIdNumber: data.nationalIdNumber || '',
+          idType: data.idType || '',
+          idImage: data.idImage || '',
           emergencyContactName:
             typeof data.emergencyContact === 'string'
               ? JSON.parse(data.emergencyContact).name || ''
@@ -183,25 +206,63 @@ const ProfileInfo = ({form, setForm, navigation}) => {
               ? JSON.parse(data.emergencyContact).mobile || ''
               : data.emergencyContact?.mobile || '',
         });
+    
+        console.log("✅ Form initialized successfully.");
       } catch (err) {
-        Alert.alert('Error', 'Failed to load user info.');
+        console.error("❌ loadUser error:", err.message);
+        Alert.alert('Error', `Failed to load user info: ${err.message}`);
       } finally {
+        console.log("🔚 Finished loadUser()");
         setLoading(false);
       }
     };
+    
 
     loadUser();
   }, []);
 
   const handleCapturePhoto = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+      );
+      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+        Alert.alert('Permission denied', 'Camera permission is required.');
+        return;
+      }
+    }
+  
     const result = await launchCamera({
       mediaType: 'photo',
       cameraType: 'front',
+      saveToPhotos: true, // ✅ ensures image saved and URI available
+      includeBase64: false,
     });
-    if (!result.didCancel && result.assets?.length > 0) {
-      setProfileImage(result.assets[0]);
+  
+    if (result.didCancel) {
+      console.log('📸 User cancelled camera');
+      return;
     }
+  
+    const image = result.assets?.[0];
+    if (!image || !image.uri) {
+      Alert.alert('Error', 'Failed to capture image. Try again.');
+      return;
+    }
+  
+    const fileName =
+      image.fileName || `profile_${Date.now()}.${image.uri.split('.').pop()}`;
+    const type = image.type || 'image/jpeg';
+  
+    const safeImage = {
+      uri: image.uri,
+      fileName,
+      type,
+    };
+  
+    setProfileImage(safeImage);
   };
+  
 
   const handleSave = async () => {
     // Simple validation
@@ -214,7 +275,7 @@ const ProfileInfo = ({form, setForm, navigation}) => {
       'gender',
       'occupation',
       'sourceOfFunds',
-      'nationalIdNumber',
+      'idType',
       'emergencyContactName',
       'emergencyContactMobile',
       'address.street',
@@ -253,16 +314,6 @@ const ProfileInfo = ({form, setForm, navigation}) => {
       }
     }
 
-    // National ID format validation
-    const nationalIdRegex = /^[0-9]{12}$/;
-    if (!nationalIdRegex.test(form.nationalIdNumber)) {
-      Alert.alert(
-        'Invalid National ID',
-        'National ID number must be exactly 12 digits.',
-      );
-      return;
-    }
-
     try {
       const payload = {
         userId: user._id,
@@ -275,7 +326,6 @@ const ProfileInfo = ({form, setForm, navigation}) => {
         gender: form.gender,
         occupation: form.occupation,
         sourceOfFunds: form.sourceOfFunds,
-        nationalIdNumber: form.nationalIdNumber,
         emergencyContact: {
           name: form.emergencyContactName,
           mobile: form.emergencyContactMobile,
@@ -300,14 +350,31 @@ const ProfileInfo = ({form, setForm, navigation}) => {
         });
       }
 
+      formData.append('idType', form.idType);
+      if (form.idImage?.uri) {
+        formData.append('idImageFile', {
+          uri: form.idImage.uri,
+          type: form.idImage.type,
+          name: form.idImage.name || 'id.jpg',
+        });
+        
+      }
+      
       const response = await fetch(`${API_BASE_URL}/api/users/update`, {
         method: 'PATCH',
         headers: {'Content-Type': 'multipart/form-data'},
         body: formData,
       });
 
-      const updated = await response.json();
+      const contentType = response.headers.get('content-type');
+      const updated = contentType && contentType.includes('application/json')
+        ? await response.json()
+        : await response.text(); // fallback to text if not JSON
+      
+      if (!response.ok) throw new Error(updated?.error || updated || 'Update failed');
+      
       if (!response.ok) throw new Error(updated.error || 'Update failed');
+      console.log('📤 Upload response:', updated);
 
       setUser(updated);
       setEditMode(false);
@@ -421,7 +488,6 @@ const ProfileInfo = ({form, setForm, navigation}) => {
           {label: 'Country', key: 'country'},
           {label: 'Occupation', key: 'occupation'},
           {label: 'Source of Funds', key: 'sourceOfFunds'},
-          {label: 'National ID Number', key: 'nationalIdNumber'},
           {label: 'Emergency Contact Name', key: 'emergencyContactName'},
           {label: 'Emergency Contact Mobile', key: 'emergencyContactMobile'},
         ].map((item, index) => (
@@ -504,7 +570,143 @@ const ProfileInfo = ({form, setForm, navigation}) => {
             </View>
           </View>
         ))}
+        <View style={styles.infoRow}>
+  <View style={styles.infoField}>
+    <View style={styles.infoContent}>
+      <Text style={styles.infoLabel}>ID Type</Text>
+      {editMode ? (
+        <View
+          style={{
+            borderWidth: 1,
+            borderColor: '#ccc',
+            borderRadius: 5,
+            backgroundColor: '#fff',
+          }}>
+          <Picker
+            selectedValue={form.idType}
+            onValueChange={value =>
+              setForm(prev => ({...prev, idType: value}))
+            }>
+            <Picker.Item label="Select ID Type" value="" />
+            {[
+              'Philippine National ID (PhilSys)',
+              'Passport',
+              'Driver\'s License',
+              'SSS ID',
+              'GSIS eCard',
+              'UMID',
+              'Voter\'s ID',
+              'PRC ID',
+              'Postal ID',
+              'PhilHealth ID',
+              'TIN ID',
+              'Barangay Certificate with Photo',
+            ].map(type => (
+              <Picker.Item key={type} label={type} value={type} />
+            ))}
+          </Picker>
+        </View>
+      ) : (
+        <Text style={styles.infoValue}>{form.idType || '—'}</Text>
+      )}
+    </View>
+    {editMode && (
+      <MaterialCommunityIcons
+        name="circle-edit-outline"
+        size={20}
+        color="#3A6953"
+      />
+    )}
+  </View>
+</View>
 
+<View style={styles.infoRow}>
+  <View style={styles.infoField}>
+    <View style={styles.infoContent}>
+      <Text style={styles.infoLabel}>Upload ID Image</Text>
+      {editMode ? (
+        <>
+          <TouchableOpacity
+            onPress={async () => {
+  const {launchImageLibrary} = await import('react-native-image-picker');
+
+  const result = await launchImageLibrary({
+    mediaType: 'photo',
+    includeBase64: false,
+  });
+
+  if (result.didCancel || !result.assets?.[0]?.uri) {
+    Alert.alert('Upload Cancelled');
+    return;
+  }
+
+  const image = result.assets[0];
+  setForm(prev => ({
+    ...prev,
+    idImage: {
+      uri: image.uri,
+      name: image.fileName || 'id.jpg',
+      type: image.type || 'image/jpeg',
+    },
+  }));
+}}
+
+            style={{
+              backgroundColor: '#3A6953',
+              padding: 8,
+              borderRadius: 5,
+              marginTop: 5,
+            }}>
+            <Text style={{color: '#fff'}}>Capture ID</Text>
+          </TouchableOpacity>
+
+          {form.idImage?.uri && (
+            <Image
+              source={{uri: form.idImage.uri}}
+              style={{
+                width: 100,
+                height: 100,
+                marginTop: 10,
+                borderRadius: 8,
+                borderColor: '#ccc',
+                borderWidth: 1,
+              }}
+              resizeMode="cover"
+            />
+          )}
+        </>
+      ) : form.idImage ? (
+        <Image
+          source={{
+            uri:
+            typeof form.idImage === 'string'
+              ? form.idImage.startsWith('http')
+                ? form.idImage
+                : `${API_BASE_URL}${form.idImage}`
+              : form.idImage?.uri || '',
+          }}
+          style={{
+            width: 100,
+            height: 100,
+            marginTop: 5,
+            borderRadius: 8,
+            borderColor: '#ccc',
+            borderWidth: 1,
+          }}
+        />
+      ) : (
+        <Text style={styles.infoValue}>—</Text>
+      )}
+    </View>
+    {editMode && (
+      <MaterialCommunityIcons
+        name="circle-edit-outline"
+        size={20}
+        color="#3A6953"
+      />
+    )}
+  </View>
+</View>
         {/* 📍 Address Fields */}
         <View style={styles.infoRow}>
           <View style={styles.infoField}>
@@ -652,6 +854,13 @@ const ProfileSettings = ({navigation}) => {
         }
       }
 
+      await fetch(`${API_BASE_URL}/api/users/last-active/${userObj._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timestamp: new Date().toISOString() })  // pass custom time
+      });
+      
+      
       // ✅ Clear local session
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('user');

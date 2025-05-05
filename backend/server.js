@@ -1293,5 +1293,5 @@ app.use('/api/purchase', purchaseRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
 app.use('/api', uploadRoutes);
-app.use('/uploads', express.static('uploads'));
-app.use('/api', require('./routes/groupRoutes'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));app.use('/api', require('./routes/groupRoutes'));
+app.use('/api/reviews', require('./routes/reviews'));

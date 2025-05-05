@@ -18,4 +18,11 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+exports.isSuperAdmin = (req, res, next) => {
+  if (req.user?.role !== 'superadmin') {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+  next();
+};
+
 module.exports = verifyToken;

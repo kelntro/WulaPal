@@ -42,6 +42,37 @@ const PaluwaganGroups = () => {
     };
   }, [organizerId]);
 
+  const getMissingProfileFields = (user) => {
+    const missingFields = [];
+  
+    if (!user.name) missingFields.push("Name");
+    if (!user.email) missingFields.push("Email");
+    if (!user.mobile) missingFields.push("Mobile Number");
+    if (!user.country) missingFields.push("Country");
+    if (!user.dateofBirth) missingFields.push("Date of Birth");
+    if (!user.gender) missingFields.push("Gender");
+    if (!user.occupation) missingFields.push("Occupation");
+    if (!user.sourceOfFunds) missingFields.push("Source of Funds");
+    if (!user.idType) missingFields.push("ID Type");
+    if (!user.idImage) missingFields.push("ID Image");
+    if (!user.profileImage) missingFields.push("Profile Picture");
+  
+    // Address fields
+    if (!user.address?.street) missingFields.push("Street");
+    if (!user.address?.barangay) missingFields.push("Barangay");
+    if (!user.address?.city) missingFields.push("City");
+    if (!user.address?.province) missingFields.push("Province");
+    if (!user.address?.zipCode) missingFields.push("Zip Code");
+  
+    // Emergency contact
+    if (!user.emergencyContact?.name) missingFields.push("Emergency Contact Name");
+    if (!user.emergencyContact?.mobile) missingFields.push("Emergency Contact Mobile");
+  
+    return missingFields;
+  };
+  
+  
+  
   const fetchGroups = () => {
     fetch(`${SERVER_URL}/api/organizer-groups?organizerId=${organizerId}`)
       .then(async (response) => {
@@ -97,14 +128,31 @@ const PaluwaganGroups = () => {
           />
         </div>
         <button
-          onClick={() => setShowModal(true)}
-          className="bg-[#3A6953] text-white px-4 py-2 pr-5 rounded-[20px] flex items-center shadow-md hover:bg-[#6A8C73] transition mr-6"
-        >
-          <span className="mr-1">
-            <FiPlus />
-          </span>
-          Create a Paluwagan
-        </button>
+  onClick={() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const missing = getMissingProfileFields(user);
+  
+    if (missing.length > 0) {
+      const confirmRedirect = window.confirm(
+        `⚠️ Please complete your profile before creating a Paluwagan group.\n\nMissing fields:\n- ${missing.join("\n- ")}\n\nGo to Profile Info now?`
+      );
+      if (confirmRedirect) {
+        navigate("/profile/profile-information"); // 🔁 Replace with your actual route path
+      }
+      return;
+    }
+  
+    setShowModal(true);
+  }}
+  
+  className="bg-[#3A6953] text-white px-4 py-2 pr-5 rounded-[20px] flex items-center shadow-md hover:bg-[#6A8C73] transition mr-6"
+>
+  <span className="mr-1">
+    <FiPlus />
+  </span>
+  Create a Paluwagan
+</button>
+
       </div>
 
       {/* Create Group Modal */}

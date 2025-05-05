@@ -56,9 +56,9 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPinScreen, setShowPinScreen] = useState(false);
-const [storedUserId, setStoredUserId] = useState(null);
+  const [storedUserId, setStoredUserId] = useState(null);
 
-  +useEffect(() => {
+  useEffect(() => {
     const setupNotifications = async () => {
       try {
         await notifee.requestPermission();
@@ -83,35 +83,39 @@ const [storedUserId, setStoredUserId] = useState(null);
     const checkSession = async () => {
       const token = await AsyncStorage.getItem('token');
       const user = await AsyncStorage.getItem('user');
-    
+
       if (token && user) {
         const parsedUser = JSON.parse(user);
-    
+
         try {
           // 🔍 Fetch latest user data (to check pinCode existence)
-          const res = await fetch(`${API_BASE_URL}/api/users/${parsedUser._id}`);
+          const res = await fetch(
+            `${API_BASE_URL}/api/users/${parsedUser._id}`,
+          );
           const freshUser = await res.json();
-    
+
           if (!res.ok || !freshUser || freshUser.error || !freshUser._id) {
-            console.warn('⚠️ Failed to fetch user profile. Clearing session and redirecting to login.');
-    
+            console.warn(
+              '⚠️ Failed to fetch user profile. Clearing session and redirecting to login.',
+            );
+
             await AsyncStorage.removeItem('user');
             await AsyncStorage.removeItem('token');
-    
+
             Alert.alert(
               'Session Expired',
-              'Your account no longer exists or was reset. Please log in again.'
+              'Your account no longer exists or was reset. Please log in again.',
             );
-    
+
             setIsAuthenticated(false);
             setLoading(false); // ✅ Ensure this is before return
             return;
           }
-    
+
           await AsyncStorage.setItem('user', JSON.stringify(freshUser));
-    
+
           console.log('🔍 Received pinCode value:', freshUser.pinCode);
-    
+
           if (freshUser.pinCode && freshUser.pinCode !== 'null') {
             console.log('🔐 PIN is set. Requiring verification.');
             setStoredUserId(freshUser._id);
@@ -120,18 +124,17 @@ const [storedUserId, setStoredUserId] = useState(null);
             console.log('✅ No PIN set. Logging in directly.');
             setIsAuthenticated(true);
           }
-    
+
           // 🔄 Refresh notifications
           await setupNotifications();
           const fcmToken = await getMessaging(getApp()).getToken();
           if (fcmToken) {
             await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: freshUser._id, fcmToken }),
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({userId: freshUser._id, fcmToken}),
             });
           }
-    
         } catch (err) {
           console.error('❌ Session check failed:', err.message);
           setIsAuthenticated(false);
@@ -144,10 +147,9 @@ const [storedUserId, setStoredUserId] = useState(null);
         setLoading(false); // ✅ Handles missing token/user session
         return;
       }
-    
+
       setLoading(false); // ✅ Covers successful case
-    };       
-    
+    };
 
     checkSession();
 
@@ -192,6 +194,34 @@ const [storedUserId, setStoredUserId] = useState(null);
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    let heartbeatInterval;
+
+    const startHeartbeat = async () => {
+      const user = await AsyncStorage.getItem('user');
+      const parsedUser = user ? JSON.parse(user) : null;
+
+      if (!parsedUser?._id) return;
+
+      heartbeatInterval = setInterval(() => {
+        fetch(`${API_BASE_URL}/api/users/last-active/${parsedUser._id}`, {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+        }).catch(err => {
+          console.warn('⚠️ Heartbeat failed:', err.message);
+        });
+      }, 120000); // Every 2 minutes
+    };
+
+    if (isAuthenticated && !showPinScreen) {
+      startHeartbeat();
+    }
+
+    return () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+    };
+  }, [isAuthenticated, showPinScreen]);
+
   if (loading) {
     return (
       <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
@@ -204,20 +234,18 @@ const [storedUserId, setStoredUserId] = useState(null);
     <NavigationContainer>
       <Stack.Navigator screenOptions={{headerShown: false}}>
         {showPinScreen ? (
- <Stack.Screen
- name="PinCodeScreen"
- options={{ headerShown: false }}
- initialParams={{
-   userId: storedUserId,
-   onSuccess: () => {
-     setShowPinScreen(false);
-     setIsAuthenticated(true);
-   },
- }}
->
- {props => <PinCodeScreen {...props} />}
-</Stack.Screen>
-
+          <Stack.Screen
+            name="PinCodeScreen"
+            options={{headerShown: false}}
+            initialParams={{
+              userId: storedUserId,
+              onSuccess: () => {
+                setShowPinScreen(false);
+                setIsAuthenticated(true);
+              },
+            }}>
+            {props => <PinCodeScreen {...props} />}
+          </Stack.Screen>
         ) : isAuthenticated ? (
           <Stack.Screen name="MainApp" component={BottomTabNavigator} />
         ) : (
@@ -236,7 +264,10 @@ const [storedUserId, setStoredUserId] = useState(null);
           component={TransactionDetailsScreen}
         />
         <Stack.Screen name="DepositScreen" component={DepositScreen} />
-        <Stack.Screen name="DepositSuccessScreen" component={DepositSuccessScreen} />
+        <Stack.Screen
+          name="DepositSuccessScreen"
+          component={DepositSuccessScreen}
+        />
         <Stack.Screen name="TransferScreen" component={TransferScreen} />
         <Stack.Screen name="WithdrawScreen" component={WithdrawScreen} />
         <Stack.Screen

@@ -21,57 +21,52 @@ import PrivacyPolicy from "../pages/settings/Privacy-policy.jsx";
 import Transactions from "../pages/transactions/Transactions.jsx";
 import Wallet from "../pages/wallet/Wulapal.jsx";
 import ProfileInformation from "../pages/profile/Profile-information.jsx";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const location = useLocation(); // Get current route
+  const location = useLocation();
+  const { user } = useContext(AuthContext);
 
-  // Define routes where Sidebar should NOT be displayed
   const noSidebarRoutes = ["/", "/login", "/signup"];
   const shouldShowSidebar = !noSidebarRoutes.includes(location.pathname);
 
   return (
     <div className="flex">
-      {/* Conditionally render Sidebar */}
       {shouldShowSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
 
-      {/* Main Content Area */}
       <div
         className={`flex-1 transition-all duration-500 ${
           shouldShowSidebar ? (isSidebarOpen ? "ml-[200px]" : "ml-[20px]") : "ml-0"
         } p-0`}
       >
         <Routes>
-          {/* Routes with Sidebar Wrapped in Layout */}
           <Route element={<Layout />}>
+            {/* Shared route */}
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/analytics" element={<Analytics />} />
-
-            {/* Help Center Routes */}
-            <Route path="/help-center" element={<HelpCenter />} />
-            <Route path="/contact-us" element={<ContactUs />} />
-
-            {/* Manage Group Routes */}
-            <Route path="/manage-group/create" element={<CreateGroupModal />} />
-            <Route path="/manage-group/add-member" element={<AddMember />} />
-            <Route path="/manage-group/chat/:groupId" element={<GroupChat />} />
-            <Route path="/manage-group/members" element={<GroupMembers />} />
-            <Route path="/manage-group/transactions/:groupId" element={<GroupTransactions />} />
-            <Route path="/manage-group/paluwagan-groups" element={<PaluwaganGroups />} />
-
-            {/* Settings */}
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/terms-and-conditions" element={<TermsandConditions />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-
-
-            {/* Other Routes */}
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/transactions" element={<Transactions />} />
             <Route path="/wallet" element={<Wallet />} />
+            <Route path="/settings" element={<Settings />} />
 
-            {/* User Profile */}
-            <Route path="/profile/profile-information" element={<ProfileInformation />} />
+            {/* Organizer-only routes */}
+            {user?.role !== "superadmin" && (
+              <>
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/help-center" element={<HelpCenter />} />
+                <Route path="/contact-us" element={<ContactUs />} />
+                <Route path="/manage-group/create" element={<CreateGroupModal />} />
+                <Route path="/manage-group/add-member" element={<AddMember />} />
+                <Route path="/manage-group/chat/:groupId" element={<GroupChat />} />
+                <Route path="/manage-group/members" element={<GroupMembers />} />
+                <Route path="/manage-group/transactions/:groupId" element={<GroupTransactions />} />
+                <Route path="/manage-group/paluwagan-groups" element={<PaluwaganGroups />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/terms-and-conditions" element={<TermsandConditions />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/profile/profile-information" element={<ProfileInformation />} />
+              </>
+            )}
           </Route>
         </Routes>
       </div>

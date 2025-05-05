@@ -63,6 +63,16 @@ const Login = () => {
       if (data.otpSent) {
         navigate("/otp", { state: { email } });
       }
+      // ✅ Update lastActive
+      if (data?.user?._id) {
+        localStorage.setItem("userId", data.user._id); // ✅ Save it for Dashboard use
+      
+        await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -129,6 +139,11 @@ const Login = () => {
       }
   
       login(data.token, data.user);
+      localStorage.setItem("userId", data.user._id); // ✅ Add this line
+      await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" }
+      });
       navigate("/dashboard");
     } catch (err) {
       console.error("Google Sign-In Error:", err.message);

@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema(
   {
     profileImage: { type: String, default: null },
     name: { type: String, required: true, trim: true },
-    role: { type: String, enum: ["organizer", "member"], required: true },
+    role: { type: String, enum: ["organizer", "member", "superadmin"], required: true },
     dateofBirth: { type: Date, default: null },
     country: { type: String, default: null },
     mobile: { type: String, default: null },
@@ -29,7 +29,8 @@ const userSchema = new mongoose.Schema(
     gender: { type: String, enum: ['Male', 'Female', 'Other'], default: null },
     occupation: { type: String, default: null },
     sourceOfFunds: { type: String, default: null },
-    nationalIdNumber: { type: String, default: null },
+    idType: { type: String, default: null },
+    idImage: { type: String, default: null },
     emergencyContact: {
       name: { type: String, default: null },
       mobile: { type: String, default: null }
@@ -38,8 +39,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["Free", "Basic", "Pro"],
       default: "Free",
-    }
-    
+    },
+    lastActive: {
+      type: Date,
+      default: Date.now,
+    }    
   },
   { timestamps: true }
 );

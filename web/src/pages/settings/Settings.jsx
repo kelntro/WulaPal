@@ -8,10 +8,19 @@ const Settings = () => {
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext); // ✅ Use logout from context
 
-  const handleLogout = () => {
-    logout(); // ✅ This clears localStorage and user state
+  const handleLogout = async () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user?._id) {
+      await fetch(`http://localhost:5050/api/users/last-active/${user._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  
+    logout();
     navigate("/login", { replace: true });
   };
+  
 
   return (
     <div className="p-2 min-h-screen flex flex-col items-start ml-[90px]">

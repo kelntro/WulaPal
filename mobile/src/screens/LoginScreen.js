@@ -82,13 +82,17 @@ const LoginScreen = ({ navigation }) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: data.user._id, fcmToken }),
         });
-  
+   
         const fcmResult = await res.json();
         console.log("📥 FCM save response:", fcmResult);
   
         if (!res.ok) throw new Error("FCM token failed to save");
   
-        console.log("✅ FCM token saved successfully");
+        await fetch(`${API_BASE_URL}/api/users/last-active/${data.user._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" }
+        });
+                console.log("✅ FCM token saved successfully");
       } else {
         console.warn("⚠️ No FCM token received");
       }
@@ -171,6 +175,11 @@ const handleGoogleLogin = async () => {
     }
 
     console.log("✅ Backend member login/register success:", result.user);
+
+    await fetch(`${API_BASE_URL}/api/users/last-active/${result.user._id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" }
+    });
 
     await AsyncStorage.setItem("user", JSON.stringify(result.user));
     console.log("💾 Updated user saved from backend.");

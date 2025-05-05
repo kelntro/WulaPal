@@ -23,6 +23,23 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// ✅ Storage config for ID images
+const idStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const idUploadPath = path.join(__dirname, "..", "uploads", "id");
+    if (!fs.existsSync(idUploadPath)) {
+      fs.mkdirSync(idUploadPath, { recursive: true });
+    }
+    cb(null, idUploadPath);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `id_${Date.now()}${ext}`);
+  },
+});
+
+const uploadId = multer({ storage: idStorage });
+
 // 🔍 GET current user profile
 router.get("/", verifyToken, async (req, res) => {
   const user = await User.findById(req.user.id).select(
@@ -33,14 +50,60 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 // ✏️ UPDATE user profile
-router.put("/", verifyToken, async (req, res) => {
-  const updates = req.body;
-  const user = await User.findByIdAndUpdate(req.user.id, updates, {
-    new: true,
-  }).select("-password -otp -otpExpires -verificationToken");
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json({ success: true, user });
-});
+router.put(
+  "/",
+  verifyToken,
+  uploadId.single("idImageFile"), // expecting 'idImageFile' from frontend
+  async (req, res) => {
+    try {
+      console.log("📥 Incoming PUT /api/profile request");
+      console.log("🧾 Headers:", req.headers);
+      console.log("🧍 User ID from token:", req.user?.id);
+      console.log("📄 Body:", req.body);
+      console.log("📎 File:", req.file);
+
+      const updates = { ...req.body };
+
+      // ✅ Parse nested JSON fields
+      ["address", "emergencyContact"].forEach((field) => {
+        if (updates[field] && typeof updates[field] === "string") {
+          try {
+            updates[field] = JSON.parse(updates[field]);
+            console.log(`✅ Parsed ${field}:`, updates[field]);
+          } catch (err) {
+            console.warn(`⚠️ Failed to parse ${field}:`, err.message);
+            updates[field] = {};
+          }
+        }
+      });
+
+      // ✅ Handle uploaded ID image
+      if (req.file) {
+        updates.idImage = `/uploads/id/${req.file.filename}`;
+        console.log("✅ Saved ID image to:", updates.idImage);
+      } else {
+        console.warn("⚠️ No ID image uploaded in this request.");
+      }
+
+      const user = await User.findByIdAndUpdate(req.user.id, updates, {
+        new: true,
+      }).select("-password -otp -otpExpires -verificationToken");
+
+      if (!user) {
+        console.error("❌ User not found with ID:", req.user.id);
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      console.log("✅ Profile updated:", user._id);
+      res.json({ success: true, user });
+    } catch (err) {
+      console.error("❌ Error updating profile:", err.message);
+      res.status(500).json({ error: "Server error" });
+    }
+  }
+);
+
+
 
 // 📷 Upload and update profile image
 router.post(
