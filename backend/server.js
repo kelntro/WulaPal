@@ -806,120 +806,160 @@ app.post("/api/confirm-contribution", async (req, res) => {
         console.log(`🎯 All contributions in for "${group.name}". Triggering payout...`);
   
         const payout = group.payouts[group.currentPayoutIndex || 0];
-        if (payout) {
-          const recipient = await Wallet.findOne({ userId: payout.recipientId });
-          if (recipient) {
-            const totalPayout = amountPHP * expected;
-            recipient.balance += totalPayout;
-            await recipient.save();
-  
-            // Log payout
-            const payoutId = `PAYOUT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-            await Transaction.create({
-              userId: payout.recipientId,
-              type: "receive",
-              amount: totalPayout,
-              referenceId: payoutId,
-              metadata: {
-                from: `Group: ${group.name}`,
-                groupId: group._id.toString(),
-                cycle: (group.currentPayoutIndex || 0) + 1,
-              },
-              status: "confirmed",
-            });
-  
-            // Notify recipient
-            await MemberNotification.create({
-              userId: payout.recipientId,
-              message: `🎉 You received ₱${totalPayout} payout from group "${group.name}".`,
-              type: "payout_received",
-              groupId,
-            });
+if (payout) {
+  const recipient = await Wallet.findOne({ userId: payout.recipientId });
+  if (recipient) {
+    const totalPayout = amountPHP * expected;
+    const organizerShare = totalPayout * 0.01;
+    const superadminShare = totalPayout * 0.01;
+    const recipientShare = totalPayout * 0.98;
 
-            // 💬 Emit real-time notification
-            const io = req.app.get("io");
-            io.emit("memberNotification", {
-            userId: payout.recipientId.toString(),
-            message: `🎉 You received ₱${totalPayout} payout from group "${group.name}".`,
+    // 🏦 Payout to member
+    recipient.balance += recipientShare;
+    await recipient.save();
+
+    const payoutId = `PAYOUT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    await Transaction.create({
+      userId: payout.recipientId,
+      type: "receive",
+      amount: recipientShare,
+      referenceId: payoutId,
+      metadata: {
+        from: `Group: ${group.name}`,
+        groupId: group._id.toString(),
+        cycle: (group.currentPayoutIndex || 0) + 1,
+      },
+      status: "confirmed",
+    });
+
+    await MemberNotification.create({
+      userId: payout.recipientId,
+      message: `🎉 You received ₱${recipientShare.toFixed(2)} payout from group "${group.name}".`,
+      type: "payout_received",
+      groupId,
+    });
+
+    const io = req.app.get("io");
+    io.emit("memberNotification", {
+      userId: payout.recipientId.toString(),
+      message: `🎉 You received ₱${recipientShare.toFixed(2)} payout from group "${group.name}".`,
+      date: new Date(),
+    });
+
+    // 🏦 Payout to organizer
+    const organizerWallet = await Wallet.findOne({ userId: group.handler });
+    if (organizerWallet) {
+      organizerWallet.balance += organizerShare;
+      await organizerWallet.save();
+
+      await Transaction.create({
+        userId: group.handler,
+        type: "receive",
+        amount: organizerShare,
+        referenceId: `ORGANIZER-${Date.now()}`,
+        metadata: {
+          groupId: group._id.toString(),
+          type: "organizer_share",
+        },
+        status: "confirmed",
+      });
+    }
+
+    // 🏦 Payout to superadmin
+    const superadmin = await User.findOne({ role: "superadmin" });
+    if (superadmin) {
+      const superadminWallet = await Wallet.findOne({ userId: superadmin._id });
+      if (superadminWallet) {
+        superadminWallet.balance += superadminShare;
+        await superadminWallet.save();
+
+        await Transaction.create({
+          userId: superadmin._id,
+          type: "receive",
+          amount: superadminShare,
+          referenceId: `SYS-${Date.now()}`,
+          metadata: {
+            groupId: group._id.toString(),
+            type: "system_share",
+          },
+          status: "confirmed",
+        });
+      }
+    }
+
+    // Reset group cycle
+    group.currentCycleContributions = 0;
+    group.currentPayoutIndex += 1;
+
+    if (group.currentPayoutIndex >= group.payouts.length) {
+      group.status = "completed";
+
+      for (const member of group.members) {
+        const wallet = await Wallet.findOne({ userId: member.userId });
+        if (wallet && member.depositAmount > 0) {
+          wallet.balance += member.depositAmount;
+          await wallet.save();
+
+          const refundRef = `REFUND-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+          await Transaction.create({
+            userId: member.userId,
+            type: "receive",
+            amount: member.depositAmount,
+            referenceId: refundRef,
+            metadata: {
+              groupId: group._id.toString(),
+              type: "deposit_refund"
+            },
+            status: "confirmed"
+          });
+
+          await MemberNotification.create({
+            userId: member.userId,
+            groupId: group._id,
+            type: "deposit_refund",
+            message: `💰 Your initial deposit of ₱${member.depositAmount} for group "${group.name}" has been refunded.`,
+            processed: true
+          });
+
+          io.emit("memberNotification", {
+            userId: member.userId.toString(),
+            message: `💰 Your initial deposit of ₱${member.depositAmount} for group "${group.name}" has been refunded.`,
             date: new Date()
-            });
-  
-            // Reset group cycle
-            group.currentCycleContributions = 0;
-            group.currentPayoutIndex += 1;
-  
-            if (group.currentPayoutIndex >= group.payouts.length) {
-              group.status = "completed";
-            
-              for (const member of group.members) {
-                // 💰 Refund initial deposit
-                const wallet = await Wallet.findOne({ userId: member.userId });
-                if (wallet && member.depositAmount > 0) {
-                  wallet.balance += member.depositAmount;
-                  await wallet.save();
-            
-                  const refundRef = `REFUND-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-                  await Transaction.create({
-                    userId: member.userId,
-                    type: "receive",
-                    amount: member.depositAmount,
-                    referenceId: refundRef,
-                    metadata: {
-                      groupId: group._id.toString(),
-                      type: "deposit_refund"
-                    },
-                    status: "confirmed"
-                  });
-            
-                  // 🛎️ Notify member
-                  await MemberNotification.create({
-                    userId: member.userId,
-                    groupId: group._id,
-                    type: "deposit_refund",
-                    message: `💰 Your initial deposit of ₱${member.depositAmount} for group "${group.name}" has been refunded.`,
-                    processed: true
-                  });
-            
-                  io.emit("memberNotification", {
-                    userId: member.userId.toString(),
-                    message: `💰 Your initial deposit of ₱${member.depositAmount} for group "${group.name}" has been refunded.`,
-                    date: new Date()
-                  });
-                }
-            
-                // 🎉 Notify about group completion
-                await MemberNotification.create({
-                  userId: member.userId,
-                  groupId: group._id,
-                  message: `✅ Group "${group.name}" has completed all payout cycles.`,
-                  type: "group_completed",
-                });
-            
-                io.emit("memberNotification", {
-                  userId: member.userId.toString(),
-                  message: `✅ Group "${group.name}" has completed all payout cycles.`,
-                  date: new Date()
-                });
-              }
-            
-              await Notification.create({
-                organizerId: group.handler,
-                message: `🏁 Group "${group.name}" has completed all payout cycles.`,
-              });
-            
-              io.emit("groupUpdated", {
-                organizerId: group.handler.toString(),
-                message: `🏁 Group "${group.name}" has completed all payout cycles.`,
-                date: new Date(),
-              });
-            
-              console.log(`🏁 Group "${group.name}" is now completed.`);
-            }            
-  
-            group.lastContributionDate = new Date();
-            await group.save();
-          }
+          });
         }
+
+        await MemberNotification.create({
+          userId: member.userId,
+          groupId: group._id,
+          message: `✅ Group "${group.name}" has completed all payout cycles.`,
+          type: "group_completed",
+        });
+
+        io.emit("memberNotification", {
+          userId: member.userId.toString(),
+          message: `✅ Group "${group.name}" has completed all payout cycles.`,
+          date: new Date()
+        });
+      }
+
+      await Notification.create({
+        organizerId: group.handler,
+        message: `🏁 Group "${group.name}" has completed all payout cycles.`,
+      });
+
+      io.emit("groupUpdated", {
+        organizerId: group.handler.toString(),
+        message: `🏁 Group "${group.name}" has completed all payout cycles.`,
+        date: new Date(),
+      });
+
+      console.log(`🏁 Group "${group.name}" is now completed.`);
+    }
+
+    group.lastContributionDate = new Date();
+    await group.save();
+  }
+}
       }
   
       res.json({ success: true, message: "Contribution processed instantly." });

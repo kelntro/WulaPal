@@ -221,8 +221,13 @@ const GroupDetailsScreen = ({route}) => {
       <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 10 }}>
         💰 Initial Deposit Required
       </Text>
+      
       <Text style={{ fontSize: 14, marginBottom: 10 }}>
-        To prevent fraud, a deposit is required to join this group. Your deposit will be refunded once the group completes.
+        To prevent fraud, a deposit is required to join this group. Your deposit will be refunded after the group completes.
+      </Text>
+
+      <Text style={{ fontSize: 14, color: '#B00020', marginBottom: 10 }}>
+        ⚠️ Note: A 2% share will be deducted from each payout — 1% goes to the organizer and 1% to the system.
       </Text>
 
       <TextInput

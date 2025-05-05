@@ -18,6 +18,7 @@ const Login = () => {
   const [countdown, setCountdown] = useState(60);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
   useEffect(() => {
     let timer;
@@ -48,11 +49,14 @@ const Login = () => {
     }
 
     try {
+      const role = email === "admin@wulapal.com" ? "superadmin" : "organizer";
+
       const response = await fetch("http://localhost:5050/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role: "organizer" }),
+        body: JSON.stringify({ email, password, role }),
       });
+      
 
       const data = await response.json();
       if (!response.ok) {
@@ -62,7 +66,19 @@ const Login = () => {
       // If OTP has been sent, navigate to OTP verification page
       if (data.otpSent) {
         navigate("/otp", { state: { email } });
+      } else {
+        // ✅ Add this to support direct dashboard access (superadmin or verified organizer)
+        login(data.token, data.user);
+        localStorage.setItem("userId", data.user._id);
+      
+        await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+        });
+      
+        navigate("/dashboard");
       }
+      
       // ✅ Update lastActive
       if (data?.user?._id) {
         localStorage.setItem("userId", data.user._id); // ✅ Save it for Dashboard use

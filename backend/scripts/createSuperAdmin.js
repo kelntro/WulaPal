@@ -8,12 +8,13 @@ mongoose.connect('mongodb://localhost:27017/wulapal'); // replace with actual UR
   const existing = await User.findOne({ email: 'admin@wulapal.com' });
   if (existing) return console.log('Super admin already exists');
 
-  const hashed = await bcrypt.hash('supersecurepassword', 10);
+  const hashed = await bcrypt.hash('Wulapal123', 10);
   await User.create({
     name: 'Super Admin',
     email: 'admin@wulapal.com',
     password: hashed,
     role: 'superadmin',
+    isVerified: true,
   });
 
   console.log('✅ Super admin created!');

@@ -46,13 +46,32 @@ const SetPinScreen = ({ route }) => {
       Alert.alert('Success', 'Your PIN has been set.', [
         {
           text: 'Continue',
-          onPress: () =>
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'ProfileScreen' }],
-            }),
+          onPress: async () => {
+            try {
+              // ✅ Fetch updated user
+              const updatedRes = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+              const updatedUser = await updatedRes.json();
+      
+              if (!updatedRes.ok || !updatedUser || !updatedUser._id) {
+                throw new Error(updatedUser?.error || 'Failed to fetch updated user');
+              }
+      
+              // ✅ Save updated user to AsyncStorage
+              await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      
+              // ✅ Navigate to Home inside MainApp
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'MainApp', params: { screen: 'Home' } }],
+              });
+            } catch (err) {
+              Alert.alert('Error', err.message);
+            }
+          },
         },
       ]);
+      
+      
     } catch (err) {
       Alert.alert('Error', err.message);
     } finally {

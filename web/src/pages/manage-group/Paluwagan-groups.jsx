@@ -128,23 +128,34 @@ const PaluwaganGroups = () => {
           />
         </div>
         <button
-  onClick={() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const missing = getMissingProfileFields(user);
-  
+onClick={async () => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const response = await fetch(`http://localhost:5050/api/users/${storedUser._id}`);
+    const freshUser = await response.json();
+
+    // Optional: update localStorage with fresh user data
+    localStorage.setItem("user", JSON.stringify(freshUser));
+
+    const missing = getMissingProfileFields(freshUser);
+
     if (missing.length > 0) {
       const confirmRedirect = window.confirm(
         `⚠️ Please complete your profile before creating a Paluwagan group.\n\nMissing fields:\n- ${missing.join("\n- ")}\n\nGo to Profile Info now?`
       );
       if (confirmRedirect) {
-        navigate("/profile/profile-information"); // 🔁 Replace with your actual route path
+        navigate("/profile/profile-information");
       }
       return;
     }
-  
+
     setShowModal(true);
-  }}
-  
+  } catch (err) {
+    console.error("❌ Failed to fetch updated user profile:", err);
+    alert("Unable to verify your profile. Please try again later.");
+  }
+}}
+
   className="bg-[#3A6953] text-white px-4 py-2 pr-5 rounded-[20px] flex items-center shadow-md hover:bg-[#6A8C73] transition mr-6"
 >
   <span className="mr-1">

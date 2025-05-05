@@ -246,8 +246,9 @@ const HomeScreen = () => {
             <TouchableOpacity
               onPress={() => {
                 setShowIncompleteModal(false);
-                navigation.navigate('ProfileScreen', {userId: user?._id});
-              }}
+                navigation.navigate('MainApp', {
+                  screen: 'Profile', 
+                });              }}
               style={{
                 marginTop: 20,
                 backgroundColor: '#3A6953',

@@ -1007,8 +1007,19 @@ const ProfileSettings = ({navigation}) => {
                     if (!res.ok)
                       throw new Error(result.error || 'Failed to set PIN');
 
-                    Alert.alert('Success', 'PIN updated successfully');
-                    setShowPinModal(false);
+                    Alert.alert('Success', 'PIN updated successfully', [
+                      {
+                        text: 'OK',
+                        onPress: () => {
+                          setShowPinModal(false);
+                          navigation.reset({
+                            index: 0,
+                            routes: [{name: 'Main'}], // Make sure 'Main' is correctly registered in your navigator
+                          });
+                        },
+                      },
+                    ]);
+                    
                   } catch (err) {
                     Alert.alert('Error', err.message);
                   } finally {

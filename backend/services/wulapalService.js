@@ -44,12 +44,15 @@ async function createGroup(contributionAmount, frequency, requiredMembers) {
         // Step 1: Deploy token dynamically
         const tokenAddress = await deployMockToken();
 
+        const superAdminAddress = wallet.address;
+
         console.log(`🚀 Deploying WulaPal contract...`);
         const wulapal = await WulaPalFactory.deploy(
             tokenAddress,
             ethers.parseUnits(contributionAmount.toString(), 6),
             frequency,
-            requiredMembers
+            requiredMembers,
+            superAdminAddress
         );
 
         await wulapal.waitForDeployment();
@@ -106,8 +109,25 @@ async function getContractBalance(contractAddress, tokenAddress) {
     }
 }
 
+async function triggerPayout(contractAddress) {
+    try {
+      const contract = new ethers.Contract(contractAddress, WulaPalABI.abi, wallet);
+  
+      console.log("🔁 Triggering smart contract payout...");
+      const tx = await contract.automaticPayout();
+      await tx.wait();
+  
+      console.log(`✅ Payout executed successfully: ${tx.hash}`);
+      return { success: true, txHash: tx.hash };
+    } catch (error) {
+      console.error("❌ Error triggering payout:", error);
+      return { success: false, error: error.message };
+    }
+  }
+
 module.exports = {
     createGroup,
     contribute,
-    getContractBalance
+    getContractBalance,
+    triggerPayout
 };

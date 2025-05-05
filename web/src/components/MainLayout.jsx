@@ -47,6 +47,7 @@ const MainLayout = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/profile/profile-information" element={<ProfileInformation />} />
 
             {/* Organizer-only routes */}
             {user?.role !== "superadmin" && (
@@ -64,7 +65,6 @@ const MainLayout = () => {
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/terms-and-conditions" element={<TermsandConditions />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/profile/profile-information" element={<ProfileInformation />} />
               </>
             )}
           </Route>

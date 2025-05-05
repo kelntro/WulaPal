@@ -15,6 +15,7 @@ contract WulaPal {
     }
 
     address public organizer;
+    address public superAdmin;
     IERC20 public stableToken;
     uint256 public contributionAmount;
     uint256 public payoutAmount;
@@ -29,7 +30,7 @@ contract WulaPal {
     mapping(address => bool) public isMember;
 
     event ContributionMade(address indexed member, uint256 amount);
-    event PayoutReleased(address indexed recipient, uint256 amount);
+    event PayoutReleased(address indexed recipient, uint256 netAmount, uint256 organizerFee, uint256 systemFee);
     event GroupCreated(address indexed organizer, uint256 requiredMembers, uint256 contributionAmount);
 
     modifier onlyOrganizer() {
@@ -41,9 +42,11 @@ contract WulaPal {
         address _stableToken,
         uint256 _contributionAmount,
         uint256 _frequency,
-        uint256 _requiredMembers
+        uint256 _requiredMembers,
+        address _superAdmin
     ) {
         organizer = msg.sender;
+        superAdmin = _superAdmin;
         stableToken = IERC20(_stableToken);
         contributionAmount = _contributionAmount;
         frequency = _frequency;
@@ -82,15 +85,21 @@ contract WulaPal {
     function automaticPayout() external onlyOrganizer {
         require(nextPayoutIndex < totalMembers, "All payouts completed");
         require(block.timestamp >= startTime + (nextPayoutIndex * frequency), "Not time for next payout");
-        require(totalContributed >= contributionAmount * totalMembers, "Insufficient funds for payout");
+        require(totalContributed >= contributionAmount * (requiredMembers - 1), "Insufficient funds");
 
         address recipient = members[nextPayoutIndex].wallet;
         members[nextPayoutIndex].hasReceivedPayout = true;
 
-        bool success = stableToken.transfer(recipient, contributionAmount * totalMembers);
-        require(success, "Payout transfer failed");
+        uint256 totalPayout = contributionAmount * (requiredMembers - 1);
+        uint256 organizerFee = (totalPayout * 1) / 100;
+        uint256 systemFee = (totalPayout * 1) / 100;
+        uint256 netPayout = totalPayout - organizerFee - systemFee;
 
-        emit PayoutReleased(recipient, contributionAmount * totalMembers);
+        require(stableToken.transfer(recipient, netPayout), "Recipient transfer failed");
+        require(stableToken.transfer(organizer, organizerFee), "Organizer fee transfer failed");
+        require(stableToken.transfer(superAdmin, systemFee), "System fee transfer failed");
+
+        emit PayoutReleased(recipient, netPayout, organizerFee, systemFee);
 
         nextPayoutIndex++;
     }

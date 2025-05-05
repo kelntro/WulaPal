@@ -1,11 +1,12 @@
 const Wallet = require('../models/Wallet');
 const Group = require('../models/Group');
 const MemberNotification = require('../models/MemberNotification');
-const { contribute } = require('../services/wulapalService');
 const { getUSDTFromPHP } = require('../utils/exchange');
 const Transaction = require('../models/Transaction');
 const { sendPushToUser } = require('../services/pushService');
 const mongoose = require('mongoose');
+
+const { contribute, triggerPayout } = require('../services/wulapalService');
 
 
 const handleAutoContribution = async () => {
@@ -257,38 +258,55 @@ const handleAutoContribution = async () => {
         continue;
       }
   
-      const totalPayout = Number(group.contributionAmount) * expectedContributions;
-      recipient.balance += totalPayout;
-      await recipient.save();
-  
-      await MemberNotification.create({
-        userId: payout.recipientId,
-        message: `🎉 You received a total of ₱${totalPayout} payout from group "${group.name}".`,
-        type: "payout_received",
-        groupId: group._id,
-      });
-  
-      await sendPushToUser(
-        payout.recipientId.toString(),
-        "WulaPal",
-        `🎉 You received ₱${totalPayout} from group "${group.name}".`
-      );
-  
-      const referenceId = `PAYOUT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-      await Transaction.create({
-        userId: payout.recipientId,
-        type: "receive",
-        amount: totalPayout,
-        referenceId,
-        metadata: {
-          from: `Group: ${group.name}`,
-          groupId: group._id.toString(),
-          cycle: payoutIndex + 1
-        },
-        status: "confirmed",
-      });
-  
-      console.log(`🎉 [User: ${payout.recipientId}] Received ₱${totalPayout} from group "${group.name}". Transaction logged.`);
+      const result = await triggerPayout(group.contractAddress);
+      if (result.success) {
+        console.log(`✅ Blockchain payout triggered for group ${group.name}`);
+      
+        group.currentCycleContributions = 0;
+        group.currentPayoutIndex += 1;
+        await group.save();
+      
+        await MemberNotification.create({
+          userId: payout.recipientId,
+          message: `🎉 You received your payout from group "${group.name}".`,
+          type: "payout_received",
+          groupId: group._id,
+        });
+      
+        await sendPushToUser(
+          payout.recipientId.toString(),
+          "WulaPal",
+          `🎉 You received your payout from "${group.name}".`
+        );
+      
+        // ✅ INSERT THIS BLOCK to credit organizer’s wallet in MongoDB
+        const totalPayoutPHP = Number(group.contributionAmount) * (group.requiredMembers - 1);
+        const organizerFee = (totalPayoutPHP * 1) / 100;
+      
+        const organizerWallet = await Wallet.findOne({ userId: group.handler });
+        if (organizerWallet) {
+          organizerWallet.balance += organizerFee;
+          await organizerWallet.save();
+      
+          await Transaction.create({
+            userId: group.handler,
+            type: 'payout_share',
+            amount: organizerFee,
+            referenceId: `org-share-${Date.now()}`,
+            status: 'confirmed',
+            metadata: {
+              groupId: group._id.toString(),
+              from: 'smart_contract',
+              note: '1% organizer share from payout'
+            }
+          });
+      
+          console.log(`💰 Organizer share of ₱${organizerFee} credited to ${group.handler}`);
+        }
+      }
+       else {
+  console.log(`❌ Payout failed for group ${group.name}:`, result.error);
+}
   
       group.currentCycleContributions = 0;
       group.currentPayoutIndex += 1;

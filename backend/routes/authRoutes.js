@@ -248,10 +248,11 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
-    if (!role || !["organizer", "member"].includes(role)) {
-      return res.status(400).json({ error: "Invalid role. Must be 'organizer' or 'member'." });
-    }
+    if (!role || !["organizer", "member", "superadmin"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role. Must be 'organizer', 'member', or 'superadmin'." });
+    }    
 
+    
     const user = await User.findOne({ email, role });
     if (!user) {
       return res.status(400).json({ error: "Invalid credentials." });
@@ -266,17 +267,17 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid email or password." });
     }
 
-    // ✅ No OTP Required for Members
-    if (role === "member") {
-      // Generate JWT Token
-      const token = jwt.sign(
-        { id: user._id, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-      );
+// ✅ No OTP Required for Members and Superadmin
+if (role === "member" || role === "superadmin") {
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
 
-      return res.json({ success: true, token, user });
-    }
+  return res.json({ success: true, token, user });
+}
+
 
     // ✅ Organizers Continue Using Email Verification
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
