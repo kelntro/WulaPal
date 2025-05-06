@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "841356244009",
+    "project_id": "wulapal",
+    "storage_bucket": "wulapal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:841356244009:android:3e725565f9045df7a15838",
+        "android_client_info": {
+          "package_name": "com.wulapal.mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "841356244009-g5cojd899iqh6cf6rppl4cs95eb8kban.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wulapal.mobile",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "841356244009-icpfsekev3ptc9r73qmee7tn68orqpii.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCN7zWmUcxLju_2gbHL5jBWMuicdg7NzLc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "841356244009-icpfsekev3ptc9r73qmee7tn68orqpii.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

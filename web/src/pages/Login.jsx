@@ -1,8 +1,11 @@
-import { useState } from "react"; 
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { Link } from "react-router-dom";
+import { auth, provider } from "../firebase-config";
+import { signInWithPopup } from "firebase/auth";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -10,11 +13,34 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [resendMessage, setResendMessage] = useState(null);
+  const [countdown, setCountdown] = useState(60);
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+  useEffect(() => {
+    let timer;
+    if (resendDisabled) {
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev === 1) {
+            clearInterval(timer);
+            setResendDisabled(false);
+            return 60;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendDisabled]);
 
   const handleLogin = async () => {
-    setError(null); // Clear previous errors
-    setLoading(true); // Disable button while processing
+    setError(null);
+    setResendMessage(null);
+    setLoading(true);
 
     if (!email || !password) {
       setError("Please enter both email and password.");
@@ -23,24 +49,46 @@ const Login = () => {
     }
 
     try {
+      const role = email === "admin@wulapal.com" ? "superadmin" : "organizer";
+
       const response = await fetch("http://localhost:5050/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role: "organizer" }), // Ensure only organizers log in
+        body: JSON.stringify({ email, password, role }),
       });
+      
 
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Login failed");
       }
 
-      if (data.user.role !== "organizer") {
-        throw new Error("Only organizers can log in here.");
+      // If OTP has been sent, navigate to OTP verification page
+      if (data.otpSent) {
+        navigate("/otp", { state: { email } });
+      } else {
+        // ✅ Add this to support direct dashboard access (superadmin or verified organizer)
+        login(data.token, data.user);
+        localStorage.setItem("userId", data.user._id);
+      
+        await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+        });
+      
+        navigate("/dashboard");
       }
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/dashboard");
+      
+      // ✅ Update lastActive
+      if (data?.user?._id) {
+        localStorage.setItem("userId", data.user._id); // ✅ Save it for Dashboard use
+      
+        await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -48,18 +96,86 @@ const Login = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    setError(null);
+    setResendMessage(null);
+    setResendDisabled(true);
+    setCountdown(60);
+
+    if (!email) {
+      setError("Please enter your email before resending verification.");
+      setResendDisabled(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "http://localhost:5050/api/auth/resend-verification",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to resend verification email.");
+      }
+
+      setResendMessage("Verification email resent. Check your inbox.");
+    } catch (err) {
+      setError(err.message);
+      setResendDisabled(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const { displayName, email, photoURL } = result.user;
+  
+      console.log("🔐 Google Result:", { displayName, email, photoURL });
+  
+      const response = await fetch("http://localhost:5050/api/auth/google-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: displayName,
+          email,
+          profileImage: photoURL,
+          role: "organizer",
+        }),
+      });
+  
+      const data = await response.json();
+      if (!response.ok) {
+        console.error("❌ Google login failed:", data);
+        throw new Error(data.error || "Google sign-in failed");
+      }
+  
+      login(data.token, data.user);
+      localStorage.setItem("userId", data.user._id); // ✅ Add this line
+      await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" }
+      });
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Google Sign-In Error:", err.message);
+      setError("Google Sign-In failed. Please try again.");
+    }
+  };
+  
+  
   return (
     <div className="bg-gray-100 flex justify-center items-center min-h-screen px-4">
       <div className="w-full max-w-[1000px] flex flex-row bg-white shadow-lg rounded-lg overflow-hidden">
-        
         {/* Left Section - Login Form */}
         <div className="w-3/5 flex flex-col justify-center p-12">
           <h2 className="text-3xl font-bold text-green-900 mb-6">
             Welcome Back, Ka-Wula!
           </h2>
-
-          {/* Error Message */}
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
           {/* Email Input */}
           <div className="mb-6">
@@ -69,7 +185,13 @@ const Login = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)} // Allow free typing
+              onBlur={() => {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation regex
+                if (!emailRegex.test(email)) {
+                  alert("Please enter a valid email address."); // Optional: Show feedback
+                }
+              }}
               className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
               required
             />
@@ -84,7 +206,19 @@ const Login = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  const newPassword = e.target.value;
+                  if (newPassword.length <= 30) {
+                    setPassword(newPassword); // Update password only if within max length
+                  }
+                }}
+                onBlur={() => {
+                  if (!passwordRegex.test(password)) {
+                    alert(
+                      "Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, and one number."
+                    );
+                  }
+                }}
                 className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
                 required
               />
@@ -109,6 +243,32 @@ const Login = () => {
             {loading ? "Logging in..." : "Login"}
           </button>
 
+          {/* Error Message */}
+          {error && (
+            <div className="flex flex-col items-center justify-center">
+              <p className="text-red-500 text-sm mb-4">{error}</p>
+
+              {/* Show Resend Verification Button if the error is related to verification */}
+              {error.includes("verify your email") && (
+                <button
+                  onClick={handleResendVerification}
+                  disabled={resendDisabled}
+                  className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                >
+                  {resendDisabled
+                    ? `Resend in ${countdown}s...`
+                    : "Resend Verification Email"}
+                </button>
+              )}
+            </div>
+          )}
+
+          {resendMessage && (
+            <div className="flex flex-col items-center justify-center">
+              <p className="text-green-500 text-sm mb-4">{resendMessage}</p>
+            </div>
+          )}
+
           {/* OR Section */}
           <div className="flex items-center my-6">
             <div className="flex-grow h-px bg-gray-300"></div>
@@ -117,14 +277,21 @@ const Login = () => {
           </div>
 
           {/* Google Sign-In Button */}
-          <button className="w-full flex items-center justify-center border py-3 rounded-lg hover:bg-gray-100 transition">
-            <FcGoogle className="mr-2" size={22} /> Sign in with Google
-          </button>
+          <button
+          onClick={handleGoogleSignIn}
+          className="w-full flex items-center justify-center border py-3 rounded-lg hover:bg-gray-100 transition"
+        >
+          <FcGoogle className="mr-2" size={22} /> Sign in with Google
+        </button>
+
 
           {/* Sign Up Link */}
           <p className="mt-6 text-sm text-gray-600 text-center">
             Don’t have an account?{" "}
-            <Link to="/signup" className="text-green-700 font-semibold hover:underline">
+            <Link
+              to="/signup"
+              className="text-green-700 font-semibold hover:underline"
+            >
               Sign Up
             </Link>
           </p>

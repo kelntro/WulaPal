@@ -7,26 +7,57 @@ import { IoIosLock } from "react-icons/io";
 export default function PaymentOption() {
   const navigate = useNavigate();
 
-  // States
   const [depositAmount, setDepositAmount] = useState("");
   const [depositFee, setDepositFee] = useState(0);
   const [total, setTotal] = useState(0);
+  const [recipientId, setRecipientId] = useState(""); // <-- new
+  const [loading, setLoading] = useState(false);
 
-  // Function to handle deposit amount change
   const handleDepositChange = (e) => {
     const amount = e.target.value;
     setDepositAmount(amount);
-    
+
     if (!amount) {
       setDepositFee(0);
       setTotal(0);
       return;
     }
-    
+
     const numericAmount = parseFloat(amount) || 0;
     const fee = numericAmount * 0.02 < 5 ? 5 : numericAmount * 0.02;
     setDepositFee(fee);
     setTotal(numericAmount + fee);
+  };
+
+  const handleTransfer = async () => {
+    const senderId = localStorage.getItem("userId");
+    if (!senderId) return alert("User ID missing. Please login again.");
+    if (!recipientId || recipientId === senderId) return alert("Enter a valid recipient ID.");
+    if (!depositAmount || isNaN(depositAmount) || depositAmount <= 0) return alert("Enter a valid amount.");
+
+    try {
+      setLoading(true);
+      const res = await fetch("http://localhost:5050/api/wallet/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          senderId,
+          recipientId,
+          amount: parseFloat(depositAmount),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Transfer failed.");
+
+      navigate("/wallet/success-transfer");
+    } catch (err) {
+      alert("Transfer failed: " + err.message);
+      console.error("Transfer error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,31 +74,20 @@ export default function PaymentOption() {
             <h3 className="text-[#3A6953] font-medium">Transfer Fund</h3>
           </div>
           <p className="text-sm text-gray-500 mb-4">
-          Transfer Funds to Other WulaPal Wallet.
+            Transfer Funds to Other WulaPal Wallet.
           </p>
 
           <div className="mb-4">
-            <label className="text-sm font-medium text-[#3A6953]">Bank Payment</label>
-            <div className="border rounded-lg p-3 flex items-center mt-2">
-              <img src="/assets/1.png" alt="Gcash" className="h-[50px] mr-1 ml-[-10px] mt-[-10px] mb-[-10px]" />
-              <span className="text-gray-700 font-medium">WWallet</span>
-            </div>
-          </div>
-
-          <div className="mb-4">
             <label className="text-sm font-medium text-[#3A6953] flex items-center">
-              Account Name <span className="ml-1 text-gray-400"><BsInfoCircle /></span>
+              Recipient ID <span className="ml-1 text-gray-400"><BsInfoCircle /></span>
             </label>
-            <input type="text" className="w-full p-2 border rounded-md mt-1" placeholder="Enter account name" />
-          </div>
-
-          <div className="mb-4">
-            <label className="text-sm font-medium text-[#3A6953] flex items-center">
-              Account Number <span className="ml-1 text-gray-400"><BsInfoCircle /></span>
-            </label>
-            <div className="flex items-center border rounded-md p-2 mt-1">
-              <input type="text" className="w-full p-1 outline-none" placeholder="Enter account number" />
-            </div>
+            <input
+              type="text"
+              className="w-full p-2 border rounded-md mt-1"
+              placeholder="Enter recipient userId"
+              value={recipientId}
+              onChange={(e) => setRecipientId(e.target.value)}
+            />
           </div>
 
           <div className="mb-4">
@@ -75,7 +95,7 @@ export default function PaymentOption() {
               Amount <span className="ml-1 text-gray-400"><BsInfoCircle /></span>
             </label>
             <input 
-              type="text" 
+              type="number" 
               className="w-full p-2 border rounded-md mt-1" 
               placeholder="Enter amount" 
               value={depositAmount}
@@ -91,8 +111,13 @@ export default function PaymentOption() {
               Cancel
             </button>
 
-            <button className="w-full bg-[#3A6953] text-white p-2 rounded-md"
-                    onClick={() => navigate("/wallet/success-transfer")}>Confirm Transfer</button>
+            <button
+              className="w-full bg-[#3A6953] text-white p-2 rounded-md"
+              onClick={handleTransfer}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Transfer"}
+            </button>
           </div>
         </div>
 
@@ -102,7 +127,7 @@ export default function PaymentOption() {
 
           <div className="mt-6 text-xl font-medium flex justify-between items-center text-[#3A6953]">
             <span>Transfer Amount</span>
-            <span className="text-[#3A6953] font-semibold">₱{depositAmount ? depositAmount : "0"}</span>
+            <span className="text-[#3A6953] font-semibold">₱{depositAmount || "0"}</span>
           </div>
 
           <div className="mt-6 text-xl font-medium flex justify-between items-center text-[#3A6953] border-b border-[#3A6953] pb-4">

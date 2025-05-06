@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext.jsx";
 import { FaQuestionCircle } from "react-icons/fa";
 import { RxDashboard } from "react-icons/rx";
 import {
@@ -14,8 +15,8 @@ import { HiChevronRight } from "react-icons/hi";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
+  const { user } = useContext(AuthContext); // ✅ real-time context user
 
-  // Function to check if a link is active
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -29,16 +30,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         className="flex items-center space-x-[-15px] cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
-        {/* Logo (Always Visible) */}
         <img
-          src="assets/2.png"
+          src="/assets/2.png"
           alt="WulaPal Logo"
           className={`object-cover transition-all duration-300 ${
             isOpen ? "w-[80px] h-[80px]" : "w-[70px] h-[70px]"
           }`}
         />
-
-        {/* Text (Only Visible When Sidebar is Open) */}
         {isOpen && (
           <span className="text-white text-2xl font-octosquares font-bold transition-all duration-300">
             ulaPal
@@ -48,91 +46,140 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
       {/* Navigation Menu */}
       <ul className="space-y-1 mt-[-100px] flex flex-col">
-        <SidebarItem
-          to="/dashboard"
-          icon={<RxDashboard />}
-          label="Dashboard"
-          isOpen={isOpen}
-          isActive={isActive("/dashboard")}
-        />
-        <SidebarItem
-          to="/analytics"
-          icon={<IoAnalyticsOutline />}
-          label="Analytics"
-          isOpen={isOpen}
-          isActive={isActive("/analytics")}
-        />
-        <SidebarItem
-          to="/manage-group/paluwagan-groups"
-          icon={<MdGroups />}
-          label="Groups"
-          isOpen={isOpen}
-          isActive={isActive("/manage-group/paluwagan-groups")}
-        />
-        <SidebarItem
-          to="/wallet"
-          icon={<IoWalletOutline />}
-          label="My Wallet"
-          isOpen={isOpen}
-          isActive={isActive("/wallet")}
-        />
-        <SidebarItem
-          to="/notifications"
-          icon={<VscBellDot />}
-          label="Notifications"
-          isOpen={isOpen}
-          isActive={isActive("/notifications")}
-        />
-        <SidebarItem
-          to="/transactions"
-          icon={<GrTransaction />}
-          label="Transactions"
-          isOpen={isOpen}
-          isActive={isActive("/transactions")}
-        />
-        <SidebarItem
-          to="/settings"
-          icon={<IoSettingsSharp />}
-          label="Settings"
-          isOpen={isOpen}
-          isActive={isActive("/settings")}
-        />
-        <SidebarItem
-          to="/help-center"
-          icon={<FaQuestionCircle />}
-          label="Help Center"
-          isOpen={isOpen}
-          isActive={isActive("/help-center")}
-        />
-        <SidebarItem
-          to="purchase/subscription"
-          icon={<MdOutlineSubscriptions />}
-          label="Subscriptions"
-          isOpen={isOpen}
-          isActive={isActive("purchase/subscription")}
-        />
-      </ul>
+  {user?.role === "superadmin" ? (
+    <>
+      <SidebarItem
+        to="/dashboard"
+        icon={<RxDashboard />}
+        label="Dashboard"
+        isOpen={isOpen}
+        isActive={isActive("/dashboard")}
+      />
+      <SidebarItem
+        to="/wallet"
+        icon={<IoWalletOutline />}
+        label="My Wallet"
+        isOpen={isOpen}
+        isActive={isActive("/wallet")}
+      />
+      <SidebarItem
+        to="/settings"
+        icon={<IoSettingsSharp />}
+        label="Settings"
+        isOpen={isOpen}
+        isActive={isActive("/settings")}
+      />
+    </>
+  ) : (
+    <>
+      <SidebarItem
+        to="/dashboard"
+        icon={<RxDashboard />}
+        label="Dashboard"
+        isOpen={isOpen}
+        isActive={isActive("/dashboard")}
+      />
+      <SidebarItem
+        to="/analytics"
+        icon={<IoAnalyticsOutline />}
+        label="Analytics"
+        isOpen={isOpen}
+        isActive={isActive("/analytics")}
+      />
+      <SidebarItem
+        to="/manage-group/paluwagan-groups"
+        icon={<MdGroups />}
+        label="Groups"
+        isOpen={isOpen}
+        isActive={isActive("/manage-group/paluwagan-groups")}
+      />
+      <SidebarItem
+        to="/wallet"
+        icon={<IoWalletOutline />}
+        label="My Wallet"
+        isOpen={isOpen}
+        isActive={isActive("/wallet")}
+      />
+      <SidebarItem
+        to="/notifications"
+        icon={<VscBellDot />}
+        label="Notifications"
+        isOpen={isOpen}
+        isActive={isActive("/notifications")}
+      />
+      <SidebarItem
+        to="/transactions"
+        icon={<GrTransaction />}
+        label="Transactions"
+        isOpen={isOpen}
+        isActive={isActive("/transactions")}
+      />
+      <SidebarItem
+        to="/settings"
+        icon={<IoSettingsSharp />}
+        label="Settings"
+        isOpen={isOpen}
+        isActive={isActive("/settings")}
+      />
+      <SidebarItem
+        to="/help-center"
+        icon={<FaQuestionCircle />}
+        label="Help Center"
+        isOpen={isOpen}
+        isActive={isActive("/help-center")}
+      />
+      <SidebarItem
+        to="/purchase/subscription"
+        icon={<MdOutlineSubscriptions />}
+        label="Subscriptions"
+        isOpen={isOpen}
+        isActive={isActive("/purchase/subscription")}
+      />
+    </>
+  )}
+</ul>
 
       {/* User Profile Section */}
       <Link to="/profile/profile-information" className="block">
         <div
-          className={`flex items-center p-1 mt-6 mb-3 rounded-lg cursor-pointer transition duration-200 
-          ${isActive("/profile/profile-information") ? "bg-[#6A8C73]" : "hover:bg-[#6A8C73]"}`}
+          className={`flex items-center p-1 mt-6 mb-3 rounded-lg cursor-pointer transition duration-200 ${
+            isActive("/profile/profile-information")
+              ? "bg-[#6A8C73]"
+              : "hover:bg-[#6A8C73]"
+          }`}
         >
           <img
-            src="assets/Profile.jpg"
-            alt="User Avatar"
-            className={`transition-all object-cover rounded-full 
-            ${isOpen ? "w-[40px] h-[40px]" : "w-[40px] h-[40px]"}`}
-          />
-          
+  src={
+    user?.profileImage &&
+    user.profileImage !== "null" &&
+    user.profileImage !== ""
+      ? user.profileImage.startsWith("http")
+        ? user.profileImage
+        : `http://localhost:5050${user.profileImage}`
+      : "/assets/Profile.jpg"
+  }
+  onError={(e) => {
+    console.warn("❌ Failed to load user avatar:", user?.profileImage);
+    e.target.onerror = null;
+    e.target.src = "/assets/Profile.jpg";
+  }}
+  referrerPolicy="no-referrer"
+  alt="User Avatar"
+  className="transition-all object-cover rounded-full w-[40px] h-[40px]"
+/>
+
+
           {isOpen && (
             <div className="ml-3 flex-1">
-              <p className="text-base font-semibold">Ali Riaz</p>
-              <p className="text-xs text-gray-300">Travel Handler</p>
+              <p className="text-base font-semibold">
+                {user?.name || "Organizer"}
+              </p>
+              <p className="text-xs text-gray-300 capitalize">
+                {user?.role || "Organizer"}
+              </p>
             </div>
           )}
-          
+
           {isOpen && <HiChevronRight className="text-gray-300" />}
         </div>
       </Link>
@@ -140,7 +187,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   );
 };
 
-// SidebarItem Component to make the code modular
 const SidebarItem = ({ to, icon, label, isOpen, isActive }) => (
   <li>
     <Link

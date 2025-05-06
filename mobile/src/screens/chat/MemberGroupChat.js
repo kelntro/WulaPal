@@ -1,0 +1,287 @@
+import React, { useEffect, useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Linking,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import DocumentPicker from 'react-native-document-picker';
+import { useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import io from 'socket.io-client';
+import { API_BASE_URL } from '@env';
+
+const socket = io(API_BASE_URL);
+
+const MemberGroupChat = () => {
+  const route = useRoute();
+  const { groupId } = route.params;
+
+  const [user, setUser] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [typingUsers, setTypingUsers] = useState([]);
+  const chatRef = useRef(null);
+
+  useEffect(() => {
+    const initUserAndMessages = async () => {
+      const storedUser = await AsyncStorage.getItem('user');
+      if (!storedUser) return;
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+
+      fetch(`${API_BASE_URL}/api/chat/group/${groupId}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log("📩 Loaded messages:", data);
+          setMessages(data);
+        });
+
+      fetch(`${API_BASE_URL}/api/chat/group/${groupId}/mark-read`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: parsedUser._id }),
+      });
+
+      socket.emit('join', groupId);
+
+      socket.on('new-message', (msg) => {
+        setMessages(prev => [...prev, msg]);
+      });
+
+      socket.on('typing', ({ user }) => {
+        setTypingUsers(prev => [...new Set([...prev, user])]);
+        setTimeout(() => {
+          setTypingUsers(prev => prev.filter(u => u !== user));
+        }, 3000);
+      });
+
+      return () => {
+        socket.emit('leave', groupId);
+        socket.off('new-message');
+        socket.off('typing');
+      };
+    };
+
+    initUserAndMessages();
+  }, [groupId]);
+
+  useEffect(() => {
+    chatRef.current?.scrollToEnd({ animated: true });
+  }, [messages]);
+
+  const handleTyping = () => {
+    if (user?.name) {
+      socket.emit('typing', { groupId, user: user.name });
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || !user) return;
+
+    await fetch(`${API_BASE_URL}/api/chat/group/${groupId}/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        groupId,
+        sender: user._id,
+        type: 'text',
+        content: input,
+      }),
+    });
+
+    setInput('');
+  };
+
+  const pickAndSendFile = async () => {
+    try {
+      const res = await DocumentPicker.pickSingle({ type: DocumentPicker.types.allFiles });
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: res.uri,
+        type: res.type,
+        name: res.name,
+      });
+
+      const upload = await fetch(`${API_BASE_URL}/api/upload-chat-file`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await upload.json();
+
+      if (data.url) {
+        await fetch(`${API_BASE_URL}/api/chat/group/${groupId}/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            groupId,
+            sender: user._id,
+            type: 'file',
+            content: data.url,
+          }),
+        });
+      }
+    } catch (err) {
+      if (!DocumentPicker.isCancel(err)) {
+        console.error("❌ File Upload Error:", err);
+      }
+    }
+  };
+
+  const renderItem = ({ item }) => {
+    const isSender = item.sender._id === user._id;
+  
+    return (
+      <View style={[styles.messageWrapper, isSender ? styles.alignRight : styles.alignLeft]}>
+        {!isSender && (
+          <Text style={styles.senderName}>
+            {item.sender.name || 'Unknown'}
+          </Text>
+        )}
+        <View style={[styles.message, isSender && styles.sender]}>
+          {item.type === 'file' ? (
+            <TouchableOpacity onPress={() => Linking.openURL(item.content)}>
+              <Text style={[styles.fileLink, isSender && styles.senderText]}>📎 View File</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={[styles.messageText, isSender && styles.senderText]}>
+              {item.content}
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  };
+  
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: 'center', color: '#888' }}>Loading chat...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.container}
+    >
+      <FlatList
+        ref={chatRef}
+        data={messages}
+        renderItem={renderItem}
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={{ padding: 10 }}
+        ListEmptyComponent={
+          <Text style={{ textAlign: 'center', color: '#888' }}>
+            No messages yet.
+          </Text>
+        }
+      />
+
+      {typingUsers.length > 0 && (
+        <Text style={styles.typingIndicator}>
+          {typingUsers.join(", ")} {typingUsers.length > 1 ? "are" : "is"} typing...
+        </Text>
+      )}
+
+      <View style={styles.inputContainer}>
+        <TouchableOpacity onPress={pickAndSendFile}>
+          <Icon name="attach-outline" size={24} color="#3A6953" style={{ marginRight: 8 }} />
+        </TouchableOpacity>
+        <TextInput
+          value={input}
+          onChangeText={(text) => {
+            setInput(text);
+            handleTyping();
+          }}
+          onSubmitEditing={sendMessage}
+          placeholder="Type a message..."
+          style={styles.input}
+        />
+        <TouchableOpacity onPress={sendMessage} style={styles.sendBtn}>
+          <Icon name="send" size={20} color="white" />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F4F8F7' },
+  message: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 8,
+    maxWidth: '80%',
+    alignSelf: 'flex-start',
+  },
+  sender: {
+    backgroundColor: '#DFF0DA',
+    alignSelf: 'flex-end',
+  },
+  messageText: { fontSize: 14, color: '#333' },
+  senderText: { color: '#2E7D32' },
+  fileLink: { textDecorationLine: 'underline', fontSize: 14 },
+  typingIndicator: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 4,
+    marginLeft: 12,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+  },
+  input: {
+    flex: 1,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
+  sendBtn: {
+    backgroundColor: '#3A6953',
+    padding: 10,
+    borderRadius: 20,
+    marginLeft: 8,
+  },
+  messageWrapper: {
+    marginBottom: 10,
+    maxWidth: '80%',
+  },
+  
+  alignLeft: {
+    alignSelf: 'flex-start',
+  },
+  
+  alignRight: {
+    alignSelf: 'flex-end',
+  },
+  
+  senderName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3A6953',
+    marginBottom: 4,
+    marginLeft: 5,
+  },
+  
+});
+
+export default MemberGroupChat;

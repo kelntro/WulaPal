@@ -1,0 +1,60 @@
+import axios from 'axios';
+
+const XENDIT_API_KEY = process.env.XENDIT_SECRET_KEY; // ✅ Make sure it's correct
+
+export const createPlanPurchase = async (req, res) => {
+    console.log("[PLAN PURCHASE] API HIT: Received a plan purchase request");
+
+    try {
+        const { amount, plan, userId, successRedirectURL } = req.body;
+
+        if (!amount || isNaN(amount) || amount <= 0) {
+            console.error("[PLAN PURCHASE] Invalid amount:", amount);
+            return res.status(400).json({ message: "Invalid plan amount." });
+        }
+
+        if (!plan || !userId || !successRedirectURL) {
+            console.error("[PLAN PURCHASE] Missing required fields.");
+            return res.status(400).json({ message: "Missing required fields." });
+        }
+
+        console.log("[PLAN PURCHASE] Creating Xendit invoice...");
+        const ref = `plan-${userId}-${Date.now()}`;
+
+        const invoicePayload = {
+            external_id: ref,
+            payer_email: `user-${userId}@wulapal.app`,
+            description: `Purchase ${plan} Plan on WulaPal`,
+            amount: Number(amount),
+            currency: "PHP",
+            success_redirect_url: successRedirectURL, // ✅ Important! after payment go back to success page
+        };
+
+        const response = await axios.post("https://api.xendit.co/v2/invoices", invoicePayload, {
+            headers: {
+                Authorization: `Basic ${Buffer.from(XENDIT_API_KEY + ":").toString("base64")}`,
+                "Content-Type": "application/json",
+            },
+        });
+
+        const checkoutUrl = response.data.invoice_url;
+
+        if (!checkoutUrl) {
+            console.error("[PLAN PURCHASE] No checkout URL returned by Xendit.");
+            return res.status(500).json({ message: "Failed to generate payment link. Try again later." });
+        }
+
+        console.log("[PLAN PURCHASE] Xendit Invoice Created. Checkout URL:", checkoutUrl);
+
+        return res.status(200).json({
+            message: "Plan purchase initiated. Redirecting to payment link.",
+            checkout_url: checkoutUrl,
+        });
+    } catch (error) {
+        console.error("[PLAN PURCHASE] Error processing plan purchase:", error.response?.data || error.message);
+        return res.status(500).json({
+            message: "Error processing plan purchase via Xendit.",
+            error: error.message,
+        });
+    }
+};

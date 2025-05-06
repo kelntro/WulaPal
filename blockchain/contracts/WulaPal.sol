@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+interface IERC20 {
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
+}
+
 contract WulaPal {
     struct Member {
         address wallet;
@@ -9,36 +15,39 @@ contract WulaPal {
     }
 
     address public organizer;
+    address public superAdmin;
+    IERC20 public stableToken;
     uint256 public contributionAmount;
     uint256 public payoutAmount;
-    uint256 public frequency; // Contribution frequency in seconds
+    uint256 public frequency;
     uint256 public totalMembers;
     uint256 public requiredMembers;
     uint256 public totalContributed;
     uint256 public nextPayoutIndex;
     uint256 public startTime;
-    bool public groupStarted;
 
     Member[] public members;
     mapping(address => bool) public isMember;
 
     event ContributionMade(address indexed member, uint256 amount);
-    event PayoutReleased(address indexed recipient, uint256 amount);
+    event PayoutReleased(address indexed recipient, uint256 netAmount, uint256 organizerFee, uint256 systemFee);
     event GroupCreated(address indexed organizer, uint256 requiredMembers, uint256 contributionAmount);
-    event GroupFull();
 
     modifier onlyOrganizer() {
         require(msg.sender == organizer, "Only the organizer can perform this action");
         _;
     }
 
-    modifier onlyWhenStarted() {
-        require(groupStarted, "Group has not started yet");
-        _;
-    }
-
-    constructor(uint256 _contributionAmount, uint256 _frequency, uint256 _requiredMembers) {
+    constructor(
+        address _stableToken,
+        uint256 _contributionAmount,
+        uint256 _frequency,
+        uint256 _requiredMembers,
+        address _superAdmin
+    ) {
         organizer = msg.sender;
+        superAdmin = _superAdmin;
+        stableToken = IERC20(_stableToken);
         contributionAmount = _contributionAmount;
         frequency = _frequency;
         requiredMembers = _requiredMembers;
@@ -54,55 +63,48 @@ contract WulaPal {
         members.push(Member(msg.sender, false, false));
         isMember[msg.sender] = true;
         totalMembers++;
-
-        if (totalMembers == requiredMembers) {
-            startGroup();
-        }
     }
 
-    function startGroup() private {
-        groupStarted = true;
-        shuffleMembers(); // Randomize payout order
-        emit GroupFull();
-    }
-
-    function shuffleMembers() private {
-        for (uint i = 0; i < members.length; i++) {
-            uint randomIndex = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, i))) % members.length;
-            (members[i], members[randomIndex]) = (members[randomIndex], members[i]);
-        }
-    }
-
-    function contribute() external payable onlyWhenStarted {
-        require(msg.value == contributionAmount, "Incorrect contribution amount");
-        require(isMember[msg.sender], "Not a member");
+    function contribute() external {
 
         for (uint i = 0; i < members.length; i++) {
             if (members[i].wallet == msg.sender) {
                 require(!members[i].hasContributed, "Already contributed");
+
+                bool success = stableToken.transferFrom(msg.sender, address(this), contributionAmount);
+                require(success, "Token transfer failed");
+
                 members[i].hasContributed = true;
-                totalContributed += msg.value;
-                emit ContributionMade(msg.sender, msg.value);
+                totalContributed += contributionAmount;
+                emit ContributionMade(msg.sender, contributionAmount);
                 break;
             }
         }
     }
 
     function automaticPayout() external onlyOrganizer {
-        require(groupStarted, "Group must be started");
         require(nextPayoutIndex < totalMembers, "All payouts completed");
         require(block.timestamp >= startTime + (nextPayoutIndex * frequency), "Not time for next payout");
-        require(totalContributed >= contributionAmount * totalMembers, "Insufficient funds for payout");
+        require(totalContributed >= contributionAmount * (requiredMembers - 1), "Insufficient funds");
 
         address recipient = members[nextPayoutIndex].wallet;
         members[nextPayoutIndex].hasReceivedPayout = true;
-        payable(recipient).transfer(contributionAmount * totalMembers);
-        emit PayoutReleased(recipient, contributionAmount * totalMembers);
+
+        uint256 totalPayout = contributionAmount * (requiredMembers - 1);
+        uint256 organizerFee = (totalPayout * 1) / 100;
+        uint256 systemFee = (totalPayout * 1) / 100;
+        uint256 netPayout = totalPayout - organizerFee - systemFee;
+
+        require(stableToken.transfer(recipient, netPayout), "Recipient transfer failed");
+        require(stableToken.transfer(organizer, organizerFee), "Organizer fee transfer failed");
+        require(stableToken.transfer(superAdmin, systemFee), "System fee transfer failed");
+
+        emit PayoutReleased(recipient, netPayout, organizerFee, systemFee);
 
         nextPayoutIndex++;
     }
 
     function getContractBalance() external view returns (uint256) {
-        return address(this).balance;
+        return stableToken.balanceOf(address(this));
     }
 }

@@ -1,13 +1,15 @@
-import { StrictMode } from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.jsx"; // ✅ Import App.js
+import App from "./App.jsx";
 import "./styles/global.css";
-console.log("🔍 Checking if global.css is loaded");
+import { AuthProvider } from "./context/AuthContext.jsx"; // ✅ Add this line
 
 const rootElement = document.getElementById("root");
 
 createRoot(rootElement).render(
-  <StrictMode>
-    <App /> {/* ✅ Use App.js for routing */}
-  </StrictMode>
+  <React.StrictMode>
+    <AuthProvider> {/* ✅ Wrap everything with AuthProvider */}
+        <App />
+    </AuthProvider>
+  </React.StrictMode>
 );

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import axios from 'axios';
+import { API_BASE_URL } from '@env';
 
 const GroupsScreen = ({ navigation }) => {
     const [groups, setGroups] = useState([]);
@@ -12,7 +13,7 @@ const GroupsScreen = ({ navigation }) => {
 
     const fetchGroups = async () => {
         try {
-            const response = await axios.get('http://10.0.2.2:5050/api/groups');
+            const response = await axios.get('${API_BASE_URL}/api/groups');
             setGroups(response.data);
         } catch (error) {
             console.error("Error fetching groups:", error.message);

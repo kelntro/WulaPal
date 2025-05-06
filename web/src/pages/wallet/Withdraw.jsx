@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import { MdPayment } from "react-icons/md";
 import { BsInfoCircle } from "react-icons/bs";
 import { IoIosLock } from "react-icons/io";
@@ -7,26 +7,60 @@ import { IoIosLock } from "react-icons/io";
 export default function PaymentOption() {
   const navigate = useNavigate();
 
-  // States
   const [depositAmount, setDepositAmount] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [depositFee, setDepositFee] = useState(0);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  // Function to handle deposit amount change
   const handleDepositChange = (e) => {
     const amount = e.target.value;
     setDepositAmount(amount);
-    
+
     if (!amount) {
       setDepositFee(0);
       setTotal(0);
       return;
     }
-    
+
     const numericAmount = parseFloat(amount) || 0;
     const fee = numericAmount * 0.02 < 5 ? 5 : numericAmount * 0.02;
     setDepositFee(fee);
     setTotal(numericAmount + fee);
+  };
+
+  const handleWithdraw = async () => {
+    const userId = localStorage.getItem("userId");
+
+    if (!userId) return alert("User ID missing. Please login again.");
+    if (!mobileNumber || mobileNumber.length < 10) return alert("Enter a valid mobile number.");
+    if (!depositAmount || isNaN(depositAmount) || depositAmount <= 0) return alert("Enter a valid amount.");
+
+    try {
+      setLoading(true);
+
+      const res = await fetch("http://localhost:5050/api/wallet/withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: parseFloat(depositAmount),
+          userId,
+          mobileNumber: mobileNumber,
+          channel: "GCASH"
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Withdrawal failed");
+
+      navigate("/wallet/success-withdraw");
+    } catch (error) {
+      alert("Withdrawal failed: " + error.message);
+      console.error("Withdrawal error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,34 +74,33 @@ export default function PaymentOption() {
           </div>
           <div className="flex items-center mb-4">
             <span className="text-green-700 text-xl mr-2"><MdPayment /></span>
-            <h3 className="text-[#3A6953] font-medium">Deposit Funds</h3>
+            <h3 className="text-[#3A6953] font-medium">Withdraw Funds</h3>
           </div>
           <p className="text-sm text-gray-500 mb-4">
-            Deposit Funds to Your Wallet.
+            Withdraw funds to your linked GCash account.
           </p>
 
           <div className="mb-4">
-            <label className="text-sm font-medium text-[#3A6953]">Linked bank for you withdrawal</label>
+            <label className="text-sm font-medium text-[#3A6953]">Linked Bank</label>
             <div className="border rounded-lg p-3 flex items-center mt-2">
               <img src="/assets/gcashlogo.jpg" alt="Gcash" className="h-[20px] mr-1 ml-[-10px]" />
-              <span className="text-gray-700 font-medium">Gcash</span>
+              <span className="text-gray-700 font-medium">GCash</span>
             </div>
           </div>
 
           <div className="mb-4">
             <label className="text-sm font-medium text-[#3A6953] flex items-center">
-              Account Name <span className="ml-1 text-gray-400"><BsInfoCircle /></span>
-            </label>
-            <input type="text" className="w-full p-2 border rounded-md mt-1" placeholder="Ali Riaz" />
-          </div>
-
-          <div className="mb-4">
-            <label className="text-sm font-medium text-[#3A6953] flex items-center">
-              Account Number <span className="ml-1 text-gray-400"><BsInfoCircle /></span>
+              GCash Mobile Number <span className="ml-1 text-gray-400"><BsInfoCircle /></span>
             </label>
             <div className="flex items-center border rounded-md p-2 mt-1">
               <span className="text-gray-700 mr-2">+63</span>
-              <input type="text" className="w-full p-1 outline-none" placeholder="905 838 5274" />
+              <input
+                type="text"
+                className="w-full p-1 outline-none"
+                placeholder="905 838 5274"
+                value={mobileNumber}
+                onChange={(e) => setMobileNumber(e.target.value)}
+              />
             </div>
           </div>
 
@@ -92,23 +125,28 @@ export default function PaymentOption() {
               Cancel
             </button>
 
-            <button className="w-full bg-[#3A6953] text-white p-2 rounded-md"
-                    onClick={() => navigate("/wallet/success-withdraw")}>Confirm Withdrawal</button>
+            <button
+              className="w-full bg-[#3A6953] text-white p-2 rounded-md"
+              onClick={handleWithdraw}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm Withdrawal"}
+            </button>
           </div>
         </div>
 
-        {/* Plan Details */}
+        {/* Payment Summary */}
         <div className="flex-1 bg-[#D4E8DB] p-6 rounded-2xl shadow-lg">
           <h3 className="text-lg font-bold mb-4 text-[#3A6953]">Payment Details</h3>
 
           <div className="mt-6 text-xl font-medium flex justify-between items-center text-[#3A6953]">
             <span>Withdrawal Amount</span>
-            <span className="text-[#3A6953] font-semibold">₱{depositAmount ? depositAmount : "0"}</span>
+            <span className="text-[#3A6953] font-semibold">₱{depositAmount || "0"}</span>
           </div>
 
           <div className="mt-6 text-xl font-medium flex justify-between items-center text-[#3A6953] border-b border-[#3A6953] pb-4">
             <span>Withdrawal Fee</span>
-            <span className="text-[#3A6953] font-semibold">₱{depositAmount ? depositFee.toFixed(2) : "0"}</span>
+            <span className="text-[#3A6953] font-semibold">₱{depositFee.toFixed(2)}</span>
           </div>
 
           <div className="mt-6 text-xl font-semibold flex justify-between items-center text-[#3A6953]">

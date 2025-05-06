@@ -1,5 +1,13 @@
 # Ignore Backend dependencies
 node_modules/
+node_modules/.*
 logs/
 *.log
-.env
+.env+
+uploads/
+
+#Json Package
+*package.json
+*package-lock.json
+
+firebase-service-account.json
