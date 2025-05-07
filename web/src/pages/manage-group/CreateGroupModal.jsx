@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaRegImage } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import { HiUserGroup } from "react-icons/hi";
@@ -15,6 +15,31 @@ const CreateGroupModal = ({ onClose }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [warning, setWarning] = useState(null);
+
+  useEffect(() => {
+    const checkActiveGroups = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) return;
+
+        const response = await fetch(`http://localhost:5050/api/organizer-groups?organizerId=${user.name}`);
+        const groups = await response.json();
+        
+        const activeGroups = groups.filter(g => g.status === "open" || g.status === "active");
+        
+        if (user.plan === "Free" && activeGroups.length >= 1) {
+          setWarning("You've reached your Free plan limit of 1 active group. Upgrade to create more groups.");
+        } else if (user.plan === "Basic" && activeGroups.length >= 4) {
+          setWarning("You're approaching your Basic plan limit of 5 active groups. Consider upgrading to Pro for unlimited groups.");
+        }
+      } catch (err) {
+        console.error("Failed to check active groups:", err);
+      }
+    };
+
+    checkActiveGroups();
+  }, []);
 
   // Handle image selection
 const handleImageUpload = (event) => {
@@ -233,6 +258,11 @@ const [frequency, setFrequency] = useState("Weekly");
               {loading ? "Creating..." : "Create"}
             </button>
           </div>
+          {warning && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700">
+              {warning}
+            </div>
+          )}
         </form>
       </div>
     </div>

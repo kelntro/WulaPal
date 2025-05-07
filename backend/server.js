@@ -25,6 +25,8 @@ const messageRoutes = require("./routes/messageRoutes");
 const uploadRoutes = require('./routes/upload');
 const verifyToken = require("./middleware/auth");
 const Wallet = require("./models/Wallet");
+const { getUSDTFromPHP } = require("./utils/exchange");
+
 // 🔌 Connect to MongoDB here
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -111,7 +113,7 @@ app.post("/api/create-group", async (req, res) => {
       });
     }
 
-    if (organizerUser.plan === "Basic" && activeGroups.length >= 6) {
+    if (organizerUser.plan === "Basic" && activeGroups.length >= 5) {
       return res.status(403).json({
         error: "Basic plan limit reached. Please upgrade to Pro or manage your existing groups."
       });
@@ -486,6 +488,103 @@ app.post("/api/groups/:groupId/confirm-member", async (req, res) => {
   } catch (err) {
     console.error("❌ Confirm member error:", err.message);
     res.status(500).json({ error: "Server error while confirming membership." });
+  }
+});
+
+app.post("/api/groups/:groupId/contribute-now", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const { groupId } = req.params;
+
+    const group = await Group.findById(groupId);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    // ✅ Prevent early contribution if group is not yet full
+    if (group.members.length < group.slots) {
+      return res.status(400).json({
+        error: "Group is not yet full. Please wait for other members to join before contributing."
+      });
+    }
+
+    // ✅ Prevent contribution if member is the payout recipient
+    const payout = group.payouts[group.currentPayoutIndex || 0];
+    const isPayoutRecipient = payout?.recipientId?.toString() === userId;
+    if (isPayoutRecipient) {
+      return res.status(400).json({ error: "You are the payout recipient this cycle." });
+    }
+
+    // ✅ Check if already contributed for this cycle
+    const alreadyConfirmed = await MemberNotification.exists({
+      userId,
+      groupId,
+      type: "contribution_confirmed",
+      processed: false
+    });
+    if (alreadyConfirmed) {
+      return res.status(400).json({ error: "Already contributed for this cycle." });
+    }
+
+    // ✅ Check wallet existence and balance
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) return res.status(404).json({ error: "Wallet not found" });
+
+    const amountPHP = Number(group.contributionAmount);
+    if (wallet.balance < amountPHP) {
+      return res.status(400).json({ error: "Insufficient balance" });
+    }
+
+    // ✅ Exchange and blockchain interaction
+    const { usdtAmount, rate } = await getUSDTFromPHP(amountPHP);
+    const result = await contribute(group.contractAddress, group.tokenAddress, usdtAmount);
+    if (!result.success) return res.status(500).json({ error: result.error });
+
+    // ✅ Deduct balance and save wallet
+    wallet.balance -= amountPHP;
+    await wallet.save();
+
+    // ✅ Update contribution count
+    group.currentCycleContributions += 1;
+    await group.save();
+
+    // ✅ Save notification
+    await MemberNotification.create({
+      userId,
+      groupId,
+      type: "contribution_confirmed",
+      message: `✅ You contributed ₱${amountPHP} early to "${group.name}".`,
+      processed: false
+    });
+
+    // ✅ Log transaction
+    const referenceId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    await Transaction.create({
+      userId,
+      type: "transfer",
+      amount: amountPHP,
+      amountUSDT: usdtAmount,
+      exchangeRate: rate,
+      referenceId,
+      metadata: {
+        groupId: group._id.toString(),
+        to: `Group: ${group.name}`,
+        method: "advance_payment"
+      },
+      status: "confirmed",
+    });
+
+    // ✅ Emit real-time notification
+    const io = req.app.get("io");
+    io.emit("memberNotification", {
+      userId: userId.toString(),
+      message: `✅ You contributed ₱${amountPHP} early to "${group.name}".`,
+      date: new Date()
+    });
+
+    return res.json({ success: true, message: "Advance contribution successful." });
+
+  } catch (err) {
+    console.error("❌ Advance contribution error:", err.message);
+    return res.status(500).json({ error: "Server error" });
   }
 });
 

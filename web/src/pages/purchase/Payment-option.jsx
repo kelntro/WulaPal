@@ -40,7 +40,7 @@ export default function PaymentOption() {
           amount: plans[selectedPlan],
           plan: selectedPlan,
           userId,
-          successRedirectURL: "http://localhost:5173/purchase/success", // << 🔥 important: Xendit will go here after payment
+          successRedirectURL: `http://localhost:5173/purchase/success?plan=${selectedPlan}`,
         }),
       });
 

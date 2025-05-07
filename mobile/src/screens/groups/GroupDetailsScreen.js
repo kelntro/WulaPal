@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; 
+import React, { useState, useEffect } from 'react'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -9,6 +9,7 @@ import {
   TextInput,
   ScrollView,
   Modal,
+  ActivityIndicator ,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {API_BASE_URL} from '@env';
@@ -29,7 +30,38 @@ const GroupDetailsScreen = ({route}) => {
   const [modalMessage, setModalMessage] = useState('');
   const [depositModalVisible, setDepositModalVisible] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
+  const [isMember, setIsMember] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
+
+  useEffect(() => {
+    const checkMembership = async () => {
+      const userData = await AsyncStorage.getItem('user');
+      if (!userData) return;
   
+      const user = JSON.parse(userData);
+      const userId = user._id;
+      console.log('👤 Logged in user ID:', userId);
+  
+      try {
+        const groupResponse = await fetch(`${API_BASE_URL}/api/groups/${groupId}`);
+        const groupData = await groupResponse.json();
+  
+        console.log('📦 Group Members:', groupData.members);
+  
+        const member = groupData.members.some(
+          (m) => m?.id?.toString() === userId
+        );           
+  
+        console.log('✅ Is member of group?', member);
+        setIsMember(member);
+      } catch (err) {
+        console.error('❌ Error checking group membership:', err);
+      }
+    };
+  
+    checkMembership();
+  }, []);  
+
   const initiateJoin = async () => {
     const userData = await AsyncStorage.getItem('user');
     if (!userData) {
@@ -87,6 +119,10 @@ const GroupDetailsScreen = ({route}) => {
     }
   };
 
+  const normalizedImage = image?.startsWith('http')
+  ? image.replace(/^http:\/\/[^\/]+/, API_BASE_URL.replace(/\/$/, ''))
+  : `${API_BASE_URL.replace(/\/$/, '')}/${image?.replace(/\\/g, '/')}`;
+
   
   const joinGroup = async (groupId) => {
     try {
@@ -134,10 +170,12 @@ const GroupDetailsScreen = ({route}) => {
 
   return (
     <ScrollView style={styles.container}>
-      <Image
-        source={{uri: image || 'https://via.placeholder.com/150'}}
-        style={styles.image}
-      />
+<Image
+  source={{ uri: normalizedImage || 'https://via.placeholder.com/150' }}
+  style={styles.image}
+  onError={(e) => console.log('❌ Image failed to load:', e.nativeEvent)}
+  onLoad={() => console.log('✅ Image loaded:', normalizedImage)}
+/>
 
       <View style={styles.content}>
         <Text style={styles.title}>{groupName || 'Unnamed Group'}</Text>
@@ -178,9 +216,46 @@ const GroupDetailsScreen = ({route}) => {
           {description || 'No description provided.'}
         </Text>
 
-        <TouchableOpacity style={styles.joinButton} onPress={initiateJoin}>
-        <Text style={styles.joinButtonText}>Join Group</Text>
-      </TouchableOpacity>
+        {!isMember && (
+  <TouchableOpacity style={styles.joinButton} onPress={initiateJoin}>
+    <Text style={styles.joinButtonText}>Join Group</Text>
+  </TouchableOpacity>
+)}
+
+      {isMember && (
+  <TouchableOpacity
+  style={[styles.joinButton, { backgroundColor: isPaying ? '#AAA' : '#285236', marginTop: 12 }]}
+  disabled={isPaying}
+  onPress={async () => {
+    try {
+      setIsPaying(true); // 🟢 Start loading
+
+      const userData = await AsyncStorage.getItem('user');
+      const user = JSON.parse(userData);
+
+      const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}/contribute-now`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user._id }),
+      });
+
+      const data = await response.json();
+      setModalMessage(data.success ? `✅ ${data.message}` : `❌ ${data.error}`);
+      setModalVisible(true);
+    } catch (err) {
+      console.error("❌ Advance contribution failed:", err);
+      setModalMessage("❌ Something went wrong while processing payment.");
+      setModalVisible(true);
+    } finally {
+      setIsPaying(false); // 🔴 Stop loading
+    }
+  }}
+>
+
+<Text style={styles.joinButtonText}>Pay ₱{contribution} Now</Text>
+</TouchableOpacity>
+)}
+
       </View>
 
       <Modal
@@ -227,8 +302,10 @@ const GroupDetailsScreen = ({route}) => {
       </Text>
 
       <Text style={{ fontSize: 14, color: '#B00020', marginBottom: 10 }}>
-        ⚠️ Note: A 2% share will be deducted from each payout — 1% goes to the organizer and 1% to the system.
-      </Text>
+  ⚠️ Note:
+      {"\n"}• A 2% share will be deducted from each payout (1% for the organizer, 1% for the system).
+      {"\n"}• A 5% penalty will be charged if you miss your scheduled contribution.
+    </Text>
 
       <TextInput
         placeholder="Enter deposit amount"
@@ -248,6 +325,15 @@ const GroupDetailsScreen = ({route}) => {
     </View>
   </View>
 </Modal>
+{isPaying && (
+  <View style={styles.loadingOverlay}>
+    <ActivityIndicator size="large" color="#285236" />
+    <Text style={{ marginTop: 10, color: '#285236', fontWeight: 'bold' }}>
+      Processing your payment...
+    </Text>
+  </View>
+)}
+
     </ScrollView>
   );
 };
@@ -301,6 +387,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  
 });
 
 export default GroupDetailsScreen;

@@ -40,9 +40,21 @@ const userSchema = new mongoose.Schema(
       enum: ["Free", "Basic", "Pro"],
       default: "Free",
     },
+    planExpirationDate: {
+      type: Date,
+      default: null
+    },
+    activeGroupsCount: {
+      type: Number,
+      default: 0
+    },
+    maxActiveGroups: {
+      type: Number,
+      default: 1 // Default for Free plan
+    },
     lastActive: {
       type: Date,
-      default: Date.now,
+      default: Date.now
     }    
   },
   { timestamps: true }
@@ -50,5 +62,23 @@ const userSchema = new mongoose.Schema(
 
 // ✅ Allow same email with different role (composite unique index)
 userSchema.index({ email: 1, role: 1 }, { unique: true });
+
+// Pre-save hook to update maxActiveGroups based on plan
+userSchema.pre('save', function(next) {
+  if (this.isModified('plan')) {
+    switch (this.plan) {
+      case 'Free':
+        this.maxActiveGroups = 1;
+        break;
+      case 'Basic':
+        this.maxActiveGroups = 5;
+        break;
+      case 'Pro':
+        this.maxActiveGroups = Infinity;
+        break;
+    }
+  }
+  next();
+});
 
 module.exports = mongoose.model("User", userSchema);

@@ -158,29 +158,44 @@ router.get("/search", async (req, res) => {
   
   router.patch("/update-plan", async (req, res) => {
     try {
-      const { userId, plan } = req.body;
-      if (!userId || !plan) return res.status(400).json({ error: "Missing fields" });
+      const { userId, plan, planExpirationDate } = req.body;
+      console.log("📥 Received update-plan request:", req.body);
+  
+      if (!userId || !plan) {
+        console.warn("⚠️ Missing fields: userId or plan");
+        return res.status(400).json({ error: "Missing fields" });
+      }
   
       const user = await User.findById(userId);
-      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user) {
+        console.warn("❌ User not found:", userId);
+        return res.status(404).json({ error: "User not found" });
+      }
   
       const validPlans = ["Free", "Basic", "Pro"];
       const currentIndex = validPlans.indexOf(user.plan);
       const newIndex = validPlans.indexOf(plan);
   
+      console.log(`Current plan: ${user.plan} (${currentIndex}), Requested: ${plan} (${newIndex})`);
+  
       if (newIndex === -1 || newIndex <= currentIndex) {
+        console.warn("⛔ Invalid plan change attempt");
         return res.status(400).json({ error: "Invalid upgrade. You can't downgrade or re-purchase the same plan." });
       }
   
       user.plan = plan;
+      if (planExpirationDate) {
+        user.planExpirationDate = new Date(planExpirationDate);
+      }
       await user.save();
   
+      console.log("✅ Plan upgraded:", user.plan);
       res.json({ success: true, message: `Plan upgraded to ${plan}` });
     } catch (err) {
       console.error("❌ Error updating user plan:", err.message);
       res.status(500).json({ error: "Server error" });
     }
-  });
+  });  
   
   router.patch('/last-active/:id', async (req, res) => {
     try {

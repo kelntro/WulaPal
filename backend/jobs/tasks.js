@@ -245,7 +245,15 @@ const handleAutoContribution = async () => {
         console.log(`⏳ [Group: ${group.name}] Not enough contributions yet.`);
         continue;
       }
-  
+
+      // Add check for completed payouts
+      if (group.currentPayoutIndex >= group.payouts.length) {
+        console.log(`✅ [Group: ${group.name}] All payout cycles completed.`);
+        group.status = "completed";
+        await group.save();
+        continue;
+      }
+
       const payout = group.payouts?.[payoutIndex];
       if (!payout) {
         console.log(`❌ [Group: ${group.name}] No payout data found at index ${payoutIndex}`);
@@ -279,7 +287,7 @@ const handleAutoContribution = async () => {
           `🎉 You received your payout from "${group.name}".`
         );
       
-        // ✅ INSERT THIS BLOCK to credit organizer’s wallet in MongoDB
+        // ✅ INSERT THIS BLOCK to credit organizer's wallet in MongoDB
         const totalPayoutPHP = Number(group.contributionAmount) * (group.requiredMembers - 1);
         const organizerFee = (totalPayoutPHP * 1) / 100;
       
@@ -303,71 +311,67 @@ const handleAutoContribution = async () => {
       
           console.log(`💰 Organizer share of ₱${organizerFee} credited to ${group.handler}`);
         }
-      }
-       else {
-  console.log(`❌ Payout failed for group ${group.name}:`, result.error);
-}
-  
-      group.currentCycleContributions = 0;
-      group.currentPayoutIndex += 1;
-  
-      // ✅ Check if group is done
-      const isCompleted = group.currentPayoutIndex >= group.payouts.length;
-      if (isCompleted) {
-        group.status = "completed";
-  
-        for (const member of group.members) {
-          // 💸 Refund each member’s deposit
-          if (member.depositAmount > 0) {
-            const wallet = await Wallet.findOne({ userId: member.userId });
-            if (wallet) {
-              wallet.balance += member.depositAmount;
-              await wallet.save();
-  
-              await Transaction.create({
-                userId: member.userId,
-                type: "refund",
-                amount: member.depositAmount,
-                metadata: {
-                  groupId: group._id.toString(),
-                  type: "deposit_refund"
-                },
-                status: "confirmed"
-              });
-  
-              await MemberNotification.create({
-                userId: member.userId,
-                groupId: group._id,
-                message: `💰 Your ₱${member.depositAmount} deposit was refunded after group "${group.name}" completed.`,
-                type: "deposit_refunded"
-              });
-  
-              await sendPushToUser(
-                member.userId.toString(),
-                "WulaPal",
-                `💰 Your ₱${member.depositAmount} deposit for group "${group.name}" was refunded.`
-              );
-  
-              console.log(`↩️ [Refund] ₱${member.depositAmount} refunded to ${member.userId}`);
+
+        // ✅ Check if group is done
+        if (group.currentPayoutIndex >= group.payouts.length) {
+          group.status = "completed";
+          await group.save();
+          
+          for (const member of group.members) {
+            // 💸 Refund each member's deposit
+            if (member.depositAmount > 0) {
+              const wallet = await Wallet.findOne({ userId: member.userId });
+              if (wallet) {
+                wallet.balance += member.depositAmount;
+                await wallet.save();
+    
+                await Transaction.create({
+                  userId: member.userId,
+                  type: "refund",
+                  amount: member.depositAmount,
+                  metadata: {
+                    groupId: group._id.toString(),
+                    type: "deposit_refund"
+                  },
+                  status: "confirmed"
+                });
+    
+                await MemberNotification.create({
+                  userId: member.userId,
+                  groupId: group._id,
+                  message: `💰 Your ₱${member.depositAmount} deposit was refunded after group "${group.name}" completed.`,
+                  type: "deposit_refunded"
+                });
+    
+                await sendPushToUser(
+                  member.userId.toString(),
+                  "WulaPal",
+                  `💰 Your ₱${member.depositAmount} deposit for group "${group.name}" was refunded.`
+                );
+    
+                console.log(`↩️ [Refund] ₱${member.depositAmount} refunded to ${member.userId}`);
+              }
             }
+    
+            // 📨 Final notification
+            await MemberNotification.create({
+              userId: member.userId,
+              groupId: group._id,
+              message: `✅ Group "${group.name}" has completed all payout cycles.`,
+              type: "group_completed"
+            });
+    
+            await sendPushToUser(
+              member.userId.toString(),
+              "WulaPal",
+              `✅ Group "${group.name}" is now completed. 🎉`
+            );
           }
-  
-          // 📨 Final notification
-          await MemberNotification.create({
-            userId: member.userId,
-            groupId: group._id,
-            message: `✅ Group "${group.name}" has completed all payout cycles.`,
-            type: "group_completed"
-          });
-  
-          await sendPushToUser(
-            member.userId.toString(),
-            "WulaPal",
-            `✅ Group "${group.name}" is now completed. 🎉`
-          );
+    
+          console.log(`🏁 [Group: ${group.name}] All payout cycles completed. Group marked as completed.`);
         }
-  
-        console.log(`🏁 [Group: ${group.name}] All payout cycles completed. Group marked as completed.`);
+      } else {
+        console.log(`❌ Payout failed for group ${group.name}:`, result.error);
       }
   
       // ✅ Update group status/timing

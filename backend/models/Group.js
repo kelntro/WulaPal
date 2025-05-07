@@ -35,7 +35,15 @@ const GroupSchema = new mongoose.Schema(
     status: { type: String, enum: ["open", "active", "completed"], default: "open" },
     lastContributionDate: { type: Date },
     currentCycleContributions: { type: Number, default: 0 },
-    currentPayoutIndex: { type: Number, default: 0 }
+    currentPayoutIndex: { type: Number, default: 0 },
+    penalties: [
+      {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        cycle: { type: Number, required: true },
+        amount: { type: Number, required: true },
+        date: { type: Date, default: Date.now }
+      }
+    ]    
   },
   { timestamps: true }
 );

@@ -18,6 +18,10 @@ export const createPlanPurchase = async (req, res) => {
             return res.status(400).json({ message: "Missing required fields." });
         }
 
+        // Set expiration date to 1 year from now
+        const expirationDate = new Date();
+        expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+
         console.log("[PLAN PURCHASE] Creating Xendit invoice...");
         const ref = `plan-${userId}-${Date.now()}`;
 
@@ -28,6 +32,11 @@ export const createPlanPurchase = async (req, res) => {
             amount: Number(amount),
             currency: "PHP",
             success_redirect_url: successRedirectURL, // ✅ Important! after payment go back to success page
+            metadata: {
+                userId,
+                plan,
+                expirationDate: expirationDate.toISOString()
+            }
         };
 
         const response = await axios.post("https://api.xendit.co/v2/invoices", invoicePayload, {

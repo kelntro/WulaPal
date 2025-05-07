@@ -171,8 +171,11 @@ const GroupsScreen = () => {
             <FlatList
               data={filteredGroups}
               keyExtractor={item => item._id}
-              renderItem={({item}) => <GroupCard group={item} />}
+              renderItem={({ item }) => (
+                <GroupCard group={item} currentUserId={currentUserId} />
+              )}
             />
+
           ) : (
             <Text style={styles.noGroupsText}>
               {selectedTab === 'your'
@@ -187,7 +190,7 @@ const GroupsScreen = () => {
 };
 
 // ✅ Group Card Component
-const GroupCard = ({group}) => {
+const GroupCard = ({ group, currentUserId }) => {
   const navigation = useNavigation();
 // Normalize API_BASE_URL to avoid trailing slashes
 const baseUrl = API_BASE_URL.replace(/\/$/, '');
@@ -205,8 +208,8 @@ console.log('🌐 Final Image URL:', imageUrl);
   const handlerName = group.handler?.name || 'Unknown';
   const isJoined = group.members?.some(member => {
     const id = typeof member === 'string' ? member : member.userId;
-    return id === group.currentUserId;
-  });
+    return id.toString() === currentUserId;
+  });  
 
   return (
     <View style={styles.card}>
