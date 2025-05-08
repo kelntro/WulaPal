@@ -133,34 +133,19 @@ const Wallet = () => {
               <StatCard
                 title="Total Deposit"
                 amount={`₱${walletSummary.deposit.toLocaleString()}`}
-                icon={<GoArrowDownLeft />}
-                change="+1.29%"
-                changeColor="text-[#285236]"
-                changeBg="bg-[#E5F8ED]"
-              />
+                icon={<GoArrowUpRight />}              />
               <StatCard
                 title="Total Withdraw"
                 amount={`₱${walletSummary.withdraw.toLocaleString()}`}
-                icon={<GoArrowUpRight />}
-                change="-1.29%"
-                changeColor="text-[#9B2C2C]"
-                changeBg="bg-[#FBE7E7]"
-              />
+                icon={<GoArrowUpRight />}              />
               <StatCard
                 title="Total Receive"
                 amount={`₱${walletSummary.receive.toLocaleString()}`}
-                icon={<GoArrowDownLeft />}
-                change="+1.29%"
-                changeColor="text-[#285236]"
-                changeBg="bg-[#E5F8ED]"
-              />
+                icon={<GoArrowUpRight />}              />
               <StatCard
                 title="Total Transfer"
                 amount={`₱${walletSummary.transfer.toLocaleString()}`}
                 icon={<GoArrowUpRight />}
-                change="-1.29%"
-                changeColor="text-[#9B2C2C]"
-                changeBg="bg-[#FBE7E7]"
               />
             </div>
           </div>

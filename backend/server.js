@@ -424,16 +424,20 @@ app.post("/api/groups/:groupId/confirm-member", async (req, res) => {
     wallet.balance -= parsedDeposit;
     await wallet.save();
 
-    await Transaction.create({
-      userId,
-      type: "deposit",
-      amount: parsedDeposit,
-      metadata: {
-        groupId: group._id.toString(),
-        type: "security_deposit"
-      },
-      status: "confirmed",
-    });
+    const referenceId = `SECURITY-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+
+await Transaction.create({
+  userId,
+  type: "deposit",
+  amount: parsedDeposit,
+  referenceId, // ✅ Fix: add this field
+  metadata: {
+    groupId: group._id.toString(),
+    type: "security_deposit"
+  },
+  status: "confirmed",
+});
+
 
     group.members.push({
       userId: new mongoose.Types.ObjectId(userId),
@@ -486,9 +490,10 @@ app.post("/api/groups/:groupId/confirm-member", async (req, res) => {
     res.json({ success: true, message: "Member confirmed with deposit and added to group." });
 
   } catch (err) {
-    console.error("❌ Confirm member error:", err.message);
-    res.status(500).json({ error: "Server error while confirming membership." });
+    console.error("❌ Confirm member error:", err);
+    res.status(500).json({ error: err.message || "Server error while confirming membership." });
   }
+  
 });
 
 app.post("/api/groups/:groupId/contribute-now", async (req, res) => {

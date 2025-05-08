@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
+  View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet,
   Alert, SafeAreaView, Modal, Pressable
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -16,6 +16,10 @@ const NotificationScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [customDate, setCustomDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
+const [depositInput, setDepositInput] = useState("");
+const [joiningNotification, setJoiningNotification] = useState(null);
+
 
   const handleFilterChange = (filter, date = null) => {
     setSelectedFilter(filter);
@@ -146,24 +150,31 @@ const NotificationScreen = () => {
   };
 
   const confirmJoin = async (notification) => {
+    console.log("📨 [confirmJoin] Received notification:", notification);
+  
     try {
       const user = await AsyncStorage.getItem("user");
       const parsed = user ? JSON.parse(user) : null;
-      if (!parsed?._id || !notification.groupId) return;
   
-      const res = await axios.post(`${API_BASE_URL}/api/groups/${notification.groupId}/confirm-member`, {
-        userId: parsed._id,
-      });
-  
-      if (res.data.success) {
-        Alert.alert("✅ Joined", "You have successfully joined the group!");
-        fetchNotifications(selectedFilter);
+      if (!parsed?._id) {
+        console.warn("⚠️ [confirmJoin] Missing user._id");
+        return;
       }
+      if (!notification.groupId) {
+        console.warn("⚠️ [confirmJoin] Missing notification.groupId");
+        return;
+      }
+  
+      console.log("✅ [confirmJoin] Showing custom modal for deposit...");
+      setJoiningNotification(notification);
+      setDepositInput("");
+      setShowDepositModal(true);
     } catch (err) {
-      console.error("❌ Joining group failed:", err.message);
-      Alert.alert("Error", "Failed to join the group.");
+      console.error("❌ [confirmJoin] Outer error:", err.message);
+      Alert.alert("Error", "Could not process request.");
     }
   };
+  
   
   useEffect(() => {
     fetchNotifications();
@@ -219,6 +230,88 @@ const NotificationScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={showDepositModal} transparent animationType="slide">
+  <View style={{
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.4)"
+  }}>
+    <View style={{
+      backgroundColor: "#fff",
+      padding: 20,
+      borderRadius: 10,
+      width: "80%"
+    }}>
+      <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
+        Enter Initial Deposit
+      </Text>
+      <TextInput
+        placeholder="e.g. 100"
+        keyboardType="numeric"
+        value={depositInput}
+        onChangeText={setDepositInput}
+        style={{
+          borderWidth: 1,
+          borderColor: "#ccc",
+          borderRadius: 5,
+          padding: 10,
+          marginBottom: 15,
+        }}
+      />
+      <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+        <TouchableOpacity onPress={() => {
+          console.log("❌ [confirmJoin] User canceled the modal");
+          setShowDepositModal(false);
+        }}>
+          <Text style={{ marginRight: 15, color: "#999" }}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={async () => {
+            console.log("💰 [confirmJoin] User entered:", depositInput);
+            const depositAmount = Number(depositInput);
+            if (isNaN(depositAmount) || depositAmount <= 0) {
+              console.warn("⚠️ [confirmJoin] Invalid amount entered:", depositInput);
+              Alert.alert("Invalid", "Please enter a valid deposit amount.");
+              return;
+            }
+
+            try {
+              console.log("📤 [confirmJoin] Sending join request...");
+              const user = await AsyncStorage.getItem("user");
+              const parsed = user ? JSON.parse(user) : null;
+
+              const res = await axios.post(
+                `${API_BASE_URL}/api/groups/${joiningNotification.groupId}/confirm-member`,
+                {
+                  userId: parsed._id,
+                  depositAmount,
+                }
+              );
+
+              console.log("✅ [confirmJoin] Server response:", res.data);
+
+              if (res.data.success) {
+                Alert.alert("✅ Joined", "You have successfully joined the group!");
+                fetchNotifications(selectedFilter);
+              } else {
+                Alert.alert("Error", res.data.error || "Failed to join.");
+              }
+            } catch (err) {
+              console.error("❌ [confirmJoin] Axios error:", err.message);
+              Alert.alert("Error", "Failed to join the group.");
+            } finally {
+              setShowDepositModal(false);
+            }
+          }}
+        >
+          <Text style={{ color: "#2E7D32", fontWeight: "bold" }}>Join</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
 
       {/* Calendar Picker */}
       {showDatePicker && (

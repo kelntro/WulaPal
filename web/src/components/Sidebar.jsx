@@ -19,6 +19,25 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   const isActive = (path) => location.pathname === path;
 
+  // Helper functions for badge
+  const getPlanBadgeText = (plan) => {
+    if (!plan) return "FREE";
+    if (plan.toLowerCase() === "pro") return "PRO";
+    if (plan.toLowerCase() === "basic") return "BASIC";
+    return plan.toUpperCase();
+  };
+
+  const getBadgeStyle = (plan) => {
+    switch ((plan || '').toLowerCase()) {
+      case 'pro':
+        return 'bg-[#89A598] text-white';
+      case 'basic':
+        return 'bg-[#89A598] text-white';
+      default:
+        return 'bg-[#89A598] text-white';
+    }
+  };
+
   return (
     <div
       className={`${
@@ -148,26 +167,32 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               : "hover:bg-[#6A8C73]"
           }`}
         >
-          <img
-  src={
-    user?.profileImage &&
-    user.profileImage !== "null" &&
-    user.profileImage !== ""
-      ? user.profileImage.startsWith("http")
-        ? user.profileImage
-        : `http://localhost:5050${user.profileImage}`
-      : "/assets/Profile.jpg"
-  }
-  onError={(e) => {
-    console.warn("❌ Failed to load user avatar:", user?.profileImage);
-    e.target.onerror = null;
-    e.target.src = "/assets/Profile.jpg";
-  }}
-  referrerPolicy="no-referrer"
-  alt="User Avatar"
-  className="transition-all object-cover rounded-full w-[40px] h-[40px]"
-/>
-
+          <div className="relative">
+            <img
+              src={
+                user?.profileImage &&
+                user.profileImage !== "null" &&
+                user.profileImage !== ""
+                  ? user.profileImage.startsWith("http")
+                    ? user.profileImage
+                    : `http://localhost:5050${user.profileImage}`
+                  : "/assets/Profile.jpg"
+              }
+              onError={(e) => {
+                console.warn("❌ Failed to load user avatar:", user?.profileImage);
+                e.target.onerror = null;
+                e.target.src = "/assets/Profile.jpg";
+              }}
+              referrerPolicy="no-referrer"
+              alt="User Avatar"
+              className="transition-all object-cover rounded-full w-[40px] h-[40px]"
+            />
+            {/* Plan Badge */}
+            <span className={`absolute left-1/2 -translate-x-1/2 -bottom-2 px-2 py-0.5 rounded-full text-[10px] font-semibold shadow ${getBadgeStyle(user?.plan)}`}
+              style={{whiteSpace: 'nowrap'}}>
+              {getPlanBadgeText(user?.plan)}
+            </span>
+          </div>
 
           {isOpen && (
             <div className="ml-3 flex-1">

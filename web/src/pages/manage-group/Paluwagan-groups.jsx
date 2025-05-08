@@ -15,6 +15,8 @@ const PaluwaganGroups = () => {
   const [search, setSearch] = useState(""); // ✅ For search
   const [organizerId, setOrganizerId] = useState(null);
   const navigate = useNavigate();
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [missingFields, setMissingFields] = useState([]);
 
   const socket = io(SERVER_URL, {
     transports: ["websocket", "polling"],
@@ -110,7 +112,7 @@ const PaluwaganGroups = () => {
             Paluwagan Groups
           </h1>
           <p className="text-[#6A8C73] font-normal">
-            Here’s your Paluwagan groups and manage your own group.
+            Here's your Paluwagan groups and manage your own group.
           </p>
         </div>
       </div>
@@ -128,42 +130,36 @@ const PaluwaganGroups = () => {
           />
         </div>
         <button
-onClick={async () => {
-  try {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    const response = await fetch(`http://localhost:5050/api/users/${storedUser._id}`);
-    const freshUser = await response.json();
+          onClick={async () => {
+            try {
+              const storedUser = JSON.parse(localStorage.getItem("user"));
+              const response = await fetch(`http://localhost:5050/api/users/${storedUser._id}`);
+              const freshUser = await response.json();
 
-    // Optional: update localStorage with fresh user data
-    localStorage.setItem("user", JSON.stringify(freshUser));
+              // Optional: update localStorage with fresh user data
+              localStorage.setItem("user", JSON.stringify(freshUser));
 
-    const missing = getMissingProfileFields(freshUser);
+              const missing = getMissingProfileFields(freshUser);
 
-    if (missing.length > 0) {
-      const confirmRedirect = window.confirm(
-        `⚠️ Please complete your profile before creating a Paluwagan group.\n\nMissing fields:\n- ${missing.join("\n- ")}\n\nGo to Profile Info now?`
-      );
-      if (confirmRedirect) {
-        navigate("/profile/profile-information");
-      }
-      return;
-    }
+              if (missing.length > 0) {
+                setMissingFields(missing);
+                setShowProfileModal(true);
+                return;
+              }
 
-    setShowModal(true);
-  } catch (err) {
-    console.error("❌ Failed to fetch updated user profile:", err);
-    alert("Unable to verify your profile. Please try again later.");
-  }
-}}
-
-  className="bg-[#3A6953] text-white px-4 py-2 pr-5 rounded-[20px] flex items-center shadow-md hover:bg-[#6A8C73] transition mr-6"
->
-  <span className="mr-1">
-    <FiPlus />
-  </span>
-  Create a Paluwagan
-</button>
-
+              setShowModal(true);
+            } catch (err) {
+              console.error("❌ Failed to fetch updated user profile:", err);
+              alert("Unable to verify your profile. Please try again later.");
+            }
+          }}
+          className="bg-[#3A6953] text-white px-4 py-2 pr-5 rounded-[20px] flex items-center shadow-md hover:bg-[#6A8C73] transition mr-6"
+        >
+          <span className="mr-1">
+            <FiPlus />
+          </span>
+          Create a Paluwagan
+        </button>
       </div>
 
       {/* Create Group Modal */}
@@ -175,6 +171,17 @@ onClick={async () => {
           }}
         />
       )}
+
+      {/* Profile Completion Modal */}
+      <ProfileCompletionModal
+        open={showProfileModal}
+        missing={missingFields}
+        onConfirm={() => {
+          setShowProfileModal(false);
+          navigate("/profile/profile-information");
+        }}
+        onCancel={() => setShowProfileModal(false)}
+      />
 
       {/* Groups Grid */}
       <div className="flex flex-wrap justify-center gap-[20px] mr-[30px]">
@@ -231,6 +238,38 @@ onClick={async () => {
         ) : (
           <p className="text-gray-500 text-center w-full">No groups found.</p>
         )}
+      </div>
+    </div>
+  );
+};
+
+// Modal component
+const ProfileCompletionModal = ({ open, missing, onConfirm, onCancel }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+        <h2 className="text-xl font-bold text-[#285236] mb-2">Complete Your Profile</h2>
+        <p className="text-gray-700 mb-4">Please complete your profile before creating a Paluwagan group.</p>
+        <ul className="mb-4 list-disc list-inside text-sm text-[#9B2C2C]">
+          {missing.map((field) => (
+            <li key={field}>Missing: <span className="font-semibold">{field}</span></li>
+          ))}
+        </ul>
+        <div className="flex justify-end gap-2 mt-4">
+          <button
+            className="px-4 py-2 rounded bg-[#3A6953] text-white font-semibold hover:bg-[#285236] transition"
+            onClick={onConfirm}
+          >
+            Go to Profile Info
+          </button>
+          <button
+            className="px-4 py-2 rounded border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
