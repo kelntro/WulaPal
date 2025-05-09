@@ -654,7 +654,7 @@ app.post("/api/groups/:groupId/contribute-now", async (req, res) => {
     const referenceId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
     await Transaction.create({
       userId,
-      type: "transfer",
+      type: "contribution",
       amount: amountPHP,
       amountUSDT: usdtAmount,
       exchangeRate: rate,
@@ -982,7 +982,7 @@ app.post("/api/confirm-contribution", async (req, res) => {
       const referenceId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
       await Transaction.create({
         userId,
-        type: "transfer",
+        type: "contribution",
         amount: amountPHP,
         amountUSDT: usdtAmount,
         exchangeRate: rate,

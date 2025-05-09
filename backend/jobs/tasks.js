@@ -202,7 +202,7 @@ const handleAutoContribution = async () => {
         const referenceId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
         await Transaction.create({
           userId: confirm.userId,
-          type: "transfer",
+          type: "contribution",
           amount: amountPHP,
           amountUSDT: usdtAmount,
           exchangeRate: rate,
