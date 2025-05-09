@@ -147,7 +147,6 @@ const [selectedGroup, setSelectedGroup] = useState(null);
             <Text style={styles.modalTitle}>Enter Initial Deposit</Text>
             <Text style={styles.modalSub}>Amount will be refunded at group end</Text>
             <TextInput
-              placeholder="e.g. 100"
               keyboardType="numeric"
               value={depositInput}
               onChangeText={setDepositInput}

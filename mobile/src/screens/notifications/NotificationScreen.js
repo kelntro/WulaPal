@@ -243,7 +243,6 @@ const [joiningNotification, setJoiningNotification] = useState(null);
         Enter Initial Deposit
       </Text>
       <TextInput
-        placeholder="e.g. 100"
         keyboardType="numeric"
         value={depositInput}
         onChangeText={setDepositInput}
