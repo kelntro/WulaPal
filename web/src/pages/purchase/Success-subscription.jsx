@@ -11,6 +11,7 @@ const SuccessSubscription = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+
     const savePlan = async () => {
       try {
         const storedUser = user || JSON.parse(localStorage.getItem("user"));
@@ -65,28 +66,43 @@ const SuccessSubscription = () => {
         }
     
         if (data.success) {
-          const updatedUser = {
-            ...storedUser,
-            plan: selectedPlan,
-            planExpirationDate: expirationDate.toISOString(),
-          };
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-          localStorage.removeItem("selectedPlan");
-          localStorage.removeItem("selectedPlanUserId");
-          setUser(updatedUser);
-          setSuccess(true);
-          
-          await fetch("http://localhost:5050/api/purchase/credit-superadmin", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              fromUserId: userId,
-              amount: selectedPlan === "Basic" ? 300 : 500,
-            }),
-          });
-          
-          console.log("✅ Plan updated and user context refreshed");
-        }
+  const updatedUser = {
+    ...storedUser,
+    plan: selectedPlan,
+    planExpirationDate: expirationDate.toISOString(),
+  };
+
+  localStorage.setItem("user", JSON.stringify(updatedUser));
+  setUser(updatedUser);
+  setSuccess(true);
+
+  // ✅ Only credit if not already done
+  try {
+    const referenceId = `PLAN-${userId}-${selectedPlan}`; // ✅ Generate unique ID
+
+    const creditRes = await fetch("http://localhost:5050/api/purchase/credit-superadmin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fromUserId: userId,
+        amount: selectedPlan === "Basic" ? 300 : 500,
+        referenceId, // ✅ Pass it
+      }),
+    });
+
+    const creditData = await creditRes.json();
+
+    if (creditRes.ok && creditData.success) {
+      console.log("✅ Super admin credited:", creditData.message);
+      localStorage.setItem("hasCreditedPlan", "true"); // ✅ Only after success
+    } else {
+      console.warn("❌ Credit failed or skipped:", creditData.message || creditData);
+    }
+  } catch (creditErr) {
+    console.error("❌ Error during creditSuperadminWallet fetch:", creditErr.message);
+  }
+}
+        
       } catch (err) {
         console.error("❌ Failed to save plan:", err.message);
         setError(err.message);
