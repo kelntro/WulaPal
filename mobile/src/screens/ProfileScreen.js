@@ -12,6 +12,7 @@ import {
   Dimensions,
   Platform,
   PermissionsAndroid,
+  Clipboard,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -474,7 +475,13 @@ const ProfileInfo = ({form, setForm, navigation}) => {
               <Text style={styles.infoLabel}>Account Number</Text>
               <Text style={styles.infoValue}>{user._id}</Text>
             </View>
-            <Feather name="copy" size={20} color="#3A6953" />
+            <TouchableOpacity 
+              onPress={() => {
+                Clipboard.setString(user._id);
+                Alert.alert('Success', 'Account number copied to clipboard');
+              }}>
+              <Feather name="copy" size={20} color="#3A6953" />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -483,13 +490,13 @@ const ProfileInfo = ({form, setForm, navigation}) => {
           {label: 'Full Name', key: 'name'},
           {label: 'Date of Birth', key: 'dateofBirth', isDate: true},
           {label: 'Gender', key: 'gender'},
-          {label: 'Mobile Number', key: 'mobile'},
-          {label: 'Email Address', key: 'email'},
+          {label: 'Mobile Number', key: 'mobile', isNumeric: true},
+          {label: 'Email Address', key: 'email', disabled: true},
           {label: 'Country', key: 'country'},
           {label: 'Occupation', key: 'occupation'},
           {label: 'Source of Funds', key: 'sourceOfFunds'},
           {label: 'Emergency Contact Name', key: 'emergencyContactName'},
-          {label: 'Emergency Contact Mobile', key: 'emergencyContactMobile'},
+          {label: 'Emergency Contact Mobile', key: 'emergencyContactMobile', isNumeric: true},
         ].map((item, index) => (
           <View key={index} style={styles.infoRow}>
             <View style={styles.infoField}>
@@ -529,23 +536,37 @@ const ProfileInfo = ({form, setForm, navigation}) => {
                       )}
                     </>
                   ) : item.key === 'gender' ? (
-                    <View
-                      style={{
-                        borderWidth: 1,
-                        borderColor: '#ccc',
-                        borderRadius: 5,
-                        backgroundColor: '#fff',
-                      }}>
-                      <Picker
-                        selectedValue={form.gender}
-                        onValueChange={value =>
-                          setForm(prev => ({...prev, gender: value}))
-                        }>
-                        <Picker.Item label="Select Gender" value="" />
-                        <Picker.Item label="Male" value="Male" />
-                        <Picker.Item label="Female" value="Female" />
-                        <Picker.Item label="Other" value="Other" />
-                      </Picker>
+                    <View style={{flexDirection: 'column', width: '100%'}}>
+                      {editMode ? (
+                        <>
+                          <Text style={[styles.infoValue, {marginBottom: 8}]}>
+                            {form.gender || 'Select Gender'}
+                          </Text>
+                          <View
+                            style={{
+                              borderWidth: 1,
+                              borderColor: '#ccc',
+                              borderRadius: 5,
+                              backgroundColor: '#fff',
+                              height: 40,
+                              justifyContent: 'center',
+                            }}>
+                            <Picker
+                              selectedValue={form.gender}
+                              onValueChange={value =>
+                                setForm(prev => ({...prev, gender: value}))
+                              }
+                              style={{height: 40, width: '100%'}}>
+                              <Picker.Item label="Select Gender" value="" />
+                              <Picker.Item label="Male" value="Male" />
+                              <Picker.Item label="Female" value="Female" />
+                              <Picker.Item label="Other" value="Other" />
+                            </Picker>
+                          </View>
+                        </>
+                      ) : (
+                        <Text style={styles.infoValue}>{form.gender || '—'}</Text>
+                      )}
                     </View>
                   ) : (
                     <TextInput
@@ -554,6 +575,9 @@ const ProfileInfo = ({form, setForm, navigation}) => {
                         setForm(prev => ({...prev, [item.key]: text}))
                       }
                       style={styles.input}
+                      editable={!item.disabled}
+                      keyboardType={item.isNumeric ? "numeric" : "default"}
+                      maxLength={item.isNumeric ? 11 : undefined}
                     />
                   )
                 ) : (
@@ -571,142 +595,150 @@ const ProfileInfo = ({form, setForm, navigation}) => {
           </View>
         ))}
         <View style={styles.infoRow}>
-  <View style={styles.infoField}>
-    <View style={styles.infoContent}>
-      <Text style={styles.infoLabel}>ID Type</Text>
-      {editMode ? (
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: '#ccc',
-            borderRadius: 5,
-            backgroundColor: '#fff',
-          }}>
-          <Picker
-            selectedValue={form.idType}
-            onValueChange={value =>
-              setForm(prev => ({...prev, idType: value}))
-            }>
-            <Picker.Item label="Select ID Type" value="" />
-            {[
-              'Philippine National ID (PhilSys)',
-              'Passport',
-              'Driver\'s License',
-              'SSS ID',
-              'GSIS eCard',
-              'UMID',
-              'Voter\'s ID',
-              'PRC ID',
-              'Postal ID',
-              'PhilHealth ID',
-              'TIN ID',
-              'Barangay Certificate with Photo',
-            ].map(type => (
-              <Picker.Item key={type} label={type} value={type} />
-            ))}
-          </Picker>
+          <View style={styles.infoField}>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>ID Type</Text>
+              {editMode ? (
+                <View style={{flexDirection: 'column', width: '100%'}}>
+                  <Text style={[styles.infoValue, {marginBottom: 8}]}>
+                    {form.idType || 'Select ID Type'}
+                  </Text>
+                  <View
+                    style={{
+                      borderWidth: 1,
+                      borderColor: '#ccc',
+                      borderRadius: 5,
+                      backgroundColor: '#fff',
+                      height: 40,
+                      justifyContent: 'center',
+                    }}>
+                    <Picker
+                      selectedValue={form.idType}
+                      onValueChange={value =>
+                        setForm(prev => ({...prev, idType: value}))
+                      }
+                      style={{height: 40, width: '100%'}}>
+                      <Picker.Item label="Select ID Type" value="" />
+                      {[
+                        'Philippine National ID (PhilSys)',
+                        'Passport',
+                        'Driver\'s License',
+                        'SSS ID',
+                        'GSIS eCard',
+                        'UMID',
+                        'Voter\'s ID',
+                        'PRC ID',
+                        'Postal ID',
+                        'PhilHealth ID',
+                        'TIN ID',
+                        'Barangay Certificate with Photo',
+                      ].map(type => (
+                        <Picker.Item key={type} label={type} value={type} />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              ) : (
+                <Text style={styles.infoValue}>{form.idType || '—'}</Text>
+              )}
+            </View>
+            {editMode && (
+              <MaterialCommunityIcons
+                name="circle-edit-outline"
+                size={20}
+                color="#3A6953"
+              />
+            )}
+          </View>
         </View>
-      ) : (
-        <Text style={styles.infoValue}>{form.idType || '—'}</Text>
-      )}
-    </View>
-    {editMode && (
-      <MaterialCommunityIcons
-        name="circle-edit-outline"
-        size={20}
-        color="#3A6953"
-      />
-    )}
-  </View>
-</View>
 
-<View style={styles.infoRow}>
-  <View style={styles.infoField}>
-    <View style={styles.infoContent}>
-      <Text style={styles.infoLabel}>Upload ID Image</Text>
-      {editMode ? (
-        <>
-          <TouchableOpacity
-            onPress={async () => {
-  const {launchImageLibrary} = await import('react-native-image-picker');
+        <View style={styles.infoRow}>
+          <View style={styles.infoField}>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Upload ID Image</Text>
+              {editMode ? (
+                <>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      const {launchImageLibrary} = await import('react-native-image-picker');
 
-  const result = await launchImageLibrary({
-    mediaType: 'photo',
-    includeBase64: false,
-  });
+                      const result = await launchImageLibrary({
+                        mediaType: 'photo',
+                        includeBase64: false,
+                      });
 
-  if (result.didCancel || !result.assets?.[0]?.uri) {
-    Alert.alert('Upload Cancelled');
-    return;
-  }
+                      if (result.didCancel || !result.assets?.[0]?.uri) {
+                        Alert.alert('Upload Cancelled');
+                        return;
+                      }
 
-  const image = result.assets[0];
-  setForm(prev => ({
-    ...prev,
-    idImage: {
-      uri: image.uri,
-      name: image.fileName || 'id.jpg',
-      type: image.type || 'image/jpeg',
-    },
-  }));
-}}
+                      const image = result.assets[0];
+                      setForm(prev => ({
+                        ...prev,
+                        idImage: {
+                          uri: image.uri,
+                          name: image.fileName || 'id.jpg',
+                          type: image.type || 'image/jpeg',
+                        },
+                      }));
+                    }}
 
-            style={{
-              backgroundColor: '#3A6953',
-              padding: 8,
-              borderRadius: 5,
-              marginTop: 5,
-            }}>
-            <Text style={{color: '#fff'}}>Capture ID</Text>
-          </TouchableOpacity>
+                    style={{
+                      backgroundColor: '#3A6953',
+                      padding: 8,
+                      borderRadius: 5,
+                      marginTop: 5,
+                    }}>
+                    <Text style={{color: '#fff'}}>Capture ID</Text>
+                  </TouchableOpacity>
 
-          {form.idImage?.uri && (
-            <Image
-              source={{uri: form.idImage.uri}}
-              style={{
-                width: 100,
-                height: 100,
-                marginTop: 10,
-                borderRadius: 8,
-                borderColor: '#ccc',
-                borderWidth: 1,
-              }}
-              resizeMode="cover"
-            />
-          )}
-        </>
-      ) : form.idImage ? (
-        <Image
-          source={{
-            uri:
-            typeof form.idImage === 'string'
-              ? form.idImage.startsWith('http')
-                ? form.idImage
-                : `${API_BASE_URL}${form.idImage}`
-              : form.idImage?.uri || '',
-          }}
-          style={{
-            width: 100,
-            height: 100,
-            marginTop: 5,
-            borderRadius: 8,
-            borderColor: '#ccc',
-            borderWidth: 1,
-          }}
-        />
-      ) : (
-        <Text style={styles.infoValue}>—</Text>
-      )}
-    </View>
-    {editMode && (
-      <MaterialCommunityIcons
-        name="circle-edit-outline"
-        size={20}
-        color="#3A6953"
-      />
-    )}
-  </View>
-</View>
+                  {form.idImage?.uri && (
+                    <Image
+                      source={{uri: form.idImage.uri}}
+                      style={{
+                        width: 100,
+                        height: 100,
+                        marginTop: 10,
+                        borderRadius: 8,
+                        borderColor: '#ccc',
+                        borderWidth: 1,
+                      }}
+                      resizeMode="cover"
+                    />
+                  )}
+                </>
+              ) : form.idImage ? (
+                <Image
+                  source={{
+                    uri:
+                    typeof form.idImage === 'string'
+                      ? form.idImage.startsWith('http')
+                        ? form.idImage
+                        : `${API_BASE_URL}${form.idImage}`
+                      : form.idImage?.uri || '',
+                  }}
+                  style={{
+                    width: 100,
+                    height: 100,
+                    marginTop: 5,
+                    borderRadius: 8,
+                    borderColor: '#ccc',
+                    borderWidth: 1,
+                  }}
+                />
+              ) : (
+                <Text style={styles.infoValue}>—</Text>
+              )}
+            </View>
+            {editMode && (
+              <MaterialCommunityIcons
+                name="circle-edit-outline"
+                size={20}
+                color="#3A6953"
+              />
+            )}
+          </View>
+        </View>
         {/* 📍 Address Fields */}
         <View style={styles.infoRow}>
           <View style={styles.infoField}>
