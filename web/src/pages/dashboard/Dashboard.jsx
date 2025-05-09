@@ -464,7 +464,10 @@ const RecentTransactions = () => {
                   {txn.type === "transfer" && "Fund Transfer"}
                   {txn.type === "receive" && "Fund Received"}
                 </td>
-                <td className="py-3">{formatDate(txn.timestamp)}</td>
+                <td className="py-3">
+  {new Date(txn.timestamp).toLocaleDateString()}{" "}
+  {new Date(txn.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+</td>
                 <td className="py-3">₱{Number(txn.amount).toLocaleString()}</td>
                 <td className="py-3">
                   <span className="bg-[#EAE8C3] text-[#85830F] px-3 py-1 rounded-full text-sm">

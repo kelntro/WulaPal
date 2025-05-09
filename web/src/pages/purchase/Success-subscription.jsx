@@ -75,6 +75,16 @@ const SuccessSubscription = () => {
           localStorage.removeItem("selectedPlanUserId");
           setUser(updatedUser);
           setSuccess(true);
+          
+          await fetch("http://localhost:5050/api/purchase/credit-superadmin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fromUserId: userId,
+              amount: selectedPlan === "Basic" ? 300 : 500,
+            }),
+          });
+          
           console.log("✅ Plan updated and user context refreshed");
         }
       } catch (err) {

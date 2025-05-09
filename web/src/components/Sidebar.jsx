@@ -82,6 +82,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         isActive={isActive("/wallet")}
       />
       <SidebarItem
+        to="/transactions"
+        icon={<GrTransaction />}
+        label="Transactions"
+        isOpen={isOpen}
+        isActive={isActive("/transactions")}
+      />
+      <SidebarItem
         to="/settings"
         icon={<IoSettingsSharp />}
         label="Settings"

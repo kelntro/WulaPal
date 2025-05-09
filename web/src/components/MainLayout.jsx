@@ -46,6 +46,7 @@ const MainLayout = () => {
             {/* Shared route */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/wallet" element={<Wallet />} />
+            <Route path="/transactions" element={<Transactions />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile/profile-information" element={<ProfileInformation />} />
 
@@ -62,7 +63,6 @@ const MainLayout = () => {
                 <Route path="/manage-group/transactions/:groupId" element={<GroupTransactions />} />
                 <Route path="/manage-group/paluwagan-groups" element={<PaluwaganGroups />} />
                 <Route path="/notifications" element={<Notifications />} />
-                <Route path="/transactions" element={<Transactions />} />
                 <Route path="/terms-and-conditions" element={<TermsandConditions />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               </>

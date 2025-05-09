@@ -1,4 +1,7 @@
 import axios from 'axios';
+import Wallet from "../models/Wallet.js";
+import User from "../models/User.js";
+import Transaction from "../models/Transaction.js";
 
 const XENDIT_API_KEY = process.env.XENDIT_SECRET_KEY; // ✅ Make sure it's correct
 
@@ -67,3 +70,43 @@ export const createPlanPurchase = async (req, res) => {
         });
     }
 };
+
+export const creditSuperadminWallet = async (req, res) => {
+    try {
+      const { amount, fromUserId } = req.body;
+  
+      if (!amount || !fromUserId) {
+        return res.status(400).json({ message: "Amount and fromUserId required" });
+      }
+  
+      // Find the super admin
+      const superadmin = await User.findOne({ role: "superadmin" });
+      if (!superadmin) return res.status(404).json({ message: "Superadmin not found" });
+  
+      const superWallet = await Wallet.findOne({ userId: superadmin._id });
+      if (!superWallet) return res.status(404).json({ message: "Superadmin wallet not found" });
+  
+      // Credit amount
+      superWallet.balance += amount;
+      await superWallet.save();
+  
+      // Log transaction
+      const ref = `PLAN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+      await Transaction.create({
+        userId: superadmin._id,
+        type: "receive",
+        amount,
+        referenceId: ref,
+        metadata: {
+          from: `User: ${fromUserId}`,
+          type: "plan_purchase",
+        },
+        status: "confirmed",
+      });
+  
+      return res.json({ success: true, message: "Superadmin wallet credited" });
+    } catch (error) {
+      console.error("❌ Error crediting superadmin wallet:", error.message);
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
