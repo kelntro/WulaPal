@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react'; 
+import { useNavigation } from '@react-navigation/native';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -62,6 +64,8 @@ const GroupDetailsScreen = ({route}) => {
     checkMembership();
   }, []);  
 
+  const navigation = useNavigation();
+
   const initiateJoin = async () => {
     const userData = await AsyncStorage.getItem('user');
     if (!userData) {
@@ -73,22 +77,16 @@ const GroupDetailsScreen = ({route}) => {
     const user = JSON.parse(userData);
     const userId = user._id;
   
-    const groupResponse = await fetch(`${API_BASE_URL}/api/groups/${groupId}`);
-    const groupData = await groupResponse.json();
+    const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}/request-join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
   
-    const isMember = groupData.members.some(
-      (m) => (typeof m === 'string' ? m : m.userId)?.toString() === userId
-    );
-  
-    if (isMember) {
-      setModalMessage('❌ You already joined this group.');
-      setModalVisible(true);
-      return;
-    }
-  
-    // Show deposit modal
-    setDepositModalVisible(true);
-  };
+    const data = await response.json();
+    setModalMessage(data.success ? '✅ Request sent to organizer.' : `❌ ${data.error}`);
+    setModalVisible(true);
+  };  
 
   const confirmJoinWithDeposit = async () => {
     try {
@@ -222,38 +220,50 @@ const GroupDetailsScreen = ({route}) => {
   </TouchableOpacity>
 )}
 
-      {isMember && (
-  <TouchableOpacity
-  style={[styles.joinButton, { backgroundColor: isPaying ? '#AAA' : '#285236', marginTop: 12 }]}
-  disabled={isPaying}
-  onPress={async () => {
-    try {
-      setIsPaying(true); // 🟢 Start loading
+{!isMember ? (
+  <TouchableOpacity style={styles.joinButton} onPress={initiateJoin}>
+    <Text style={styles.joinButtonText}>Join Group</Text>
+  </TouchableOpacity>
+) : (
+  <>
+    <TouchableOpacity
+      style={[styles.joinButton, { backgroundColor: isPaying ? '#AAA' : '#285236' }]}
+      disabled={isPaying}
+      onPress={async () => {
+        try {
+          setIsPaying(true);
+          const userData = await AsyncStorage.getItem('user');
+          const user = JSON.parse(userData);
+          const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}/contribute-now`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user._id }),
+          });
+          const data = await response.json();
+          setModalMessage(data.success ? `✅ ${data.message}` : `❌ ${data.error}`);
+          setModalVisible(true);
+        } catch (err) {
+          console.error("❌ Advance contribution failed:", err);
+          setModalMessage("❌ Something went wrong while processing payment.");
+          setModalVisible(true);
+        } finally {
+          setIsPaying(false);
+        }
+      }}
+    >
+      <Text style={styles.joinButtonText}>Pay ₱{contribution} Now</Text>
+    </TouchableOpacity>
 
-      const userData = await AsyncStorage.getItem('user');
-      const user = JSON.parse(userData);
-
-      const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}/contribute-now`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id }),
-      });
-
-      const data = await response.json();
-      setModalMessage(data.success ? `✅ ${data.message}` : `❌ ${data.error}`);
-      setModalVisible(true);
-    } catch (err) {
-      console.error("❌ Advance contribution failed:", err);
-      setModalMessage("❌ Something went wrong while processing payment.");
-      setModalVisible(true);
-    } finally {
-      setIsPaying(false); // 🔴 Stop loading
-    }
-  }}
->
-
-<Text style={styles.joinButtonText}>Pay ₱{contribution} Now</Text>
-</TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.joinButton, { backgroundColor: '#1e90ff', marginTop: 12 }]}
+      onPress={() => {
+        // ✅ Navigate to audit trail
+        navigation.navigate('AuditTrailScreen', { groupId });
+      }}
+    >
+      <Text style={styles.joinButtonText}>🔍 View Audit Trail</Text>
+    </TouchableOpacity>
+  </>
 )}
 
       </View>

@@ -34,6 +34,8 @@ import TermsScreen from './screens/settings/TermsScreen';
 import PrivacyPolicyScreen from './screens/settings/PrivacyPolicyScreen';
 import AboutScreen from './screens/settings/AboutScreen';
 import SetPinScreen from './screens/pin/SetPinScreen';
+import JoinRequestStatusScreen from './screens/groups/JoinRequestStatusScreen';
+import AuditTrailScreen from './screens/groups/AuditTrailScreen';
 
 const Stack = createStackNavigator();
 
@@ -274,6 +276,16 @@ const App = () => {
           name="OTPVerificationScreen"
           component={OTPVerificationScreen}
         />
+        <Stack.Screen
+            name="JoinRequestStatus"
+            component={JoinRequestStatusScreen}
+            options={{ title: 'Join Request Status' }}
+          />
+          <Stack.Screen
+            name="AuditTrailScreen"
+            component={AuditTrailScreen}
+            options={{ title: "Audit Trail" }}
+          />
         <Stack.Screen name="Notifications" component={NotificationScreen} />
         <Stack.Screen name="GroupChats" component={GroupChats} />
         <Stack.Screen name="MemberGroupChat" component={MemberGroupChat} />

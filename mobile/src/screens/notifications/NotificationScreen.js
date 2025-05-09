@@ -49,7 +49,6 @@ const [joiningNotification, setJoiningNotification] = useState(null);
       const res = await axios.get(url);
       setNotifications(res.data);
     } catch (error) {
-      console.error("❌ Failed to fetch notifications:", error.message);
       Alert.alert("Error", "Could not load notifications.");
     } finally {
       setLoading(false);
@@ -63,7 +62,6 @@ const [joiningNotification, setJoiningNotification] = useState(null);
         prev.map((n) => (n._id === id ? { ...n, read: true } : n))
       );
     } catch (err) {
-      console.error("❌ Failed to mark as read:", err.message);
     }
   };
 
@@ -78,7 +76,6 @@ const [joiningNotification, setJoiningNotification] = useState(null);
             await axios.delete(`${API_BASE_URL}/api/member-notifications/${id}`);
             setNotifications((prev) => prev.filter((n) => n._id !== id));
           } catch (err) {
-            console.error("❌ Failed to delete notification:", err.message);
           }
         },
       },
@@ -144,7 +141,6 @@ const [joiningNotification, setJoiningNotification] = useState(null);
         fetchNotifications(selectedFilter);
       }
     } catch (err) {
-      console.error("❌ Confirmation failed:", err.message);
       Alert.alert("Error", "Failed to confirm contribution.");
     }
   };
@@ -170,7 +166,6 @@ const [joiningNotification, setJoiningNotification] = useState(null);
       setDepositInput("");
       setShowDepositModal(true);
     } catch (err) {
-      console.error("❌ [confirmJoin] Outer error:", err.message);
       Alert.alert("Error", "Could not process request.");
     }
   };
@@ -270,7 +265,8 @@ const [joiningNotification, setJoiningNotification] = useState(null);
         <TouchableOpacity
           onPress={async () => {
             console.log("💰 [confirmJoin] User entered:", depositInput);
-            const depositAmount = Number(depositInput);
+            const cleanedAmount = depositInput.replace(/[^\d.]/g, '').trim();
+            const depositAmount = parseFloat(cleanedAmount);
             if (isNaN(depositAmount) || depositAmount <= 0) {
               console.warn("⚠️ [confirmJoin] Invalid amount entered:", depositInput);
               Alert.alert("Invalid", "Please enter a valid deposit amount.");
@@ -281,7 +277,7 @@ const [joiningNotification, setJoiningNotification] = useState(null);
               console.log("📤 [confirmJoin] Sending join request...");
               const user = await AsyncStorage.getItem("user");
               const parsed = user ? JSON.parse(user) : null;
-
+            
               const res = await axios.post(
                 `${API_BASE_URL}/api/groups/${joiningNotification.groupId}/confirm-member`,
                 {
@@ -289,21 +285,25 @@ const [joiningNotification, setJoiningNotification] = useState(null);
                   depositAmount,
                 }
               );
-
+            
               console.log("✅ [confirmJoin] Server response:", res.data);
-
+            
               if (res.data.success) {
                 Alert.alert("✅ Joined", "You have successfully joined the group!");
                 fetchNotifications(selectedFilter);
+                setShowDepositModal(false); // ✅ only close modal on success
               } else {
                 Alert.alert("Error", res.data.error || "Failed to join.");
               }
             } catch (err) {
-              console.error("❌ [confirmJoin] Axios error:", err.message);
-              Alert.alert("Error", "Failed to join the group.");
-            } finally {
-              setShowDepositModal(false);
-            }
+            
+              const message =
+                err.response?.data?.error ||
+                "Failed to join the group. Please try again later.";
+            
+              Alert.alert("❌ Join Failed", message);
+              // Do NOT close modal here, allow user to re-enter amount
+            }            
           }}
         >
           <Text style={{ color: "#2E7D32", fontWeight: "bold" }}>Join</Text>

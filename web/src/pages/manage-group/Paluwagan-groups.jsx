@@ -160,6 +160,14 @@ const PaluwaganGroups = () => {
           </span>
           Create a Paluwagan
         </button>
+        <button
+  onClick={() => navigate("/group/join-requests")}
+  className="bg-[#3A6953] text-white px-4 py-2 pr-5 rounded-[20px] flex items-center shadow-md hover:bg-[#6A8C73] transition"
+>
+  <span className="mr-1">📥</span>
+  View Join Requests
+</button>
+
       </div>
 
       {/* Create Group Modal */}

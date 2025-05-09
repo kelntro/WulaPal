@@ -122,9 +122,20 @@ const GroupsScreen = () => {
         );
 
   return (
+    
     <View style={styles.container}>
       {/* Toggle Between "Your Groups" and "Join Groups" */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+  <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#2E7D32' }}>
+    Groups
+  </Text>
+  <TouchableOpacity onPress={() => navigation.navigate('JoinRequestStatus')}>
+    <Icon name="account-check-outline" size={28} color="#2E7D32" />
+  </TouchableOpacity>
+</View>
+
       <View style={styles.toggleContainer}>
+        
         <TouchableOpacity
           style={[
             styles.toggleButton,

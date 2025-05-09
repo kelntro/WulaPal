@@ -10,6 +10,7 @@ import LoadingScreen from "./components/LoadingScreen"; // ⬅️ create this or
 import Login from "./pages/Login.jsx";
 import OtpVerification from "./pages/OtpVerification.jsx";
 import GroupMembers from "./pages/manage-group/Group-members.jsx";
+import JoinRequests from "./pages/group/JoinRequests.jsx";
 import Signup from "./pages/Signup.jsx";
 import PaymentOption from "./pages/purchase/Payment-option.jsx";
 import Subscription from "./pages/purchase/Subscription.jsx";
@@ -68,6 +69,8 @@ const App = () => {
         <Route path="/wallet/success-transfer" element={<RequireAuth><SuccessTransfer /></RequireAuth>} />
         <Route path="/wallet/withdraw" element={<RequireAuth><Withdraw /></RequireAuth>} />
         <Route path="/wallet/success-withdraw" element={<RequireAuth><SuccessWithdraw /></RequireAuth>} />
+
+        <Route path="/group/join-requests" element={<RequireAuth><JoinRequests /></RequireAuth>} />
 
         <Route path="/change-password" element={<RequireAuth><ChangePassword /></RequireAuth>} />
         <Route path="/groupchats" element={<RequireAuth><GroupChatList /></RequireAuth>} />

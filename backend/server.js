@@ -384,6 +384,7 @@ app.post("/api/groups/:groupId/add-member", async (req, res) => {
 
 app.post("/api/groups/:groupId/confirm-member", async (req, res) => {
   try {
+    const io = req.app.get("io");
     const { userId, depositAmount } = req.body;
     const { groupId } = req.params;
 
@@ -445,6 +446,96 @@ await Transaction.create({
       depositAmount: parsedDeposit
     });
 
+    if (group.members.length >= group.requiredMembers && group.status !== "active") {
+      group.status = "active";
+      group.startDate = new Date();
+      group.lastContributionDate = new Date(Date.now() - 5 * 60 * 1000); // Start timer
+      group.hasStarted = false;
+    
+      // Schedule first auto-contribution trigger
+      setTimeout(async () => {
+        const Group = require("../../models/Group");
+        const { handleAutoContribution } = require("../../jobs/tasks");
+        const freshGroup = await Group.findById(group._id);
+        if (freshGroup && !freshGroup.hasStarted) {
+          await handleAutoContribution();
+        }
+      }, 5 * 60 * 1000);
+    
+      // Determine frequency in days
+      let frequencyDays = group.frequency === "Bi-Weekly" ? 14 : group.frequency === "Monthly" ? 30 : 7;
+      const now = new Date();
+    
+      // Sort by deposit amount then join date
+      const sorted = [...group.members].sort((a, b) => {
+        if (b.depositAmount !== a.depositAmount) return b.depositAmount - a.depositAmount;
+        return new Date(a.joinDate) - new Date(b.joinDate);
+      });
+    
+      group.payouts = sorted.map((member, index) => ({
+        recipientId: member.userId,
+        payoutDate: new Date(now.getTime() + index * frequencyDays * 24 * 60 * 60 * 1000),
+      }));
+    
+      group.nextPayoutDate = group.payouts[0].payoutDate;
+    
+      // Notify all members about their payout schedule
+      for (const payout of group.payouts) {
+        const user = await User.findById(payout.recipientId);
+        const formattedDate = new Date(payout.payoutDate).toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        });
+    
+        const message = `🗓️ Your payout for group "${group.name}" is scheduled on ${formattedDate}.`;
+    
+        await MemberNotification.create({
+          userId: user._id,
+          message,
+          type: "payout_schedule",
+          groupId: group._id
+        });
+        io.emit("memberNotification", {
+          userId: user._id.toString(),
+          message,
+          date: new Date()
+        });
+      }
+    
+      // Notify organizer
+      const organizer = await User.findById(group.handler);
+      if (organizer) {
+        await Notification.create({
+          organizerId: organizer._id,
+          message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
+        });
+    
+        io.emit("groupUpdated", {
+          organizerId: organizer._id.toString(),
+          message: `🎉 Group "${group.name}" is now full. The payout cycle will start shortly.`,
+          date: new Date(),
+        });
+      }
+    
+      // Notify each member
+      for (const member of group.members) {
+        await MemberNotification.create({
+          userId: member.userId,
+          message: `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`,
+          type: "group_started",
+          groupId: group._id
+        });
+    
+        io.emit("memberNotification", {
+          userId: member.userId.toString(),
+          message: `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`,
+          date: new Date()
+        });
+      }
+    }
+    
     await group.save();
 
     // ✅ Mark the invite notification as processed
@@ -462,7 +553,6 @@ await Transaction.create({
       processed: true
     });
 
-    const io = req.app.get("io");
     io.emit("memberNotification", {
       userId,
       message: `✅ You joined the group "${group.name}" with a ₱${parsedDeposit} deposit.`,
@@ -1082,17 +1172,24 @@ if (payout) {
         return res.status(400).json({ error: "Invalid groupId format" });
       }
   
-      const transactions = await Transaction.find({ "metadata.groupId": groupId }).sort({ createdAt: -1 }).populate('userId', 'name');
+      const transactions = await Transaction.find({ "metadata.groupId": groupId })
+        .sort({ createdAt: -1 })
+        .populate('userId', 'name');
   
       const formatted = transactions.map((txn) => {
-        const createdAt = txn.createdAt ? new Date(txn.createdAt) : new Date(); // 🛠️ FIXED
+        const createdAt = txn.timestamp || txn.createdAt || new Date();
+  
         return {
-          id: txn.referenceId,
-          name: txn.userId?.name || "Unknown", // 🛠️ FIXED
-          contributed: txn.metadata?.to || txn.metadata?.from || "N/A",
+          referenceId: txn.referenceId,
+          user: txn.userId?.name || "Unknown",
+          type: txn.type,
+          amountPHP: txn.amount,
+          amountUSDT: txn.amountUSDT || null,
+          exchangeRate: txn.exchangeRate || null,
+          txHash: txn.txHash || null,
+          status: txn.status,
           date: createdAt.toLocaleDateString(),
           time: createdAt.toLocaleTimeString(),
-          status: txn.type === "transfer" ? "Deposit" : "Withdrawal",
         };
       });
   
@@ -1101,7 +1198,7 @@ if (payout) {
       console.error("❌ Error fetching group transactions:", error.message);
       res.status(500).json({ error: "Failed to fetch transactions" });
     }
-  });
+  });  
   
 app.get("/api/organizer-groups", async (req, res) => {
   try {
@@ -1431,6 +1528,153 @@ app.use(
 
 app.get("/api/secure-data", verifyToken, async (req, res) => {
   res.json({ message: "🔐 Secure route accessed", user: req.user });
+});
+
+app.post("/api/groups/:groupId/request-join", async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { userId } = req.body;
+
+    const group = await Group.findById(groupId);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const existingRequest = await MemberNotification.findOne({
+      userId,
+      groupId,
+      type: "join_request",
+      processed: false,
+    });
+
+    if (existingRequest) {
+      return res.status(400).json({ error: "You already requested to join this group." });
+    }
+
+    await MemberNotification.create({
+      userId,
+      groupId,
+      type: "join_request",
+      message: `📥 ${user.name} requested to join the group "${group.name}".`,
+      processed: false,
+    });    
+
+    // Notify organizer
+    const notifMessage = `👤 ${user.name} requested to join group "${group.name}". Review their profile.`;
+    await Notification.create({
+      organizerId: group.handler,
+      message: notifMessage,
+    });
+
+    const io = req.app.get("io");
+    io.emit("groupUpdated", {
+      organizerId: group.handler.toString(),
+      message: notifMessage,
+      date: new Date(),
+    });
+
+    res.json({ success: true, message: "Join request sent." });
+  } catch (err) {
+    console.error("❌ Join request error:", err.message);
+    res.status(500).json({ error: "Failed to send join request." });
+  }
+});
+
+app.get("/api/organizer/join-requests/:organizerId", async (req, res) => {
+  try {
+    const { organizerId } = req.params;
+
+    const groups = await Group.find({ handler: organizerId });
+    const groupIds = groups.map(g => g._id);
+
+    const requests = await MemberNotification.find({
+      groupId: { $in: groupIds },
+      type: "join_request",
+      processed: false
+    }).sort({ date: -1 });
+
+    res.json(requests);
+  } catch (err) {
+    console.error("❌ Error fetching organizer join requests:", err.message);
+    res.status(500).json({ error: "Failed to fetch join requests." });
+  }
+});
+
+app.post("/api/groups/:groupId/approve-request", async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { userId } = req.body;
+
+    const group = await Group.findById(groupId);
+    const user = await User.findById(userId);
+    if (!group || !user) return res.status(404).json({ error: "Group or user not found" });
+
+    // Mark join request as processed
+    await MemberNotification.updateMany({
+      userId,
+      groupId,
+      type: "join_request",
+      processed: false,
+    }, { processed: true });
+
+    // Send member_invite notification
+    const message = `✅ You've been approved to join the group "${group.name}". Tap to pay your initial deposit.`;
+    await MemberNotification.create({
+      userId,
+      groupId,
+      type: "member_invite",
+      message,
+      processed: false,
+    });
+
+    const io = req.app.get("io");
+    io.emit("memberNotification", {
+      userId,
+      message,
+      date: new Date()
+    });
+
+    res.json({ success: true, message: "User approved and notified." });
+  } catch (err) {
+    console.error("❌ Approve request error:", err.message);
+    res.status(500).json({ error: "Failed to approve request." });
+  }
+});
+
+app.post("/api/groups/:groupId/decline-request", async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { userId } = req.body;
+
+    // ✅ Mark the join_request as processed (declined)
+    await MemberNotification.updateMany(
+      { userId, groupId, type: "join_request", processed: false },
+      { processed: true }
+    );
+
+    // ✅ Send decline feedback to member
+    const message = `❌ Your request to join group has been declined.`;
+    await MemberNotification.create({
+      userId,
+      groupId,
+      type: "join_request",
+      message,
+      processed: true,
+    });
+
+    const io = req.app.get("io");
+    io.emit("memberNotification", {
+      userId,
+      message,
+      date: new Date()
+    });
+
+    res.json({ success: true, message: "Request declined and member notified." });
+  } catch (err) {
+    console.error("❌ Decline request error:", err.message);
+    res.status(500).json({ error: "Failed to decline request." });
+  }
 });
 
 app.use('/api/purchase', purchaseRoutes);

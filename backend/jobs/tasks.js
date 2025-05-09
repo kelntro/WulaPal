@@ -171,7 +171,7 @@ const handleAutoContribution = async () => {
         const { usdtAmount, rate } = await getUSDTFromPHP(amountPHP);
       
         // 💸 Send to blockchain
-        await contribute(group.contractAddress, group.tokenAddress, usdtAmount);
+        const result = await contribute(group.contractAddress, group.tokenAddress, usdtAmount);
       
         // 💰 Deduct and save wallet
         wallet.balance -= amountPHP;
@@ -207,6 +207,7 @@ const handleAutoContribution = async () => {
           amountUSDT: usdtAmount,
           exchangeRate: rate,
           referenceId,
+          txHash: result?.txHash || null,
           metadata: {
             to: `Group: ${group.name}`,
             groupId: group._id.toString(),
@@ -302,6 +303,7 @@ const handleAutoContribution = async () => {
             amount: organizerFee,
             referenceId: `org-share-${Date.now()}`,
             status: 'confirmed',
+            txHash: result?.txHash || null,
             metadata: {
               groupId: group._id.toString(),
               from: 'smart_contract',
@@ -329,6 +331,7 @@ const handleAutoContribution = async () => {
                   userId: member.userId,
                   type: "refund",
                   amount: member.depositAmount,
+                  txHash: result?.txHash || null,
                   metadata: {
                     groupId: group._id.toString(),
                     type: "deposit_refund"
