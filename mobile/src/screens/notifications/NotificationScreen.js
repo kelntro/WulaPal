@@ -242,8 +242,17 @@ const [joiningNotification, setJoiningNotification] = useState(null);
       <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
         Enter Initial Deposit
       </Text>
+      <Text style={{ fontSize: 14, marginBottom: 10 }}>
+        To prevent fraud, a deposit is required to join this group. Your deposit will be refunded after the group completes.
+      </Text>
+
+      <Text style={{ fontSize: 14, color: '#B00020', marginBottom: 10 }}>
+        ⚠️ Note:
+        {"\n"}• A 2% share will be deducted from each payout (1% for the organizer, 1% for the system).
+        {"\n"}• A 5% penalty will be charged if you miss your scheduled contribution.
+      </Text>
+
       <TextInput
-        placeholder="e.g. 100"
         keyboardType="numeric"
         value={depositInput}
         onChangeText={setDepositInput}

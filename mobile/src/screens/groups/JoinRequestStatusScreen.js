@@ -146,6 +146,17 @@ const [selectedGroup, setSelectedGroup] = useState(null);
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>Enter Initial Deposit</Text>
             <Text style={styles.modalSub}>Amount will be refunded at group end</Text>
+            
+            <Text style={styles.modalSub}>
+              To prevent fraud, a deposit is required to join this group. Your deposit will be refunded after the group completes.
+            </Text>
+
+            <Text style={[styles.modalSub, { color: '#B00020', marginTop: 8 }]}>
+              ⚠️ Note:
+              {"\n"}• A 2% share will be deducted from each payout (1% for the organizer, 1% for the system).
+              {"\n"}• A 5% penalty will be charged if you miss your scheduled contribution.
+            </Text>
+
             <TextInput
               keyboardType="numeric"
               value={depositInput}
@@ -184,7 +195,7 @@ const [selectedGroup, setSelectedGroup] = useState(null);
                     const data = await res.json();
   
                     if (res.ok && data.success) {
-                      alert("✅ You’ve successfully joined the group.");
+                      alert("✅ You've successfully joined the group.");
                       setShowDepositModal(false);
                       setRequests((prev) =>
                         prev.map((r) =>
