@@ -9,6 +9,8 @@ import { MessageCircle } from "lucide-react"; // ✅ Floating button icon
 import AddMemberModal from "./AddMemberModal";
 import MemberInfoModal from "./MemberInfoModal";
 import FloatingChat from "./FloatingChat"; // ✅ Importing FloatingChat
+import { io } from "socket.io-client";
+
 
 const SERVER_URL = "http://localhost:5050";
 
@@ -19,33 +21,51 @@ const GroupMembers = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+  const socket = io(SERVER_URL);
 
   const currentUser = JSON.parse(localStorage.getItem("user")); 
   useEffect(() => {
     console.log("🔍 Fetching group details for ID:", groupId);
-
+  
     if (!groupId) {
       console.error("❌ groupId is undefined! Cannot fetch group data.");
       return;
     }
-
-    fetch(`${SERVER_URL}/api/groups/${groupId}`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to fetch group data. Status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        console.log("✅ Group Data Received:", data);
-        setGroup(data);
-      })
-      .catch((err) => {
-        console.error("❌ Error fetching group:", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+  
+    const fetchGroup = () => {
+      fetch(`${SERVER_URL}/api/groups/${groupId}`)
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`Failed to fetch group data. Status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          console.log("✅ Group Data Received:", data);
+          setGroup(data);
+        })
+        .catch((err) => {
+          console.error("❌ Error fetching group:", err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    };
+  
+    // Initial fetch
+    fetchGroup();
+  
+    // Listen for real-time updates
+    socket.on("groupUpdated", (update) => {
+      if (update.groupId === groupId) {
+        console.log("🔄 Group updated:", update.message);
+        fetchGroup(); // Re-fetch group data
+      }
+    });
+  
+    return () => {
+      socket.off("groupUpdated");
+    };
   }, [groupId]);
 
   if (loading) {
@@ -192,8 +212,8 @@ const GroupMembers = () => {
     <div className="bg-white rounded-lg p-4 border shadow">
       <p className="text-sm text-gray-500 mb-1">Current Payout Recipient</p>
       <p className="text-lg text-[#3A6953] font-semibold">
-        {group.payouts?.length > 0
-          ? group.members.find((m) => m.id === group.payouts[0].recipientId)?.name || "N/A"
+      {group.payouts?.length > 0
+  ? group.members.find((m) => m.id === group.payouts[group.currentPayoutIndex]?.recipientId)?.name || "N/A"
           : "Not Assigned"}
       </p>
     </div>

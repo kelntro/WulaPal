@@ -202,7 +202,7 @@ const handleAutoContribution = async () => {
         const referenceId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
         await Transaction.create({
           userId: confirm.userId,
-          type: "contribution",
+          type: "transfer",
           amount: amountPHP,
           amountUSDT: usdtAmount,
           exchangeRate: rate,
@@ -273,8 +273,25 @@ const handleAutoContribution = async () => {
       
         group.currentCycleContributions = 0;
         group.currentPayoutIndex += 1;
+
+        // ⏭️ Update next payout date
+        const nextPayout = group.payouts[group.currentPayoutIndex];
+        if (nextPayout?.payoutDate) {
+          group.nextPayoutDate = nextPayout.payoutDate;
+        }
         await group.save();
       
+        // 🔁 Re-evaluate contributions excluding the next payout recipient
+        await handleAutoContribution(group);
+
+        // 📣 Notify frontend (Group Contribution Details should update)
+        const io = require('../server').get('io');
+        io.emit('groupUpdated', {
+          groupId: group._id.toString(),
+          message: `📢 "${group.name}" updated: new payout recipient assigned.`,
+          date: new Date(),
+        });
+
         await MemberNotification.create({
           userId: payout.recipientId,
           message: `🎉 You received your payout from group "${group.name}".`,

@@ -654,7 +654,7 @@ app.post("/api/groups/:groupId/contribute-now", async (req, res) => {
     const referenceId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
     await Transaction.create({
       userId,
-      type: "contribution",
+      type: "transfer",
       amount: amountPHP,
       amountUSDT: usdtAmount,
       exchangeRate: rate,
@@ -982,7 +982,7 @@ app.post("/api/confirm-contribution", async (req, res) => {
       const referenceId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
       await Transaction.create({
         userId,
-        type: "contribution",
+        type: "transfer",
         amount: amountPHP,
         amountUSDT: usdtAmount,
         exchangeRate: rate,
@@ -1423,6 +1423,7 @@ app.post("/api/confirm-contribution", async (req, res) => {
   try {
     const { userId, groupId } = req.body;
 
+    
     if (!userId || !groupId) {
       return res.status(400).json({ error: "Missing userId or groupId" });
     }
