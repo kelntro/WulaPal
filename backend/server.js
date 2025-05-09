@@ -454,7 +454,7 @@ await Transaction.create({
     
       // Schedule first auto-contribution trigger
       setTimeout(async () => {
-        const Group = require("../../models/Group");
+        const Group = require("./models/Group");
         const { handleAutoContribution } = require("../../jobs/tasks");
         const freshGroup = await Group.findById(group._id);
         if (freshGroup && !freshGroup.hasStarted) {
