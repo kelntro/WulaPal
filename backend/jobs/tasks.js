@@ -179,7 +179,16 @@ const handleAutoContribution = async () => {
       
         // 📊 Update group progress
         group.currentCycleContributions += 1;
-      
+
+        const expectedContributions = group.requiredMembers - 1;
+        if (group.currentCycleContributions >= expectedContributions) {
+          console.log(`📦 [Group: ${group.name}] Contribution complete. Triggering payout now.`);
+          await group.save(); // Save first
+          await handleAutoPayouts(); // Immediate payout
+        } else {
+          await group.save();
+        }
+
         // ✅ Mark as processed
         confirm.processed = true;
         await confirm.save();
@@ -211,9 +220,11 @@ const handleAutoContribution = async () => {
           metadata: {
             to: `Group: ${group.name}`,
             groupId: group._id.toString(),
+            method: confirm.message?.includes("early") ? "advance_payment" : "scheduled",
+            explorer: result?.txHash ? `https://amoy.polygonscan.com/tx/${result.txHash}` : null
           },
           status: "confirmed",
-        });
+        });        
       
         console.log(`💸 [User: ${confirm.userId}] Contribution logged. ₱${amountPHP} sent to smart contract.`);
       }      
@@ -237,21 +248,24 @@ const handleAutoContribution = async () => {
   
     for (const group of groups) {
       const payoutIndex = group.currentPayoutIndex || 0;
-      const expectedContributions = group.requiredMembers - 1;
   
       console.log(`➡️ [Group: ${group.name}] Checking if current cycle is ready for payout...`);
       console.log(`   ↳ Contributions: ${group.currentCycleContributions}/${expectedContributions}`);
   
-      if (group.currentCycleContributions < expectedContributions) {
-        console.log(`⏳ [Group: ${group.name}] Not enough contributions yet.`);
-        continue;
-      }
-
-      // Add check for completed payouts
-      if (group.currentPayoutIndex >= group.payouts.length) {
+      if (payoutIndex >= group.payouts.length) {
         console.log(`✅ [Group: ${group.name}] All payout cycles completed.`);
         group.status = "completed";
         await group.save();
+        continue;
+      }
+
+      const expectedContributions = group.requiredMembers - 1;
+      // Add check for completed payouts
+      console.log(`➡️ [Group: ${group.name}] Checking if current cycle is ready for payout...`);
+      console.log(`   ↳ Contributions: ${group.currentCycleContributions}/${expectedContributions}`);
+      
+      if (group.currentCycleContributions < expectedContributions) {
+        console.log(`⏳ [Group: ${group.name}] Not enough contributions yet.`);
         continue;
       }
 

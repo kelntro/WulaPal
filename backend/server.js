@@ -26,6 +26,7 @@ const uploadRoutes = require('./routes/upload');
 const verifyToken = require("./middleware/auth");
 const Wallet = require("./models/Wallet");
 const { getUSDTFromPHP } = require("./utils/exchange");
+const { sendPushToUser } = require("./services/pushService");
 
 // 🔌 Connect to MongoDB here
 mongoose
@@ -594,94 +595,155 @@ app.post("/api/groups/:groupId/contribute-now", async (req, res) => {
     const group = await Group.findById(groupId);
     if (!group) return res.status(404).json({ error: "Group not found" });
 
-    // ✅ Prevent early contribution if group is not yet full
     if (group.members.length < group.slots) {
-      return res.status(400).json({
-        error: "Group is not yet full. Please wait for other members to join before contributing."
-      });
+      return res.status(400).json({ error: "Group is not yet full." });
     }
 
-    // ✅ Prevent contribution if member is the payout recipient
-    const payout = group.payouts[group.currentPayoutIndex || 0];
-    const isPayoutRecipient = payout?.recipientId?.toString() === userId;
-    if (isPayoutRecipient) {
+    if (group.currentPayoutIndex >= group.payouts.length) {
+      return res.status(400).json({ error: "All payouts completed." });
+    }
+
+    const payout = group.payouts[group.currentPayoutIndex];
+    if (payout?.recipientId?.toString() === userId) {
       return res.status(400).json({ error: "You are the payout recipient this cycle." });
     }
 
-    // ✅ Check if already contributed for this cycle
     const alreadyConfirmed = await MemberNotification.exists({
       userId,
       groupId,
       type: "contribution_confirmed",
-      processed: false
+      processed: true
     });
     if (alreadyConfirmed) {
-      return res.status(400).json({ error: "Already contributed for this cycle." });
+      return res.status(400).json({ error: "Already contributed this cycle." });
     }
 
-    // ✅ Check wallet existence and balance
+    const expectedContributions = group.requiredMembers - 1;
+    if (group.currentCycleContributions >= expectedContributions) {
+      return res.status(400).json({
+        error: "All contributions for this cycle are already received."
+      });
+    }
+
     const wallet = await Wallet.findOne({ userId });
-    if (!wallet) return res.status(404).json({ error: "Wallet not found" });
+    if (!wallet) return res.status(404).json({ error: "Wallet not found." });
 
     const amountPHP = Number(group.contributionAmount);
     if (wallet.balance < amountPHP) {
-      return res.status(400).json({ error: "Insufficient balance" });
+      return res.status(400).json({ error: "Insufficient balance." });
     }
 
-    // ✅ Exchange and blockchain interaction
     const { usdtAmount, rate } = await getUSDTFromPHP(amountPHP);
     const result = await contribute(group.contractAddress, group.tokenAddress, usdtAmount);
-    if (!result.success) return res.status(500).json({ error: result.error });
+    if (!result.success) {
+      return res.status(500).json({ error: result.error || "Blockchain contribution failed." });
+    }
 
-    // ✅ Deduct balance and save wallet
     wallet.balance -= amountPHP;
     await wallet.save();
 
-    // ✅ Update contribution count
     group.currentCycleContributions += 1;
-    await group.save();
 
-    // ✅ Save notification
     await MemberNotification.create({
       userId,
       groupId,
       type: "contribution_confirmed",
-      message: `✅ You contributed ₱${amountPHP} early to "${group.name}".`,
-      processed: false
+      processed: true,
+      message: `✅ You paid ₱${amountPHP} via Pay Now.`
     });
 
-    // ✅ Log transaction
-    const referenceId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
     await Transaction.create({
       userId,
       type: "transfer",
       amount: amountPHP,
       amountUSDT: usdtAmount,
       exchangeRate: rate,
-      referenceId,
+      referenceId: `TXN-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
+      txHash: result.txHash || null,
       metadata: {
-        groupId: group._id.toString(),
+        groupId,
         to: `Group: ${group.name}`,
-        method: "advance_payment"
+        method: "pay_now",
+        explorer: result?.txHash ? `https://amoy.polygonscan.com/tx/${result.txHash}` : null
       },
-      status: "confirmed",
+      status: "confirmed"
     });
 
-    // ✅ Emit real-time notification
-    const io = req.app.get("io");
-    io.emit("memberNotification", {
-      userId: userId.toString(),
-      message: `✅ You contributed ₱${amountPHP} early to "${group.name}".`,
-      date: new Date()
-    });
+    await sendPushToUser(userId, "WulaPal", `✅ You contributed ₱${amountPHP} to "${group.name}".`);
 
-    return res.json({ success: true, message: "Advance contribution successful." });
+    // ✅ If this completes the cycle, send payout to recipient manually
+    if (group.currentCycleContributions >= expectedContributions) {
+      const recipient = await Wallet.findOne({ userId: payout.recipientId });
+      if (recipient) {
+        const total = amountPHP * expectedContributions;
+        const organizerShare = total * 0.01;
+        const superadminShare = total * 0.01;
+        const recipientShare = total * 0.98;
+
+        recipient.balance += recipientShare;
+        await recipient.save();
+
+        await Transaction.create({
+          userId: payout.recipientId,
+          type: "receive",
+          amount: recipientShare,
+          referenceId: `PAYOUT-${Date.now()}`,
+          metadata: {
+            groupId: group._id.toString(),
+            cycle: (group.currentPayoutIndex || 0) + 1
+          },
+          status: "confirmed"
+        });
+
+        await MemberNotification.create({
+          userId: payout.recipientId,
+          groupId,
+          type: "payout_received",
+          message: `🎉 You received ₱${recipientShare.toFixed(2)} from group "${group.name}".`
+        });
+
+        const io = req.app.get("io");
+        io.emit("memberNotification", {
+          userId: payout.recipientId.toString(),
+          message: `🎉 You received ₱${recipientShare.toFixed(2)} from group "${group.name}".`,
+          date: new Date()
+        });
+
+        // organizer
+        const organizerWallet = await Wallet.findOne({ userId: group.handler });
+        if (organizerWallet) {
+          organizerWallet.balance += organizerShare;
+          await organizerWallet.save();
+        }
+
+        const superadmin = await User.findOne({ role: "superadmin" });
+        if (superadmin) {
+          const superadminWallet = await Wallet.findOne({ userId: superadmin._id });
+          if (superadminWallet) {
+            superadminWallet.balance += superadminShare;
+            await superadminWallet.save();
+          }
+        }
+
+        group.currentPayoutIndex += 1;
+        group.currentCycleContributions = 0;
+        if (group.currentPayoutIndex >= group.payouts.length) {
+          group.status = "completed";
+        }
+      }
+    }
+
+    group.lastContributionDate = new Date();
+    await group.save();
+
+    return res.json({ success: true, message: "Payment successful and payout processed if due." });
 
   } catch (err) {
-    console.error("❌ Advance contribution error:", err.message);
+    console.error("❌ contribute-now error:", err.message);
     return res.status(500).json({ error: "Server error" });
   }
 });
+
 
 app.get("/api/users/find", async (req, res) => {
   try {
