@@ -724,8 +724,21 @@ app.post("/api/groups/:groupId/contribute-now", async (req, res) => {
         // organizer
         const organizerWallet = await Wallet.findOne({ userId: group.handler });
         if (organizerWallet) {
-          organizerWallet.balance += organizerShare;
+          organizerWallet.balance += organizerShare;        
           await organizerWallet.save();
+
+          await Transaction.create({
+            userId: group.handler,
+            type: "receive",
+            amount: organizerShare,
+            referenceId: `ORGANIZER-${Date.now()}`,
+            metadata: {
+              groupId: group._id.toString(),
+              type: "organizer_share",
+              cycle: group.currentPayoutIndex + 1
+            },
+            status: "confirmed"
+          });  
         }
 
         const superadmin = await User.findOne({ role: "superadmin" });
@@ -734,14 +747,72 @@ app.post("/api/groups/:groupId/contribute-now", async (req, res) => {
           if (superadminWallet) {
             superadminWallet.balance += superadminShare;
             await superadminWallet.save();
+
+            await Transaction.create({
+              userId: superadmin._id,
+              type: "receive",
+              amount: superadminShare,
+              referenceId: `SYS-${Date.now()}`,
+              metadata: {
+                groupId: group._id.toString(),
+                type: "system_share",
+                cycle: group.currentPayoutIndex + 1
+              },
+              status: "confirmed"
+            });            
           }
         }
 
         group.currentPayoutIndex += 1;
         group.currentCycleContributions = 0;
+        
         if (group.currentPayoutIndex >= group.payouts.length) {
           group.status = "completed";
+        
+          // Insert refund block here ✅
+          for (const member of group.members) {
+            if (member.depositAmount > 0) {
+              const wallet = await Wallet.findOne({ userId: member.userId });
+              if (wallet) {
+                wallet.balance += member.depositAmount;
+                await wallet.save();
+        
+                await Transaction.create({
+                  userId: member.userId,
+                  type: "refund",
+                  amount: member.depositAmount,
+                  referenceId: `REFUND-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
+                  metadata: {
+                    groupId: group._id.toString(),
+                    type: "deposit_refund"
+                  },
+                  status: "confirmed"
+                });
+        
+                await MemberNotification.create({
+                  userId: member.userId,
+                  groupId: group._id,
+                  message: `💰 Your ₱${member.depositAmount} deposit was refunded after group "${group.name}" completed.`,
+                  type: "deposit_refunded"
+                });
+        
+                const io = req.app.get("io");
+                io.emit("memberNotification", {
+                  userId: member.userId.toString(),
+                  message: `💰 Your ₱${member.depositAmount} deposit was refunded after group "${group.name}" completed.`,
+                  date: new Date()
+                });
+        
+                await sendPushToUser(
+                  member.userId.toString(),
+                  "WulaPal",
+                  `💰 Your ₱${member.depositAmount} deposit for group "${group.name}" was refunded.`
+                );
+              }
+            }
+          }
         }
+        
       }
     }
 
@@ -1214,10 +1285,10 @@ app.post("/api/confirm-contribution", async (req, res) => {
         metadata: {
           groupId: group._id.toString(),
           type: "organizer_share",
-              cycle: group.currentPayoutIndex + 1
+          cycle: group.currentPayoutIndex + 1
         },
-            status: "confirmed"
-      });
+        status: "confirmed"
+      });      
     }
 
         // Process superadmin share
@@ -1236,10 +1307,10 @@ app.post("/api/confirm-contribution", async (req, res) => {
           metadata: {
             groupId: group._id.toString(),
             type: "system_share",
-                cycle: group.currentPayoutIndex + 1
+            cycle: group.currentPayoutIndex + 1
           },
-              status: "confirmed"
-        });
+          status: "confirmed"
+        });        
       }
     }
 
