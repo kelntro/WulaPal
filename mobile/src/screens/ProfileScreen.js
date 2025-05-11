@@ -223,45 +223,55 @@ const ProfileInfo = ({form, setForm, navigation}) => {
   }, []);
 
   const handleCapturePhoto = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.CAMERA,
-      );
-      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-        Alert.alert('Permission denied', 'Camera permission is required.');
+    try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert('Permission denied', 'Camera permission is required.');
+          return;
+        }
+      }
+    
+      const result = await launchCamera({
+        mediaType: 'photo',
+        cameraType: 'front',
+        saveToPhotos: true,
+        includeBase64: false,
+        quality: 0.8,
+        maxWidth: 1000,
+        maxHeight: 1000,
+      });
+    
+      if (result.didCancel) {
+        console.log('📸 User cancelled camera');
         return;
       }
+    
+      if (!result.assets || !result.assets[0] || !result.assets[0].uri) {
+        Alert.alert('Error', 'Failed to capture image. Please try again.');
+        return;
+      }
+    
+      const image = result.assets[0];
+      const fileName = image.fileName || `profile_${Date.now()}.${image.uri.split('.').pop()}`;
+      const type = image.type || 'image/jpeg';
+    
+      const safeImage = {
+        uri: image.uri,
+        fileName,
+        type,
+      };
+    
+      setProfileImage(safeImage);
+    } catch (error) {
+      console.error('Camera error:', error);
+      Alert.alert(
+        'Error',
+        'Failed to capture photo. Please make sure you have granted camera permissions and try again.'
+      );
     }
-  
-    const result = await launchCamera({
-      mediaType: 'photo',
-      cameraType: 'front',
-      saveToPhotos: true, // ✅ ensures image saved and URI available
-      includeBase64: false,
-    });
-  
-    if (result.didCancel) {
-      console.log('📸 User cancelled camera');
-      return;
-    }
-  
-    const image = result.assets?.[0];
-    if (!image || !image.uri) {
-      Alert.alert('Error', 'Failed to capture image. Try again.');
-      return;
-    }
-  
-    const fileName =
-      image.fileName || `profile_${Date.now()}.${image.uri.split('.').pop()}`;
-    const type = image.type || 'image/jpeg';
-  
-    const safeImage = {
-      uri: image.uri,
-      fileName,
-      type,
-    };
-  
-    setProfileImage(safeImage);
   };
   
 
@@ -286,16 +296,21 @@ const ProfileInfo = ({form, setForm, navigation}) => {
       'address.zipCode',
     ];
 
-    const isDefaultImage =
-      !profileImage &&
-      (!user?.profileImage ||
-        user.profileImage.includes('profile.png') ||
-        user.profileImage === 'null' ||
-        user.profileImage === '');
-    if (isDefaultImage) {
+    // Check if profile image is captured
+    if (!profileImage) {
       Alert.alert(
-        'Missing Profile Image',
-        'You must capture a live profile photo before saving.',
+        'Profile Picture Required',
+        'Please capture a profile picture before saving.',
+        [
+          {
+            text: 'Capture Now',
+            onPress: handleCapturePhoto
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          }
+        ]
       );
       return;
     }
@@ -457,7 +472,7 @@ const ProfileInfo = ({form, setForm, navigation}) => {
 
           {editMode && (
             <TouchableOpacity
-              style={[styles.editPic, {right: 30}]} // offset to avoid overlap
+              style={[styles.editPic, {right: 30}]}
               onPress={handleSave}>
               <MaterialCommunityIcons
                 name="check-circle-outline"
@@ -465,6 +480,12 @@ const ProfileInfo = ({form, setForm, navigation}) => {
                 color="#fff"
               />
             </TouchableOpacity>
+          )}
+          
+          {editMode && !profileImage && (
+            <View style={styles.requiredIndicator}>
+              <Text style={styles.requiredText}>Required</Text>
+            </View>
           )}
         </View>
 
@@ -1350,6 +1371,20 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  requiredIndicator: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#FF3B30',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  requiredText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 
