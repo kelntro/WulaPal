@@ -1014,6 +1014,13 @@ app.post("/api/confirm-contribution", async (req, res) => {
     const group = await Group.findById(groupId);
     if (!group) return res.status(404).json({ error: "Group not found" });
 
+    // Check if current cycle is valid (should not exceed number of members)
+    if (group.currentPayoutIndex >= group.members.length) {
+      return res.status(400).json({ 
+        error: "All cycles have been completed for this group."
+      });
+    }
+
     // Check if user is the current payout recipient
     const currentPayout = group.payouts[group.currentPayoutIndex];
     const isCurrentRecipient = currentPayout?.recipientId?.toString() === userId;
