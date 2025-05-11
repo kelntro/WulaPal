@@ -119,7 +119,12 @@ const [joiningNotification, setJoiningNotification] = useState(null);
         onPress={handlePress}
         onLongPress={() => deleteNotification(item._id)}
       >
-        <Text style={styles.notificationText}>{item.message}</Text>
+<Text style={styles.notificationText}>
+  {item.message}
+  {item.cycle !== undefined && item.cycle !== null
+    ? ` (Cycle ${item.cycle + 1})`
+    : ""}
+</Text>
         {!item.read && <View style={styles.unreadDot} />}
       </TouchableOpacity>
     );
@@ -131,6 +136,39 @@ const [joiningNotification, setJoiningNotification] = useState(null);
       const parsed = user ? JSON.parse(user) : null;
       if (!parsed?._id || !notification.groupId) return;
 
+      // First check if user has already contributed
+      const checkRes = await axios.get(`${API_BASE_URL}/api/groups/${notification.groupId}/check-contribution`, {
+        params: { userId: parsed._id }
+      });
+
+      if (checkRes.data.hasContributed) {
+        const nextCycleDate = new Date(checkRes.data.nextCycleDate);
+        Alert.alert(
+          "⛔ Already Contributed",
+          `You've already contributed for cycle ${checkRes.data.currentCycle + 1}. Next cycle starts on ${nextCycleDate.toLocaleDateString()}`
+        );
+        return;
+      }
+
+      // Check if user is the current payout recipient
+      if (checkRes.data.isCurrentRecipient) {
+        Alert.alert(
+          "⛔ Cannot Contribute",
+          `You are the payout recipient for cycle ${checkRes.data.currentCycle + 1}. You don't need to contribute this cycle.`
+        );
+        return;
+      }
+
+      // Check if cycle is already complete
+      if (checkRes.data.cycleComplete) {
+        Alert.alert(
+          "⛔ Cycle Complete",
+          `This cycle already has enough contributions. Next cycle starts on ${new Date(checkRes.data.nextCycleDate).toLocaleDateString()}`
+        );
+        return;
+      }
+
+      // If not contributed yet, proceed with confirmation
       const res = await axios.post(`${API_BASE_URL}/api/confirm-contribution`, {
         userId: parsed._id,
         groupId: notification.groupId
@@ -141,9 +179,14 @@ const [joiningNotification, setJoiningNotification] = useState(null);
         fetchNotifications(selectedFilter);
       }
     } catch (err) {
-      Alert.alert("Error", "Failed to confirm contribution.");
+      const message =
+        err?.response?.data?.error === "Already contributed this cycle."
+          ? "⛔ You've already contributed for the current cycle."
+          : err?.response?.data?.error || "Failed to confirm contribution.";
+  
+      Alert.alert("❌ Contribution Failed", message);
     }
-  };
+  };  
 
   const confirmJoin = async (notification) => {
     console.log("📨 [confirmJoin] Received notification:", notification);

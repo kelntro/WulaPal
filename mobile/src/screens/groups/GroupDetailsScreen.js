@@ -236,7 +236,20 @@ const GroupDetailsScreen = ({route}) => {
                     body: JSON.stringify({ userId: user._id }),
                   });
                   const data = await response.json();
-                  setModalMessage(data.success ? `✅ ${data.message}` : `❌ ${data.error}`);
+                  
+                  if (data.success) {
+                    // Show success message with next cycle date
+                    const nextCycleDate = new Date(data.nextCycleDate);
+                    setModalMessage(`✅ ${data.message}\n\nNext contribution cycle starts on ${nextCycleDate.toLocaleDateString()}`);
+                  } else {
+                    // If already contributed, show next cycle date
+                    if (data.nextCycleDate) {
+                      const nextCycleDate = new Date(data.nextCycleDate);
+                      setModalMessage(`${data.message}\n\nNext contribution cycle starts on ${nextCycleDate.toLocaleDateString()}`);
+                    } else {
+                      setModalMessage(`❌ ${data.error}`);
+                    }
+                  }
                   setModalVisible(true);
                 } catch (err) {
                   console.error("❌ Advance contribution failed:", err);

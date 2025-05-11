@@ -26,14 +26,14 @@ const handleAutoContribution = async () => {
       if (!group.hasStarted) {
         const minuteDifference = Math.floor((now - (group.lastContributionDate || group.createdAt)) / (1000 * 60));
         
-        if (minuteDifference >= 5) {
+        if (minuteDifference >= 1) {
           console.log(`🚀 [Group: ${group.name}] First contribution cycle is starting now.`);
           group.hasStarted = true;
           await group.save();
 
           // ✅ Notify the organizer that group started
           await Notification.create({
-            organizerId: group.handler,  // Directly use the ID
+            organizerId: group.handler,
             message: `🚀 Contribution cycle started for group "${group.name}".`,
           });
           
@@ -42,10 +42,9 @@ const handleAutoContribution = async () => {
             message: `🚀 Contribution cycle started for group "${group.name}".`,
             date: new Date(),
           });
-
           
         } else {
-          console.log(`⏳ [Group: ${group.name}] Waiting 5 minutes before first contribution cycle. Passed: ${minuteDifference}/5`);
+          console.log(`⏳ [Group: ${group.name}] Waiting 1 minute before first contribution cycle. Passed: ${minuteDifference}/1`);
           continue;
         }
       }
@@ -64,21 +63,30 @@ const handleAutoContribution = async () => {
         const memberId = member.userId.toString();
         console.log(`🔍 [Debug] Processing member ${memberId}`);
       
+        // Skip if this member is the current payout recipient
         if (memberId === payoutRecipientId) {
-          console.log(`⏭️ [Member: ${memberId}] Skipping payout recipient.`);
+          console.log(`⏭️ [Member: ${memberId}] Skipping payout recipient for cycle ${group.currentPayoutIndex + 1}.`);
           continue;
         }
       
-        // 🛑 Check if this member already confirmed in this cycle
+        // Check if this member already confirmed in this cycle
         const alreadyConfirmed = await MemberNotification.exists({
           userId: memberId,
           groupId: group._id,
-          type: "contribution_confirmed",
-          processed: false
+          type: { $in: ["contribution_confirmed", "contribution_processed"] },
+          processed: true,
+          cycle: group.currentPayoutIndex
         });
-      
+        
         if (alreadyConfirmed) {
-          console.log(`🔁 [Member: ${memberId}] Already confirmed contribution for this cycle.`);
+          console.log(`🔁 [Member: ${memberId}] Already contributed for cycle ${group.currentPayoutIndex + 1}.`);
+          continue;
+        }
+        
+        // Check if we already have enough contributions for this cycle
+        const expectedContributions = group.requiredMembers - 1;
+        if (group.currentCycleContributions >= expectedContributions) {
+          console.log(`✅ [Group: ${group.name}] Already have enough contributions for cycle ${group.currentPayoutIndex + 1}.`);
           continue;
         }
       
@@ -95,14 +103,15 @@ const handleAutoContribution = async () => {
           await MemberNotification.create({
             userId: memberId,
             groupId: group._id,
-            message: `✅ You have enough funds to contribute ₱${amount} for "${group.name}". Confirm in your dashboard.`,
+            message: `✅ You have enough funds to contribute ₱${amount} for "${group.name}" (Cycle ${group.currentPayoutIndex + 1}). Confirm in your dashboard.`,
             type: "confirmation_request",
+            cycle: group.currentPayoutIndex
           });
       
           await sendPushToUser(
             memberId,
             "WulaPal",
-            `✅ You have enough funds to contribute ₱${amount} to "${group.name}". Confirm now.`
+            `✅ You have enough funds to contribute ₱${amount} to "${group.name}" (Cycle ${group.currentPayoutIndex + 1}). Confirm now.`
           );
 
           console.log(`✅ [Member: ${memberId}] Notification to confirm contribution sent.`);
@@ -110,14 +119,15 @@ const handleAutoContribution = async () => {
           await MemberNotification.create({
             userId: memberId,
             groupId: group._id,
-            message: `⚠️ Your wallet balance is low. Your ₱${amount} contribution for "${group.name}" is due soon.`,
+            message: `⚠️ Your wallet balance is low. Your ₱${amount} contribution for "${group.name}" (Cycle ${group.currentPayoutIndex + 1}) is due soon.`,
             type: "low_funds_warning",
+            cycle: group.currentPayoutIndex
           });
       
           await sendPushToUser(
             memberId,
             "WulaPal",
-            `⚠️ Your wallet is low. You need ₱${amount} to contribute in "${group.name}".`
+            `⚠️ Your wallet is low. You need ₱${amount} to contribute in "${group.name}" (Cycle ${group.currentPayoutIndex + 1}).`
           );
           console.log(`⚠️ [Member: ${memberId}] Low balance. Warning sent.`);
         }
@@ -144,8 +154,9 @@ const handleAutoContribution = async () => {
       const confirmedUsers = await MemberNotification.find({
         type: "contribution_confirmed",
         groupId: group._id,
-        processed: { $ne: true }
-      });
+        processed: { $ne: true },
+        cycle: group.currentPayoutIndex  // ✅ Filter only for current cycle
+      });      
   
       if (confirmedUsers.length === 0) {
         console.log(`ℹ️ [Group: ${group.name}] No pending confirmed contributions.`);
@@ -199,7 +210,8 @@ const handleAutoContribution = async () => {
           message: `✅ You contributed ₱${amountPHP} to "${group.name}". Exchange rate: ₱${rate} = 1 USDT.`,
           type: "contribution_processed",
           groupId: group._id,
-        });
+          cycle: group.currentPayoutIndex, // ✅ Add cycle tracking
+        });        
 
         await sendPushToUser(
           confirm.userId.toString(),
@@ -452,7 +464,8 @@ const handleAutoContribution = async () => {
           groupId: group._id,
           type: "contribution_reminder",
           message: `📢 Reminder: Your ₱${group.contributionAmount} contribution for "${group.name}" is due tomorrow.`,
-        });
+          cycle: group.currentPayoutIndex, // ✅ Add this
+        });        
         await sendPushToUser(
           memberId,
           "WulaPal",

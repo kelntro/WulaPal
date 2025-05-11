@@ -6,6 +6,7 @@ const memberNotificationSchema = new mongoose.Schema({
   type: { type: String, default: "info" }, // e.g. "low_funds_warning", "confirmation_request"
   groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
   processed: { type: Boolean, default: false },
+  cycle: { type: Number, default: 0 },
   date: { type: Date, default: Date.now },
   read: { type: Boolean, default: false }
 });

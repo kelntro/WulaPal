@@ -32,6 +32,7 @@ const Transactions = ({ groupId }) => {
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [transactions, setTransactions] = useState([]);
+  const [cycleFilter, setCycleFilter] = useState("all");
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -62,14 +63,16 @@ const Transactions = ({ groupId }) => {
 
   const filteredTransactions = transactions.filter((txn) => {
     const matchSearch =
-      txn.name?.toLowerCase().includes(search.toLowerCase()) ||
-      txn.contributed?.toLowerCase().includes(search.toLowerCase()) ||
+      txn.user?.toLowerCase().includes(search.toLowerCase()) ||
+      txn.type?.toLowerCase().includes(search.toLowerCase()) ||
       txn.status?.toLowerCase().includes(search.toLowerCase());
 
     const matchDate =
       dateFilter === "" || formatToYMD(txn.date, txn.time) === dateFilter;
 
-    return matchSearch && matchDate;
+    const matchCycle = cycleFilter === "all" || `${txn.cycle}` === cycleFilter;
+
+    return matchSearch && matchDate && matchCycle;
   });
 
   console.log("🔎 Search:", search);
@@ -83,17 +86,13 @@ const Transactions = ({ groupId }) => {
     }
 
     const headers = [
-      "Transaction ID",
-      "Name",
-      "Contributed",
-      "Date",
-      "Time",
-      "Status",
+      "Transaction ID", "Name", "Cycle", "Contributed", "Date", "Time", "Status"
     ];
     const rows = filteredTransactions.map((txn) => [
-      txn.id,
-      txn.name,
-      txn.contributed,
+      txn.referenceId,
+      txn.user,
+      txn.cycle,
+      txn.type,
       txn.date,
       txn.time,
       txn.status,
@@ -116,6 +115,21 @@ const Transactions = ({ groupId }) => {
 
   return (
     <div className="col-span-2 p-2">
+      <select
+        className="border border-gray-300 rounded-lg p-2"
+        value={cycleFilter}
+        onChange={(e) => setCycleFilter(e.target.value)}
+      >
+        <option value="all">All Cycles</option>
+        {[...new Set(transactions.map((txn) => txn.cycle))]
+          .filter((cycle) => cycle !== "N/A")
+          .map((cycle) => (
+            <option key={cycle} value={cycle}>
+              Cycle {cycle}
+            </option>
+          ))}
+      </select>
+
       <div className="p-2">
         {/* Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
@@ -152,12 +166,14 @@ const Transactions = ({ groupId }) => {
               <tr className="bg-gray-100 text-gray-600">
                 <th className="p-3 text-left">Transaction ID</th>
                 <th className="p-3 text-left">Name</th>
+                <th className="p-3 text-left">Cycle</th> {/* 👈 Add this */}
                 <th className="p-3 text-left">Contributed to</th>
                 <th className="p-3 text-left">Date</th>
                 <th className="p-3 text-left">Time</th>
                 <th className="p-3 text-left">Status</th>
               </tr>
             </thead>
+
             <tbody>
               {filteredTransactions.length === 0 ? (
                 <tr>
@@ -173,9 +189,11 @@ const Transactions = ({ groupId }) => {
               ) : (
                 filteredTransactions.map((txn, index) => (
                   <tr key={index} className="border-t">
-                    <td className="p-3">{txn.id}</td>
-                    <td className="p-3">{txn.name}</td>
-                    <td className="p-3">{txn.contributed}</td>
+                    <td className="p-3">{txn.referenceId}</td>
+                    <td className="p-3">{txn.user}</td>
+                    <td className="p-3">Cycle {txn.cycle || "N/A"}</td>{" "}
+                    {/* ✅ NEW CYCLE COLUMN */}
+                    <td className="p-3">{txn.type}</td>
                     <td className="p-3">{txn.date}</td>
                     <td className="p-3">{txn.time}</td>
                     <td className="p-3">
