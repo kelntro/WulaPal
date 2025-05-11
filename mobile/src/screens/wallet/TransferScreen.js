@@ -120,7 +120,7 @@ const TransferScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F0F7F0',
+    backgroundColor: '#F4F8F7',
   },
   keyboardAvoid: {
     flex: 1,
@@ -139,13 +139,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1B5E20',
+    color: '#3A6953',
     marginTop: 16,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#2E7D32',
+    color: '#666',
     textAlign: 'center',
   },
   formContainer: {
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1B5E20',
+    color: '#3A6953',
     marginBottom: 8,
   },
   inputWrapper: {
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#2E7D32',
+    borderColor: '#3A6953',
     paddingHorizontal: 16,
   },
   inputIcon: {
@@ -175,14 +175,14 @@ const styles = StyleSheet.create({
   currencySymbol: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#1B5E20',
+    color: '#3A6953',
     marginRight: 8,
   },
   input: {
     flex: 1,
     fontSize: 16,
     paddingVertical: 16,
-    color: '#1B5E20',
+    color: '#3A6953',
   },
   infoContainer: {
     marginBottom: 32,
@@ -195,16 +195,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2E7D32',
+    borderColor: '#3A6953',
   },
   infoText: {
     fontSize: 16,
-    color: '#1B5E20',
+    color: '#666',
     marginLeft: 12,
     fontWeight: '500',
   },
   button: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: '#3A6953',
     padding: 16,
     borderRadius: 12,
     flexDirection: 'row',

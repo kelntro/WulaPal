@@ -93,7 +93,7 @@ const WithdrawScreen = () => {
       onPress={() => setChannel(method)}
     >
       <View style={styles.paymentMethodContent}>
-        <Icon name={icon} size={24} color={channel === method ? '#fff' : '#2E7D32'} />
+        <Icon name={icon} size={24} color={channel === method ? '#fff' : '#3A6953'} />
         <Text style={[
           styles.paymentMethodText,
           channel === method && styles.selectedPaymentMethodText
@@ -123,18 +123,18 @@ const WithdrawScreen = () => {
         >
           <View style={[
             styles.modalIconContainer,
-            { backgroundColor: modalType === 'success' ? 'rgba(46, 125, 50, 0.1)' : 'rgba(211, 47, 47, 0.1)' }
+            { backgroundColor: modalType === 'success' ? 'rgba(58, 105, 83, 0.1)' : 'rgba(211, 47, 47, 0.1)' }
           ]}>
             <Icon 
               name={modalType === 'success' ? 'check-circle' : 'error'} 
               size={40} 
-              color={modalType === 'success' ? '#2E7D32' : '#D32F2F'} 
+              color={modalType === 'success' ? '#3A6953' : '#D32F2F'} 
             />
           </View>
           
           <Text style={[
             styles.modalTitle,
-            { color: modalType === 'success' ? '#2E7D32' : '#D32F2F' }
+            { color: modalType === 'success' ? '#3A6953' : '#D32F2F' }
           ]}>
             {modalType === 'success' ? 'Success!' : 'Error'}
           </Text>
@@ -144,7 +144,7 @@ const WithdrawScreen = () => {
           <TouchableOpacity
             style={[
               styles.modalButton,
-              { backgroundColor: modalType === 'success' ? '#2E7D32' : '#D32F2F' }
+              { backgroundColor: modalType === 'success' ? '#3A6953' : '#D32F2F' }
             ]}
             onPress={hideModal}
           >
@@ -166,7 +166,7 @@ const WithdrawScreen = () => {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <View style={styles.header}>
-              <Icon name="account-balance-wallet" size={40} color="#2E7D32" />
+              <Icon name="account-balance-wallet" size={40} color="#3A6953" />
               <Text style={styles.title}>Withdraw Funds</Text>
               <Text style={styles.subtitle}>Transfer to your preferred payment method</Text>
             </View>
@@ -190,7 +190,7 @@ const WithdrawScreen = () => {
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Mobile Number</Text>
                 <View style={styles.inputWrapper}>
-                  <Icon name="phone" size={20} color="#2E7D32" style={styles.inputIcon} />
+                  <Icon name="phone" size={20} color="#3A6953" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="Enter your mobile number"
@@ -212,11 +212,11 @@ const WithdrawScreen = () => {
 
               <View style={styles.infoContainer}>
                 <View style={styles.infoItem}>
-                  <Icon name="security" size={24} color="#2E7D32" />
+                  <Icon name="security" size={24} color="#3A6953" />
                   <Text style={styles.infoText}>Secure Withdrawal</Text>
                 </View>
                 <View style={styles.infoItem}>
-                  <Icon name="access-time" size={24} color="#2E7D32" />
+                  <Icon name="access-time" size={24} color="#3A6953" />
                   <Text style={styles.infoText}>Instant Processing</Text>
                 </View>
               </View>
@@ -247,7 +247,7 @@ const WithdrawScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F0F7F0',
+    backgroundColor: '#F4F8F7',
   },
   keyboardAvoid: {
     flex: 1,
@@ -266,13 +266,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1B5E20',
+    color: '#3A6953',
     marginTop: 16,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#2E7D32',
+    color: '#666',
     textAlign: 'center',
   },
   formContainer: {
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1B5E20',
+    color: '#3A6953',
     marginBottom: 8,
   },
   inputWrapper: {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#2E7D32',
+    borderColor: '#3A6953',
     paddingHorizontal: 16,
   },
   inputIcon: {
@@ -302,19 +302,19 @@ const styles = StyleSheet.create({
   currencySymbol: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#1B5E20',
+    color: '#3A6953',
     marginRight: 8,
   },
   input: {
     flex: 1,
     fontSize: 16,
     paddingVertical: 16,
-    color: '#1B5E20',
+    color: '#3A6953',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1B5E20',
+    color: '#3A6953',
     marginBottom: 16,
   },
   paymentMethodsContainer: {
@@ -326,13 +326,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2E7D32',
+    borderColor: '#3A6953',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   selectedPaymentMethod: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: '#3A6953',
   },
   paymentMethodContent: {
     flexDirection: 'row',
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   },
   paymentMethodText: {
     fontSize: 16,
-    color: '#1B5E20',
+    color: '#3A6953',
     marginLeft: 12,
     fontWeight: '500',
   },
@@ -358,16 +358,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2E7D32',
+    borderColor: '#3A6953',
   },
   infoText: {
     fontSize: 16,
-    color: '#1B5E20',
+    color: '#666',
     marginLeft: 12,
     fontWeight: '500',
   },
   button: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: '#3A6953',
     padding: 16,
     borderRadius: 12,
     flexDirection: 'row',

@@ -85,7 +85,7 @@ const [selectedGroup, setSelectedGroup] = useState(null);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <Ionicons name="people-circle-outline" size={28} color="#285236" style={{ marginBottom: 6 }} />
+      <Ionicons name="people-circle-outline" size={28} color="#3A6953" style={{ marginBottom: 6 }} />
       <Text style={styles.groupName}>{item.groupName}</Text>
       <Text style={styles.groupId}>Group ID: {item.groupId}</Text>
       <Text style={styles.statusText}>
@@ -113,7 +113,7 @@ const [selectedGroup, setSelectedGroup] = useState(null);
   const getStatusColor = (status) => {
     switch (status) {
       case 'Approved':
-        return '#2E7D32';
+        return '#3A6953';
       case 'Declined':
         return '#B00020';
       default:
@@ -126,7 +126,7 @@ const [selectedGroup, setSelectedGroup] = useState(null);
       <View style={styles.container}>
         <Text style={styles.title}>Join Request Status</Text>
         {loading ? (
-          <ActivityIndicator size="large" color="#285236" />
+          <ActivityIndicator size="large" color="#3A6953" />
         ) : (
           <FlatList
             data={requests}
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 12,
-    color: '#2E7D32',
+    color: '#3A6953',
     textAlign: 'center',
   },
   card: {
@@ -245,21 +245,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0', // subtle gray border instead of shadow
+    borderColor: '#e0e0e0',
     alignItems: 'flex-start',
   },  
   groupId: {
     fontSize: 14,
-    color: '#444',
+    color: '#666',
     marginBottom: 4,
   },
   statusText: {
     fontSize: 14,
     marginBottom: 8,
-    color: '#333',
+    color: '#666',
   },
   actionButton: {
-    backgroundColor: '#285236',
+    backgroundColor: '#3A6953',
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 20,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   groupName: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#2E7D32',
+    color: '#3A6953',
     marginBottom: 4,
   },
   modalOverlay: {
@@ -294,16 +294,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 6,
-    color: "#2E7D32",
+    color: "#3A6953",
   },
   modalSub: {
     fontSize: 13,
-    color: "#555",
+    color: "#666",
     marginBottom: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#3A6953",
     borderRadius: 6,
     padding: 10,
     marginBottom: 15,
@@ -314,11 +314,11 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     marginRight: 15,
-    color: "#999",
+    color: "#666",
     fontSize: 16,
   },
   confirmText: {
-    color: "#2E7D32",
+    color: "#3A6953",
     fontWeight: "bold",
     fontSize: 16,
   },

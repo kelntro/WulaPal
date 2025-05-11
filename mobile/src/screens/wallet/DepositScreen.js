@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1B1B1B',
+    color: '#3A6953',
     marginTop: 16,
     marginBottom: 8,
   },
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1B1B1B',
+    color: '#3A6953',
     marginBottom: 8,
   },
   amountInputWrapper: {
@@ -201,20 +201,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#3A6953',
     paddingHorizontal: 16,
   },
   currencySymbol: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#1B1B1B',
+    color: '#3A6953',
     marginRight: 8,
   },
   input: {
     flex: 1,
     fontSize: 20,
     paddingVertical: 16,
-    color: '#1B1B1B',
+    color: '#3A6953',
   },
   helperText: {
     fontSize: 14,
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   button: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: '#3A6953',
     padding: 16,
     borderRadius: 12,
     flexDirection: 'row',

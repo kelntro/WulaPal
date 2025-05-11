@@ -59,7 +59,7 @@ const DepositSuccessScreen = () => {
           ]}
         >
           <View style={styles.iconContainer}>
-            <Icon name="check-circle" size={80} color="#2E7D32" />
+            <Icon name="check-circle" size={80} color="#3A6953" />
           </View>
 
           <Text style={styles.successText}>Deposit Successful!</Text>
@@ -72,11 +72,11 @@ const DepositSuccessScreen = () => {
 
           <View style={styles.detailsContainer}>
             <View style={styles.detailItem}>
-              <Icon name="security" size={24} color="#2E7D32" />
+              <Icon name="security" size={24} color="#3A6953" />
               <Text style={styles.detailText}>Secure Transaction</Text>
             </View>
             <View style={styles.detailItem}>
-              <Icon name="access-time" size={24} color="#2E7D32" />
+              <Icon name="access-time" size={24} color="#3A6953" />
               <Text style={styles.detailText}>Instant Credit</Text>
             </View>
           </View>
@@ -98,7 +98,7 @@ const DepositSuccessScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F0F7F0',
+    backgroundColor: '#F4F8F7',
   },
   container: {
     flex: 1,
@@ -114,17 +114,17 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(46, 125, 50, 0.15)',
+    backgroundColor: 'rgba(58, 105, 83, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
     borderWidth: 2,
-    borderColor: '#2E7D32',
+    borderColor: '#3A6953',
   },
   successText: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1B5E20',
+    color: '#3A6953',
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -135,11 +135,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     width: '100%',
     borderWidth: 1,
-    borderColor: '#2E7D32',
+    borderColor: '#3A6953',
   },
   message: {
     fontSize: 16,
-    color: '#2E7D32',
+    color: '#3A6953',
     lineHeight: 24,
     textAlign: 'center',
   },
@@ -155,16 +155,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2E7D32',
+    borderColor: '#3A6953',
   },
   detailText: {
     fontSize: 16,
-    color: '#1B5E20',
+    color: '#666',
     marginLeft: 12,
     fontWeight: '500',
   },
   button: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: '#3A6953',
     padding: 16,
     borderRadius: 12,
     flexDirection: 'row',

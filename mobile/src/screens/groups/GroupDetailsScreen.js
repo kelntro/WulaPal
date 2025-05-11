@@ -264,7 +264,7 @@ const GroupDetailsScreen = ({route}) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.joinButton, { backgroundColor: '#1e90ff', marginTop: 12 }]}
+              style={[styles.joinButton, { backgroundColor: '#6A8C73', marginTop: 12 }]}
               onPress={() => {
                 // ✅ Navigate to audit trail
                 navigation.navigate('AuditTrailScreen', { groupId });
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#2E7D32',
+    color: '#3A6953',
     marginBottom: 12,
   },
   infoRow: {

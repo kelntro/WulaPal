@@ -223,7 +223,7 @@ const [joiningNotification, setJoiningNotification] = useState(null);
       <View style={styles.header}>
         <Text style={styles.title}>Notifications</Text>
         <TouchableOpacity onPress={() => setModalVisible(true)}>
-          <Icon name="filter-outline" size={24} color="#2E7D32" />
+          <Icon name="filter-outline" size={24} color="#3A6953" />
         </TouchableOpacity>
       </View>
 
@@ -247,23 +247,37 @@ const [joiningNotification, setJoiningNotification] = useState(null);
             {["all", "today", "yesterday", "week", "month"].map((option) => (
               <Pressable
                 key={option}
-                style={styles.modalOption}
+                style={[
+                  styles.modalOption,
+                  selectedFilter === option && styles.selectedOption
+                ]}
                 onPress={() => handleFilterChange(option)}
               >
-                <Text style={styles.modalText}>{option.toUpperCase()}</Text>
+                <Text style={[
+                  styles.modalText,
+                  selectedFilter === option && styles.selectedText
+                ]}>
+                  {option.toUpperCase()}
+                </Text>
               </Pressable>
             ))}
             <Pressable
-              style={styles.modalOption}
+              style={[
+                styles.modalOption,
+                selectedFilter === "custom" && styles.selectedOption
+              ]}
               onPress={() => {
                 setModalVisible(false);
                 setShowDatePicker(true);
               }}
             >
-              <Text style={styles.modalText}>SELECT DATE</Text>
+              <Text style={[
+                styles.modalText,
+                selectedFilter === "custom" && styles.selectedText
+              ]}>SELECT DATE</Text>
             </Pressable>
             <Pressable style={styles.modalCancel} onPress={() => setModalVisible(false)}>
-              <Text style={{ color: "#999" }}>Close</Text>
+              <Text style={styles.cancelText}>Close</Text>
             </Pressable>
           </View>
         </View>
@@ -301,7 +315,7 @@ const [joiningNotification, setJoiningNotification] = useState(null);
         onChangeText={setDepositInput}
         style={{
           borderWidth: 1,
-          borderColor: "#ccc",
+          borderColor: "#3A6953",
           borderRadius: 5,
           padding: 10,
           marginBottom: 15,
@@ -358,7 +372,7 @@ const [joiningNotification, setJoiningNotification] = useState(null);
             }            
           }}
         >
-          <Text style={{ color: "#2E7D32", fontWeight: "bold" }}>Join</Text>
+          <Text style={{ color: "#3A6953", fontWeight: "bold" }}>Join</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -387,9 +401,9 @@ const [joiningNotification, setJoiningNotification] = useState(null);
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F4F8F7", padding: 20 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  title: { fontSize: 22, fontWeight: "bold", color: "#2E7D32" },
+  title: { fontSize: 22, fontWeight: "bold", color: "#3A6953" },
   loading: { color: "#666", textAlign: "center" },
-  empty: { color: "#999", textAlign: "center", marginTop: 50, fontStyle: "italic" },
+  empty: { color: "#666", textAlign: "center", marginTop: 50, fontStyle: "italic" },
   notificationItem: {
     backgroundColor: "#fff",
     padding: 15,
@@ -398,10 +412,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
   },
   readNotification: { opacity: 0.5 },
-  notificationText: { flex: 1, fontSize: 16, color: "#333" },
-  unreadDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#2E7D32", marginLeft: 10 },
+  notificationText: { flex: 1, fontSize: 16, color: "#666" },
+  unreadDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#3A6953", marginLeft: 10 },
   modalBackground: {
     flex: 1,
     justifyContent: "center",
@@ -410,19 +426,38 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: "#fff",
     marginHorizontal: 40,
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 20,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
   },
   modalOption: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     width: "100%",
     alignItems: "center",
-    borderBottomColor: "#eee",
+    borderBottomColor: "#e0e0e0",
     borderBottomWidth: 1,
   },
-  modalText: { fontSize: 16, color: "#2E7D32" },
-  modalCancel: { marginTop: 10 },
+  selectedOption: {
+    backgroundColor: "rgba(58, 105, 83, 0.1)",
+  },
+  modalText: { 
+    fontSize: 16, 
+    color: "#3A6953",
+    fontWeight: "500",
+  },
+  selectedText: {
+    fontWeight: "bold",
+  },
+  modalCancel: { 
+    marginTop: 15,
+    paddingVertical: 8,
+  },
+  cancelText: { 
+    color: "#666",
+    fontSize: 16,
+  },
 });
 
 export default NotificationScreen;

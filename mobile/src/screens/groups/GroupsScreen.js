@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { API_BASE_URL } from '@env';
 
 const socket = io(API_BASE_URL);
@@ -126,8 +127,8 @@ const GroupsScreen = () => {
     <View style={styles.container}>
       {/* Toggle Between "Your Groups" and "Join Groups" */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-  <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#2E7D32' }}>
-    Groups
+  <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#3A6953' }}>
+    Paluwagan
   </Text>
   <TouchableOpacity onPress={() => navigation.navigate('JoinRequestStatus')}>
     <Icon name="account-check-outline" size={28} color="#2E7D32" />
@@ -135,19 +136,26 @@ const GroupsScreen = () => {
 </View>
 
       <View style={styles.toggleContainer}>
-        
         <TouchableOpacity
           style={[
             styles.toggleButton,
             selectedTab === 'your' && styles.activeTab,
           ]}
-          onPress={() => setSelectedTab('your')}>
+          onPress={() => setSelectedTab('your')}
+        >
+          <MaterialIcons
+            name="group"
+            size={20}
+            color={selectedTab === 'your' ? '#fff' : '#888'}
+            style={{ marginRight: 6 }}
+          />
           <Text
             style={[
               styles.toggleText,
               selectedTab === 'your' && styles.activeText,
-            ]}>
-            👥 Your Groups
+            ]}
+          >
+            My Groups
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -155,13 +163,21 @@ const GroupsScreen = () => {
             styles.toggleButton,
             selectedTab === 'join' && styles.activeTab,
           ]}
-          onPress={() => setSelectedTab('join')}>
+          onPress={() => setSelectedTab('join')}
+        >
+          <MaterialIcons
+            name="person-search"
+            size={20}
+            color={selectedTab === 'join' ? '#fff' : '#888'}
+            style={{ marginRight: 6 }}
+          />
           <Text
             style={[
               styles.toggleText,
               selectedTab === 'join' && styles.activeText,
-            ]}>
-            🤝 Join
+            ]}
+          >
+            Join Groups
           </Text>
         </TouchableOpacity>
       </View>
@@ -316,27 +332,33 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#E0E0E0',
-    borderRadius: 25,
-    padding: 5,
-    marginBottom: 10,
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#3A6953',
+    overflow: 'hidden',
+    alignSelf: 'center',
+    marginVertical: 20,
   },
   toggleButton: {
-    flex: 1,
-    paddingVertical: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 25,
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    backgroundColor: '#fff',
+    minWidth: 120,
   },
   activeTab: {
-    backgroundColor: '#285236',
+    backgroundColor: '#3A6953',
   },
   toggleText: {
+    color: '#888',
+    fontWeight: '600',
     fontSize: 16,
-    color: '#285236',
-    fontWeight: 'bold',
   },
   activeText: {
-    color: 'white',
+    color: '#fff',
   },
   searchInput: {
     backgroundColor: 'white',
