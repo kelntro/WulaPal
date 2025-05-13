@@ -117,58 +117,60 @@ const PaluwaganGroups = () => {
         </div>
       </div>
 
-      {/* Search & Create Button */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex items-center justify-between mb-6">
+        {/* Search Bar */}
         <div className="relative w-3/4">
           <HiOutlineSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
           <input
             type="text"
             placeholder="Quick Search..."
-            className="w-[650px] p-2 pl-10 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#6A8C73]"
+            className="w-[600px] border border-[#99C6A9] rounded-full pl-12 pr-4 py-2 text-sm focus:outline-none"
             value={search}
-            onChange={(e) => setSearch(e.target.value)} // ✅ Handle search input
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button
-          onClick={async () => {
-            try {
-              const storedUser = JSON.parse(localStorage.getItem("user"));
-              const response = await fetch(`http://localhost:5050/api/users/${storedUser._id}`);
-              const freshUser = await response.json();
 
-              // Optional: update localStorage with fresh user data
-              localStorage.setItem("user", JSON.stringify(freshUser));
+        {/* Buttons */}
+        <div className="flex space-x-4 ml-6">
+          <button
+            onClick={async () => {
+              try {
+                const storedUser = JSON.parse(localStorage.getItem("user"));
+                const response = await fetch(`http://localhost:5050/api/users/${storedUser._id}`);
+                const freshUser = await response.json();
 
-              const missing = getMissingProfileFields(freshUser);
+                localStorage.setItem("user", JSON.stringify(freshUser));
+                const missing = getMissingProfileFields(freshUser);
 
-              if (missing.length > 0) {
-                setMissingFields(missing);
-                setShowProfileModal(true);
-                return;
+                if (missing.length > 0) {
+                  setMissingFields(missing);
+                  setShowProfileModal(true);
+                  return;
+                }
+
+                setShowModal(true);
+              } catch (err) {
+                console.error("❌ Failed to fetch updated user profile:", err);
+                alert("Unable to verify your profile. Please try again later.");
               }
+            }}
+            className="w-[230px] bg-[#3A6953] text-white px-4 py-2 rounded-full shadow-md flex items-center justify-center space-x-2 hover:bg-[#6A8C73] transition"
+          >
+            <FiPlus className="text-white text-lg" />
+            <span className="text-sm font-medium">Create a Paluwagan</span>
+          </button>
 
-              setShowModal(true);
-            } catch (err) {
-              console.error("❌ Failed to fetch updated user profile:", err);
-              alert("Unable to verify your profile. Please try again later.");
-            }
-          }}
-          className="bg-[#3A6953] text-white px-4 py-2 pr-5 rounded-[20px] flex items-center shadow-md hover:bg-[#6A8C73] transition mr-6"
-        >
-          <span className="mr-1">
-            <FiPlus />
-          </span>
-          Create a Paluwagan
-        </button>
-        <button
-  onClick={() => navigate("/group/join-requests")}
-  className="bg-[#3A6953] text-white px-4 py-2 pr-5 rounded-[20px] flex items-center shadow-md hover:bg-[#6A8C73] transition"
->
-  <span className="mr-1">📥</span>
-  View Join Requests
-</button>
-
+          <button
+            onClick={() => navigate("/group/join-requests")}
+            className="w-[230px] bg-[#3A6953] text-white px-4 py-2 rounded-full shadow-md flex items-center justify-center space-x-2 hover:bg-[#6A8C73] transition"
+          >
+            <span className="text-lg">📥</span>
+            <span className="text-sm font-medium">View Join Requests</span>
+          </button>
+        </div>
       </div>
+
+
 
       {/* Create Group Modal */}
       {showModal && (

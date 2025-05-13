@@ -659,9 +659,8 @@ const Dashboard = () => {
           <RecentTransactions />
         </div>
 
-        {/* Sidebar */}
-        {/* Sidebar */}
-        <div className="mt-6 flex flex-col items-center">
+        {/* Search box*/}
+        <div className="mt-[97px] flex flex-col items-center">
           {/* Search Box at the Top of Sidebar */}
           <div className="relative w-[375px]">
             {/* Search Icon */}
