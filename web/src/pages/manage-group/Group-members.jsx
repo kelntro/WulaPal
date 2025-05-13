@@ -1,3 +1,4 @@
+// imports
 import React, { useState, useEffect } from "react";
 import { HiArrowLeft } from "react-icons/hi";
 import { useNavigate, useParams } from "react-router-dom";
@@ -5,13 +6,12 @@ import { FaUsers, FaCalendarAlt } from "react-icons/fa";
 import { MdCheckCircle } from "react-icons/md";
 import { FaArrowsRotate } from "react-icons/fa6";
 import { FiPlus } from "react-icons/fi";
-import { MessageCircle } from "lucide-react"; // ✅ Floating button icon
+import { MessageCircle } from "lucide-react"; // Optional if not used
 import AddMemberModal from "./AddMemberModal";
 import MemberInfoModal from "./MemberInfoModal";
-import FloatingChat from "./FloatingChat"; // ✅ Importing FloatingChat
 import { io } from "socket.io-client";
 
-
+// server URL
 const SERVER_URL = "http://localhost:5050";
 
 const GroupMembers = () => {
@@ -22,47 +22,33 @@ const GroupMembers = () => {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
   const socket = io(SERVER_URL);
+  const currentUser = JSON.parse(localStorage.getItem("user"));
 
-  const currentUser = JSON.parse(localStorage.getItem("user")); 
   useEffect(() => {
-    console.log("🔍 Fetching group details for ID:", groupId);
-  
     if (!groupId) {
       console.error("❌ groupId is undefined! Cannot fetch group data.");
       return;
     }
-  
+
     const fetchGroup = () => {
       fetch(`${SERVER_URL}/api/groups/${groupId}`)
         .then((res) => {
-          if (!res.ok) {
-            throw new Error(`Failed to fetch group data. Status: ${res.status}`);
-          }
+          if (!res.ok) throw new Error(`Failed to fetch group. Status: ${res.status}`);
           return res.json();
         })
-        .then((data) => {
-          console.log("✅ Group Data Received:", data);
-          setGroup(data);
-        })
-        .catch((err) => {
-          console.error("❌ Error fetching group:", err);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+        .then(setGroup)
+        .catch((err) => console.error("❌ Error fetching group:", err))
+        .finally(() => setLoading(false));
     };
-  
-    // Initial fetch
+
     fetchGroup();
-  
-    // Listen for real-time updates
+
     socket.on("groupUpdated", (update) => {
       if (update.groupId === groupId) {
-        console.log("🔄 Group updated:", update.message);
-        fetchGroup(); // Re-fetch group data
+        fetchGroup();
       }
     });
-  
+
     return () => {
       socket.off("groupUpdated");
     };
@@ -87,8 +73,9 @@ const GroupMembers = () => {
   }
 
   return (
-    <div className="transition-all duration-300 w-[1150px] mx-auto bg-white p-4 rounded-lg shadow-md">
-      {/* Header Section */}
+    <div className="min-h-screen bg-[#D4E8DB] p-10">
+        <div className="transition-all duration-300 w-[1150px] mx-auto bg-white p-4 rounded-2xl shadow-md">
+      {/* Header */}
       <div className="w-full max-w-6xl mx-auto p-2 flex items-center">
         <button
           onClick={() => navigate(-1)}
@@ -98,7 +85,7 @@ const GroupMembers = () => {
         </button>
       </div>
 
-      {/* Content Section */}
+      {/* Group Info */}
       <div className="w-full max-w-6xl mx-auto mt-1 p-4 flex flex-wrap lg:flex-nowrap gap-[10px]">
         <div className="w-full lg:w-[200px]">
           <img
@@ -124,7 +111,7 @@ const GroupMembers = () => {
         </div>
       </div>
 
-      {/* Members Table */}
+      {/* Member Table */}
       <div className="p-6 w-full max-w-6xl mx-auto mt-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-green-900">List of Members</h2>
@@ -147,99 +134,85 @@ const GroupMembers = () => {
             >
               Group Chat
             </button>
-
-            </div>
+          </div>
         </div>
 
         {showModal && (
-        <AddMemberModal
-          groupId={group._id} // ✅ Ensure groupId is passed
-          onClose={() => setShowModal(false)}
-          onMemberAdded={(updatedMembers) => setGroup({ ...group, members: updatedMembers })}
-        />
-      )}
+          <AddMemberModal
+            groupId={group._id}
+            onClose={() => setShowModal(false)}
+            onMemberAdded={(updatedMembers) => setGroup({ ...group, members: updatedMembers })}
+          />
+        )}
 
-<div className="overflow-hidden rounded-lg text-center">
-    <table className="w-full text-gray-600 border-collapse">
-        <thead className="bg-gray-100 text-[#3A6953]">
-            <tr>
+        <div className="overflow-hidden rounded-lg text-center">
+          <table className="w-full text-gray-600 border-collapse">
+            <thead className="bg-gray-100 text-[#3A6953]">
+              <tr>
                 <th className="p-4 border-b">User ID</th>
                 <th className="p-4 border-b">Name</th>
                 <th className="p-4 border-b">Date Joined</th>
                 <th className="p-4 border-b">Time Joined</th>
-            </tr>
-        </thead>
-        <tbody>
-    {group.members.length > 0 ? (
-        group.members.map((member) => (
-            <tr key={member.id} className="border-b hover:bg-gray-50">
-                <td className="p-4 text-[#3A6953] font-semibold">
-                  {member.id}
-                </td>
-                <td className="p-4">{member.name || "Unknown"}</td>
-                <td className="p-4">{member.dateJoined || "N/A"}</td>
-                <td className="p-4">{member.timeJoined || "N/A"}</td>
-            </tr>
-        ))
-    ) : (
-        <tr>
-            <td colSpan="4" className="p-4 text-gray-500">No members yet</td>
-        </tr>
-    )}
-</tbody>
+              </tr>
+            </thead>
+            <tbody>
+              {group.members.length > 0 ? (
+                group.members.map((member) => (
+                  <tr key={member.id} className="border-b hover:bg-gray-50">
+                    <td className="p-4 text-[#3A6953] font-semibold">{member.id}</td>
+                    <td className="p-4">{member.name || "Unknown"}</td>
+                    <td className="p-4">{member.dateJoined || "N/A"}</td>
+                    <td className="p-4">{member.timeJoined || "N/A"}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="p-4 text-gray-500">No members yet</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-    </table>
-</div>
-
-
-<div className="p-6 w-full max-w-6xl mx-auto mt-10 bg-[#f5faf7] rounded-xl border border-[#d9e5db] shadow-sm">
-  <h2 className="text-2xl font-bold text-[#3A6953] mb-6 text-center">
-    📊 Group Contribution Details
-  </h2>
-
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-    {/* Contribution Start Date */}
-    <div className="bg-white rounded-lg p-4 border shadow">
-      <p className="text-sm text-gray-500 mb-1">Contribution Started</p>
-      <p className="text-lg text-[#3A6953] font-semibold">
-        {group.payouts?.length > 0
-          ? new Date(group.payouts[0].payoutDate).toLocaleDateString()
-          : "Not Started"}
-      </p>
-    </div>
-
-    {/* Current Payout Recipient */}
-    <div className="bg-white rounded-lg p-4 border shadow">
-      <p className="text-sm text-gray-500 mb-1">Current Payout Recipient</p>
-      <p className="text-lg text-[#3A6953] font-semibold">
-      {group.payouts?.length > 0
-  ? group.members.find((m) => m.id === group.payouts[group.currentPayoutIndex]?.recipientId)?.name || "N/A"
-          : "Not Assigned"}
-      </p>
-    </div>
-
-    {/* Next Payout Date */}
-    <div className="bg-white rounded-lg p-4 border shadow">
-      <p className="text-sm text-gray-500 mb-1">Next Payout Date</p>
-      <p className="text-lg text-[#3A6953] font-semibold">
-        {group.nextPayoutDate
-          ? new Date(group.nextPayoutDate).toLocaleDateString()
-          : "Not Set"}
-      </p>
-    </div>
-  </div>
-</div>
-
+        {/* Group Summary Section */}
+        <div className="p-6 w-full max-w-6xl mx-auto mt-10 bg-[#f5faf7] rounded-xl border border-[#d9e5db] shadow-sm">
+          <h2 className="text-2xl font-bold text-[#3A6953] mb-6 text-center">
+            📊 Group Contribution Details
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+            <div className="bg-white rounded-lg p-4 border shadow">
+              <p className="text-sm text-gray-500 mb-1">Contribution Started</p>
+              <p className="text-lg text-[#3A6953] font-semibold">
+                {group.payouts?.length > 0
+                  ? new Date(group.payouts[0].payoutDate).toLocaleDateString()
+                  : "Not Started"}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border shadow">
+              <p className="text-sm text-gray-500 mb-1">Current Payout Recipient</p>
+              <p className="text-lg text-[#3A6953] font-semibold">
+                {group.payouts?.length > 0
+                  ? group.members.find((m) => m.id === group.payouts[group.currentPayoutIndex]?.recipientId)?.name || "N/A"
+                  : "Not Assigned"}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border shadow">
+              <p className="text-sm text-gray-500 mb-1">Next Payout Date</p>
+              <p className="text-lg text-[#3A6953] font-semibold">
+                {group.nextPayoutDate
+                  ? new Date(group.nextPayoutDate).toLocaleDateString()
+                  : "Not Set"}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {selectedMember && <MemberInfoModal member={selectedMember} onClose={() => setSelectedMember(null)} />}
-
-{/* Floating Chat */}
-{group && currentUser && (
-  <FloatingChat groupId={group._id} currentUser={currentUser} />
-)}
-
     </div>
+  
+  </div>
+    
   );
 };
 
