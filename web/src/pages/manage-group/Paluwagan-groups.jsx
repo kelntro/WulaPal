@@ -4,6 +4,7 @@ import { HiOutlineSearch } from "react-icons/hi";
 import { FaUsers, FaCheckCircle } from "react-icons/fa";
 import { FaArrowsRotate } from "react-icons/fa6";
 import { FiPlus } from "react-icons/fi";
+import { PiUserListBold } from "react-icons/pi";
 import CreateGroupModal from "./CreateGroupModal";
 import io from "socket.io-client";
 
@@ -164,7 +165,7 @@ const PaluwaganGroups = () => {
             onClick={() => navigate("/group/join-requests")}
             className="w-[230px] bg-[#3A6953] text-white px-4 py-2 rounded-full shadow-md flex items-center justify-center space-x-2 hover:bg-[#6A8C73] transition"
           >
-            <span className="text-lg">📥</span>
+            <span className="text-lg"><PiUserListBold /></span>
             <span className="text-sm font-medium">View Join Requests</span>
           </button>
         </div>

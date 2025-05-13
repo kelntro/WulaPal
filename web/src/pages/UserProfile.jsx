@@ -3,6 +3,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { HiArrowLeft } from "react-icons/hi";
+import MessageUser from "./MessageUser"; // Adjust path if needed
 
 const getLastActiveLabel = (timestamp) => {
   if (!timestamp) return "Offline";
@@ -26,6 +27,7 @@ const UserProfile = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showMessage, setShowMessage] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const [rating, setRating] = useState(0);
@@ -62,7 +64,27 @@ const UserProfile = () => {
   };
 
   const handleMessageClick = () => {
-    navigate(`/message/${userId}`);
+    setShowMessage(true);
+  };
+
+  const renderAddress = (address) => {
+    if (!address) return null;
+    let parsed = {};
+    try {
+      parsed = typeof address === "string" ? JSON.parse(address) : address;
+    } catch {
+      return null;
+    }
+
+    return (
+      <>
+        {parsed.street && <p>Street: {parsed.street}</p>}
+        {parsed.barangay && <p>Barangay: {parsed.barangay}</p>}
+        {parsed.city && <p>City: {parsed.city}</p>}
+        {parsed.province && <p>Province: {parsed.province}</p>}
+        {parsed.zipCode && <p>ZIP Code: {parsed.zipCode}</p>}
+      </>
+    );
   };
 
   const submitReview = async (e) => {
@@ -93,35 +115,16 @@ const UserProfile = () => {
     }
   };
 
-  const renderAddress = (address) => {
-    if (!address) return null;
-    let parsed = {};
-    try {
-      parsed = typeof address === "string" ? JSON.parse(address) : address;
-    } catch {
-      return null;
-    }
-
-    return (
-      <>
-        {parsed.street && <p>Street: {parsed.street}</p>}
-        {parsed.barangay && <p>Barangay: {parsed.barangay}</p>}
-        {parsed.city && <p>City: {parsed.city}</p>}
-        {parsed.province && <p>Province: {parsed.province}</p>}
-        {parsed.zipCode && <p>ZIP Code: {parsed.zipCode}</p>}
-      </>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-[#D4E8DB] p-10">
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
+      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg relative z-10">
         <button
-                      onClick={() => navigate(-1)}
-                      className="flex items-center justify-center bg-[#6A8C73] text-white px-6 py-2 rounded-2xl shadow-md hover:bg-[#285236] transition"
-                    >
-                      <HiArrowLeft className="text-xl" />
-                    </button>
+          onClick={() => navigate(-1)}
+          className="flex items-center justify-center bg-[#6A8C73] text-white px-6 py-2 rounded-2xl shadow-md hover:bg-[#285236] transition"
+        >
+          <HiArrowLeft className="text-xl" />
+        </button>
+
         {loading ? (
           <div className="text-gray-600 animate-pulse">Loading user...</div>
         ) : error ? (
@@ -129,22 +132,21 @@ const UserProfile = () => {
         ) : (
           <>
             <div className="flex flex-col items-center mb-6">
-            <img
-              src={
-                user.profileImage && user.profileImage !== "null" && user.profileImage !== ""
-                  ? user.profileImage
-                  : "/assets/Profile.jpg"
-              }
-              onError={(e) => {
-                console.warn("❌ Failed to load user profile image:", user.profileImage);
-                e.target.onerror = null;
-                e.target.src = "/assets/Profile.jpg";
-              }}
-              referrerPolicy="no-referrer"
-              alt="Profile"
-              className="w-32 h-32 rounded-full border border-gray-300 mb-3 object-cover"
-            />
-
+              <img
+                src={
+                  user.profileImage && user.profileImage !== "null" && user.profileImage !== ""
+                    ? user.profileImage
+                    : "/assets/Profile.jpg"
+                }
+                onError={(e) => {
+                  console.warn("❌ Failed to load user profile image:", user.profileImage);
+                  e.target.onerror = null;
+                  e.target.src = "/assets/Profile.jpg";
+                }}
+                referrerPolicy="no-referrer"
+                alt="Profile"
+                className="w-32 h-32 rounded-full border border-gray-300 mb-3 object-cover"
+              />
 
               <h1 className="text-3xl font-bold text-[#285236] mb-1">{user.name}</h1>
               <p className="text-gray-500 italic mb-1">{getLastActiveLabel(user.lastActive)}</p>
@@ -178,9 +180,7 @@ const UserProfile = () => {
                       <span
                         key={star}
                         onClick={() => setRating(star)}
-                        className={`text-3xl cursor-pointer ${
-                          star <= rating ? "text-yellow-400" : "text-gray-300"
-                        }`}
+                        className={`text-3xl cursor-pointer ${star <= rating ? "text-yellow-400" : "text-gray-300"}`}
                       >
                         ★
                       </span>
@@ -227,6 +227,34 @@ const UserProfile = () => {
           </>
         )}
       </div>
+
+      {/* Sliding MessageUser panel */}
+      <div
+          className={`fixed top-0 right-0 h-full w-full md:w-[600px] bg-white shadow-xl transition-transform duration-500 z-50 ${
+            showMessage ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <div className="p-4 border-b flex justify-between items-center">
+            <h2 className="text-xl font-bold text-[#285236]">
+              {user?.name || "User"}
+            </h2>
+            <button
+              onClick={() => setShowMessage(false)}
+              className="text-gray-600 hover:text-red-600 text-2xl font-bold"
+            >
+              &times;
+            </button>
+          </div>
+          <MessageUser />
+        </div>
+
+      {/* Optional background overlay */}
+      {showMessage && (
+        <div
+          className="fixed inset-0 bg-black opacity-40 z-40"
+          onClick={() => setShowMessage(false)}
+        ></div>
+      )}
     </div>
   );
 };
