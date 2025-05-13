@@ -47,7 +47,7 @@ const MessageUserScreen = () => {
     if (!message.trim() || !currentUserId) return;
 
     try {
-      const res = await fetch('${API_BASE_URL}/api/messages/send', {
+      const res = await fetch(`${API_BASE_URL}/api/messages/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
