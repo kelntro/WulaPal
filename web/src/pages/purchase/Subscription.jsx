@@ -152,16 +152,16 @@ const Subscription = () => {
       <footer className="w-full mt-[50px] p-[30px] flex items-center justify-between px-[60px] bg-[#3A6953]">
         <img src={logo} alt="WulaPal Logo" className="h-[50px]" />
         <div className="flex gap-2">
-          <a href="#" className="text-[#3A6953] bg-white p-2 rounded-full shadow-md hover:opacity-80 transition">
+          <a href="https://www.instagram.com/wulapal.system1/" className="text-[#3A6953] bg-white p-2 rounded-full shadow-md hover:opacity-80 transition">
             <FaInstagram size={16} />
           </a>
-          <a href="#" className="text-[#3A6953] bg-white p-2 rounded-full shadow-md hover:opacity-80 transition">
+          <a href="https://www.facebook.com/profile.php?id=61575890444891" className="text-[#3A6953] bg-white p-2 rounded-full shadow-md hover:opacity-80 transition">
             <FaFacebookF size={16} />
           </a>
-          <a href="#" className="text-[#3A6953] bg-white p-2 rounded-full shadow-md hover:opacity-80 transition">
+          <a href="https://www.linkedin.com/in/wulapal-system-830479365/" className="text-[#3A6953] bg-white p-2 rounded-full shadow-md hover:opacity-80 transition">
             <FaLinkedinIn size={16} />
           </a>
-          <a href="#" className="text-[#3A6953] bg-white p-2 rounded-full shadow-md hover:opacity-80 transition">
+          <a href="https://x.com/wulapalsystem" className="text-[#3A6953] bg-white p-2 rounded-full shadow-md hover:opacity-80 transition">
             <FaTwitter size={16} />
           </a>
         </div>
