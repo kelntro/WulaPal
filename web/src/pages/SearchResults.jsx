@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { HiArrowLeft } from "react-icons/hi";
 
 const SearchResults = () => {
   const location = useLocation();
@@ -41,11 +42,19 @@ const SearchResults = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7faf9] p-10">
+    <div className="min-h-screen bg-[#D4E8DB] p-10">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-[#285236] mb-8">
-          Search Results for <span className="text-[#3A6953]">"{searchQuery}"</span>
-        </h1>
+         <div className="flex items-center justify-start gap-4 mb-8">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center justify-center bg-[#6A8C73] text-white px-6 py-2 rounded-2xl shadow-md hover:bg-[#285236] transition"
+            >
+              <HiArrowLeft className="text-xl" />
+            </button>
+            <h1 className="text-4xl font-bold text-[#285236]">
+              Search Results for <span className="text-[#3A6953]">"{searchQuery}"</span>
+            </h1>
+          </div>
 
         {loading ? (
           <div className="text-gray-600 text-lg animate-pulse">Loading...</div>
@@ -54,19 +63,43 @@ const SearchResults = () => {
         ) : results.length === 0 ? (
           <div className="text-gray-500 text-lg">No users found.</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-[150px]">
             {results.map((user) => (
               <div
                 key={user._id}
                 className="p-6 bg-white rounded-2xl shadow hover:shadow-lg transition cursor-pointer"
                 onClick={() => handleClick(user._id)}
               >
-                <h2 className="text-2xl font-semibold text-[#3A6953] mb-2">{user.name}</h2>
-                <p className="text-gray-700">{user.email}</p>
-                <p className="text-gray-400 text-sm mt-2">User ID: {user._id}</p>
+                <div className="flex items-center gap-4">
+                  <img
+                    src={user.profileImage || "/default-profile.png"}
+                    alt={user.name}
+                    className="w-20 h-20 rounded-full object-cover"
+                  />
+                  <div>
+                    <h2 className="text-2xl font-semibold text-[#3A6953] mb-1">{user.name}</h2>
+                    <p className="text-gray-700">{user.email}</p>
+                    <p className="text-gray-400 text-sm mt-1">User ID: {user._id}</p>
+
+                    {/* Rating */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-yellow-500 text-lg">
+                        {Array.from({ length: 5 }).map((_, index) => (
+                          <span key={index}>
+                            {user.rating && user.rating >= index + 1 ? "★" : "☆"}
+                          </span>
+                        ))}
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        {user.ratingPercentage || 0}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
+
         )}
       </div>
     </div>
