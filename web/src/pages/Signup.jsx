@@ -175,13 +175,16 @@ const Signup = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)} // Allow free typing
+              onChange={(e) => setEmail(e.target.value)} // Update email state
               onBlur={() => {
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation regex
-                if (!emailRegex.test(email)) {
-                  alert("Please enter a valid email address."); // Optional: Show feedback
+                if (email && !emailRegex.test(email)) {
+                  setError("Please enter a valid email address."); // Show feedback only if invalid
+                } else {
+                  setError(null); // Clear error if valid
                 }
               }}
+              maxLength={50} // Set maximum of 50 characters
               className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
               required
             />
