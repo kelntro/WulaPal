@@ -10,7 +10,7 @@ import {
   Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import {Dimensions} from 'react-native';
@@ -29,34 +29,26 @@ const HomeScreen = () => {
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [user, setUser] = useState(null);
 
-
-  const fetchDashboardData = async () => {
+  const fetchBalance = async (userId) => {
     try {
-      const storedUser = await AsyncStorage.getItem('user');
-      const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-      if (!parsedUser || !parsedUser._id) {
-        console.warn('User ID not found in AsyncStorage');
-        return;
+      const balanceRes = await axios.get(`${API_BASE_URL}/api/wallet/balance`, {
+        params: {userId},
+      });
+
+      if (balanceRes.data && typeof balanceRes.data.balance === 'number') {
+        setBalance(balanceRes.data.balance);
+      } else {
+        console.warn('No balance field in response.');
+        setBalance(0);
       }
+    } catch (error) {
+      console.error('❌ Error fetching balance:', error.message);
+    }
+  };
 
-      setUser(parsedUser);
-      const firstName = parsedUser.name?.split(' ')[0] || 'User';
-      setUserName(firstName);
-
-      const requiredFields = ['dateofBirth', 'country', 'mobile', 'address'];
-      const isIncomplete = requiredFields.some(field => !parsedUser[field]);
-      if (isIncomplete) {
-        setShowIncompleteModal(true);
-      }
-
-      const contributionsRes = await axios.get(
-        `${API_BASE_URL}/api/member-notifications/${parsedUser._id}`,
-        {
-          params: {
-            type: 'contribution_reminder',
-          },
-        },
-      );const groupsRes = await axios.get(`${API_BASE_URL}/api/groups/member/${parsedUser._id}`);
+  const fetchContributions = async (userId) => {
+    try {
+      const groupsRes = await axios.get(`${API_BASE_URL}/api/groups/member/${userId}`);
       const groupList = groupsRes.data || [];
       console.log('📦 Raw groups:', groupList);
       
@@ -103,18 +95,36 @@ const HomeScreen = () => {
         })
         .filter(item => item !== null);
       
-      setUpcomingContributions(contributions);      
+      setUpcomingContributions(contributions);
+    } catch (error) {
+      console.error('❌ Error fetching contributions:', error.message);
+    }
+  };
 
-      const balanceRes = await axios.get(`${API_BASE_URL}/api/wallet/balance`, {
-        params: {userId: parsedUser._id},
-      });
-
-      if (balanceRes.data && typeof balanceRes.data.balance === 'number') {
-        setBalance(balanceRes.data.balance);
-      } else {
-        console.warn('No balance field in response.');
-        setBalance(0);
+  const fetchDashboardData = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem('user');
+      const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+      if (!parsedUser || !parsedUser._id) {
+        console.warn('User ID not found in AsyncStorage');
+        return;
       }
+
+      setUser(parsedUser);
+      const firstName = parsedUser.name?.split(' ')[0] || 'User';
+      setUserName(firstName);
+
+      const requiredFields = ['dateofBirth', 'country', 'mobile', 'address'];
+      const isIncomplete = requiredFields.some(field => !parsedUser[field]);
+      if (isIncomplete) {
+        setShowIncompleteModal(true);
+      }
+
+      await Promise.all([
+        fetchBalance(parsedUser._id),
+        fetchContributions(parsedUser._id)
+      ]);
+
     } catch (error) {
       console.error('❌ Error fetching dashboard data:', error.message);
     } finally {
@@ -125,6 +135,17 @@ const HomeScreen = () => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user?._id) {
+        Promise.all([
+          fetchBalance(user._id),
+          fetchContributions(user._id)
+        ]);
+      }
+    }, [user])
+  );
 
   if (loading) {
     return (
@@ -159,7 +180,7 @@ const HomeScreen = () => {
 
       {/* Balance */}
       <View style={styles.balanceSection}>
-        <Text style={styles.subtitle}>Here’s Your Balance</Text>
+        <Text style={styles.subtitle}>Here's Your Balance</Text>
         <Text style={styles.balance}>
           ₱{balance.toLocaleString(undefined, {minimumFractionDigits: 2})}
         </Text>

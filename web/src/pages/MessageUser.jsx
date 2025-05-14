@@ -38,16 +38,17 @@ const MessageUser = () => {
   const sendMessage = async () => {
     if (!message.trim() && !file) return;
 
-    const formData = new FormData();
-    formData.append("toUserId", userId);
-    formData.append("fromUserId", user._id);
-    formData.append("content", message);
-    if (file) formData.append("attachment", file);
-
     try {
       const res = await fetch("http://localhost:5050/api/messages/send", {
         method: "POST",
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          toUserId: userId,
+          fromUserId: user._id,
+          content: message
+        }),
       });
 
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -56,7 +57,6 @@ const MessageUser = () => {
         content: message,
         from: user._id,
         timestamp: new Date().toISOString(),
-        attachment: file ? URL.createObjectURL(file) : null,
       };
 
       setMessages((prev) => [...prev, newMessage]);

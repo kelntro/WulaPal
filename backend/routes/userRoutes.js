@@ -218,5 +218,20 @@ router.get("/search", async (req, res) => {
       res.status(500).json({ error: 'Failed to update last active' });
     }
   });  
+
+  // @desc    Check if user exists
+  // @route   GET /api/users/check/:userId
+  // @access  Public
+  router.get("/check/:userId", async (req, res) => {
+    const { userId } = req.params;
+    
+    try {
+      const user = await User.findById(userId);
+      res.json({ exists: !!user });
+    } catch (err) {
+      console.error("Error checking user:", err.message);
+      res.status(500).json({ message: "Error checking user", error: err.message });
+    }
+  });
   
   module.exports = router;

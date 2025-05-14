@@ -6,12 +6,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
 
 const GroupChats = () => {
-  const [joinedGroups, setJoinedGroups] = useState([]);
+  const [allChats, setAllChats] = useState([]);
   const [user, setUser] = useState(null);
   const navigation = useNavigation();
 
   useEffect(() => {
-    const loadUserAndGroups = async () => {
+    const loadUserAndChats = async () => {
       try {
         const storedUser = await AsyncStorage.getItem('user');
         if (!storedUser) return;
@@ -19,33 +19,85 @@ const GroupChats = () => {
         const userObj = JSON.parse(storedUser);
         setUser(userObj);
 
-        const res = await fetch(`${API_BASE_URL}/api/groups`);
-        const groups = await res.json();
-
-        const filtered = groups.filter(group =>
+        // Fetch group chats
+        const groupsRes = await fetch(`${API_BASE_URL}/api/groups`);
+        const groups = await groupsRes.json();
+        const filteredGroups = groups.filter(group =>
           group.members.some(m => m.userId === userObj._id)
         );
 
-        setJoinedGroups(filtered.reverse());
+        // Fetch direct messages
+        const messagesRes = await fetch(`${API_BASE_URL}/api/messages/conversation/${userObj._id}`);
+        const messages = await messagesRes.json();
+        
+        // Get unique chat partners
+        const chatPartners = new Set();
+        messages.forEach(msg => {
+          if (msg.from === userObj._id) {
+            chatPartners.add(msg.to);
+          } else {
+            chatPartners.add(msg.from);
+          }
+        });
+
+        // Fetch user details for each chat partner
+        const partnerDetails = await Promise.all(
+          Array.from(chatPartners).map(async partnerId => {
+            const res = await fetch(`${API_BASE_URL}/api/users/${partnerId}`);
+            return res.json();
+          })
+        );
+
+        // Combine and format all chats
+        const formattedChats = [
+          ...filteredGroups.map(group => ({
+            ...group,
+            type: 'group',
+            lastActivity: group.updatedAt || group.createdAt
+          })),
+          ...partnerDetails.map(partner => ({
+            ...partner,
+            type: 'direct',
+            lastActivity: messages
+              .filter(msg => msg.from === partner._id || msg.to === partner._id)
+              .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]?.timestamp || new Date(0)
+          }))
+        ];
+
+        // Sort by last activity
+        const sortedChats = formattedChats.sort((a, b) => 
+          new Date(b.lastActivity) - new Date(a.lastActivity)
+        );
+
+        setAllChats(sortedChats);
       } catch (err) {
-        console.error('❌ Failed to load joined groups:', err);
+        console.error('❌ Failed to load chats:', err);
       }
     };
 
-    loadUserAndGroups();
+    loadUserAndChats();
   }, []);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.item}
-      onPress={() => navigation.navigate('MemberGroupChat', { groupId: item._id })}
+      onPress={() => {
+        if (item.type === 'group') {
+          navigation.navigate('MemberGroupChat', { groupId: item._id });
+        } else {
+          navigation.navigate('MessageUserScreen', { userId: item._id });
+        }
+      }}
     >
       <View style={styles.iconContainer}>
-        <Icon name="chatbubble-ellipses-outline" size={24} color="#2E7D32" />
+        <Icon 
+          name={item.type === 'group' ? "chatbubble-ellipses-outline" : "person-outline"} 
+          size={24} 
+          color="#2E7D32" 
+        />
       </View>
       <View>
         <Text style={styles.groupName}>{item.name}</Text>
-        <Text style={styles.groupDesc}>{item.description || "No description"}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -53,19 +105,19 @@ const GroupChats = () => {
   if (!user) {
     return (
       <View style={styles.container}>
-        <Text style={{ textAlign: 'center', color: '#666' }}>Loading your groups...</Text>
+        <Text style={{ textAlign: 'center', color: '#666' }}>Loading your chats...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Group Chats</Text>
+      <Text style={styles.title}>Chats</Text>
       <FlatList
-        data={joinedGroups}
+        data={allChats}
         keyExtractor={item => item._id}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.empty}>You haven’t joined any groups yet.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>No chats yet.</Text>}
       />
     </View>
   );

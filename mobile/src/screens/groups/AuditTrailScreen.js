@@ -44,9 +44,17 @@ const AuditTrailScreen = ({ route }) => {
     { id: 'refund', label: 'Refunds' }
   ];
 
-  const filteredTransactions = transactions.filter(tx => 
-    selectedType === 'all' || tx.type === selectedType
-  );
+  const filteredTransactions = transactions.filter(tx => {
+    // First check if it matches the selected type
+    const matchesType = selectedType === 'all' || tx.type === selectedType;
+    
+    // Exclude organizer and system transactions
+    const isOrganizerOrSystem = tx.metadata?.type === 'organizer_share' || 
+                               tx.metadata?.type === 'system_share' ||
+                               tx.metadata?.type === 'admin_share';
+    
+    return matchesType && !isOrganizerOrSystem;
+  });
 
   const renderTypeSelector = () => (
     <ScrollView 

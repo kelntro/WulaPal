@@ -27,6 +27,7 @@ const MemberGroupChat = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [typingUsers, setTypingUsers] = useState([]);
+  const [groupName, setGroupName] = useState('');
   const chatRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +36,11 @@ const MemberGroupChat = () => {
       if (!storedUser) return;
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
+
+      // Fetch group details
+      const groupRes = await fetch(`${API_BASE_URL}/api/groups/${groupId}`);
+      const groupData = await groupRes.json();
+      setGroupName(groupData.name);
 
       fetch(`${API_BASE_URL}/api/chat/group/${groupId}`)
         .then(res => res.json())
@@ -138,6 +144,7 @@ const MemberGroupChat = () => {
 
   const renderItem = ({ item }) => {
     const isSender = item.sender._id === user._id;
+    const firstName = item.sender?.name?.split(' ')[0] || 'Unknown';
   
     return (
       <View style={[styles.messageWrapper, isSender ? styles.alignRight : styles.alignLeft]}>
@@ -148,7 +155,10 @@ const MemberGroupChat = () => {
         )}
         <View style={[styles.message, isSender && styles.sender]}>
           {item.type === 'file' ? (
-            <TouchableOpacity onPress={() => Linking.openURL(item.content)}>
+            <TouchableOpacity onPress={() => {
+              const fileUrl = item.content.startsWith('http') ? item.content : `${API_BASE_URL}${item.content}`;
+              Linking.openURL(fileUrl);
+            }}>
               <Text style={[styles.fileLink, isSender && styles.senderText]}>📎 View File</Text>
             </TouchableOpacity>
           ) : (
@@ -156,6 +166,15 @@ const MemberGroupChat = () => {
               {item.content}
             </Text>
           )}
+          <Text style={[styles.timestamp, isSender && styles.senderTimestamp]}>
+            {firstName} • {new Date(item.timestamp).toLocaleString(undefined, {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </Text>
         </View>
       </View>
     );
@@ -175,6 +194,9 @@ const MemberGroupChat = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
     >
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{groupName}</Text>
+      </View>
       <FlatList
         ref={chatRef}
         data={messages}
@@ -218,6 +240,19 @@ const MemberGroupChat = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F8F7' },
+  header: {
+    backgroundColor: '#3A6953',
+    padding: 15,
+    paddingTop: Platform.OS === 'ios' ? 50 : 15,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2E7D32',
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   message: {
     backgroundColor: '#fff',
     padding: 10,
@@ -281,7 +316,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     marginLeft: 5,
   },
-  
+  timestamp: {
+    fontSize: 10,
+    color: '#666',
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
+  senderTimestamp: {
+    color: '#2E7D32',
+    alignSelf: 'flex-end',
+  },
 });
 
 export default MemberGroupChat;
