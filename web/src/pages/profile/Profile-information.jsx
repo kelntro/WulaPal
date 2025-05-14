@@ -271,25 +271,25 @@ const ProfileInformation = () => {
               Personal Information
             </h3>
             {/* GENDER DROPDOWN */}
-<div className="flex justify-between items-center bg-[#F4F4F4] p-3 rounded-2xl border border-[#6a8c73] text-[#285236]">
-  <span>Gender</span>
-  {isEditing ? (
-    <select
-      value={formData.gender || ""}
-      onChange={(e) => handleChange("gender", e.target.value)}
-      className="bg-transparent text-right outline-none"
-    >
-      <option value="">Select</option>
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-      <option value="Prefer not to say">Prefer not to say</option>
-    </select>
-  ) : (
-    <span className="text-[#285236] opacity-60 text-right">
-      {user.gender || "—"}
-    </span>
-  )}
-</div>
+            <div className="flex justify-between items-center bg-[#F4F4F4] p-3 rounded-2xl border border-[#6a8c73] text-[#285236]">
+              <span>Gender</span>
+              {isEditing ? (
+                <select
+                  value={formData.gender || ""}
+                  onChange={(e) => handleChange("gender", e.target.value)}
+                  className="bg-transparent text-center outline-none"
+                >
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+              ) : (
+                <span className="text-[#285236] opacity-60 text-right">
+                  {user.gender || "—"}
+                </span>
+              )}
+            </div>
             <div className="mt-2 space-y-3">
               {[
                 { label: "Date of Birth", key: "dateofBirth", type: "date" },
@@ -363,7 +363,7 @@ const ProfileInformation = () => {
                 Address
               </h3>
               <div className="mt-2 space-y-3">
-                {["street", "barangay", "city", "province", "zipCode"].map(
+                {["street", "barangay", "city", "province", "zip Code"].map(
                   (field, i) => (
                     <div
                       key={i}
@@ -406,7 +406,7 @@ const ProfileInformation = () => {
                     <select
                       value={formData.idType || ""}
                       onChange={(e) => handleChange("idType", e.target.value)}
-                      className="bg-transparent text-right outline-none"
+                      className="bg-transparent text-center outline-none"
                     >
                       <option value="">Select</option>
                       {idTypes.map((type) => (
