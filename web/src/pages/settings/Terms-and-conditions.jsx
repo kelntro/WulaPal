@@ -93,7 +93,7 @@ const TermsandConditions = () => {
             4. Privacy and Data Collection
           </h2>
           <p className="text-gray-700">
-            Wulapal values your privacy. Please review our{" "}
+            WulaPal values your privacy. Please review our{" "}
             <a href="/privacy-policy" className="text-[#285236] underline">
               Privacy Policy
             </a>{" "}
