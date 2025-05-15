@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 import axios from "axios";
 import { FiTrash2 } from "react-icons/fi";
 
-const SERVER_URL = "http://192.168.56.1:5050";
+const SERVER_URL = "http://localhost:5050";
 const socket = io(SERVER_URL);
 
 const Notifications = () => {

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const SERVER_URL = "http://192.168.56.1:5050";
+const SERVER_URL = "http://localhost:5050";
 
 const ChangePassword = () => {
   const navigate = useNavigate();

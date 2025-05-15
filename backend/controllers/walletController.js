@@ -30,6 +30,7 @@ export const depositFunds = async (req, res) => {
             description: "WulaPal Deposit",
             amount: Number(amount),
             currency: "PHP",
+            success_redirect_url: "http://localhost:5173/wallet/success-deposit",
         };
 
         const response = await axios.post("https://api.xendit.co/v2/invoices", invoicePayload, {

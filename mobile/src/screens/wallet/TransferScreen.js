@@ -1,25 +1,57 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import PinVerificationModal from '../../components/PinVerificationModal';
 
 const TransferScreen = () => {
   const navigation = useNavigation();
   const [recipientId, setRecipientId] = useState('');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pendingTransfer, setPendingTransfer] = useState(null);
+  const [validatingRecipient, setValidatingRecipient] = useState(false);
+
+  const validateRecipient = async (id) => {
+    if (!id) return false;
+    
+    setValidatingRecipient(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/users/check/${id}`);
+      return response.data.exists;
+    } catch (error) {
+      return false;
+    } finally {
+      setValidatingRecipient(false);
+    }
+  };
 
   const handleTransfer = async () => {
-    if (!recipientId || !amount || isNaN(amount) || Number(amount) <= 0) {
-      Alert.alert("Invalid Input", "Please enter a valid recipient ID and amount.");
+    // Validate amount
+    if (!amount || isNaN(amount) || Number(amount) < 10) {
+      Alert.alert("Invalid Amount", "Minimum transfer amount is ₱10.00");
+      return;
+    }
+
+    // Validate recipient ID
+    if (!recipientId) {
+      Alert.alert("Invalid Input", "Please enter a recipient ID.");
       return;
     }
 
     setLoading(true);
     try {
+      // Check if recipient exists
+      const recipientExists = await validateRecipient(recipientId);
+      if (!recipientExists) {
+        Alert.alert("Invalid Recipient", "Recipient ID not found. Please check and try again.");
+        return;
+      }
+
       const user = await AsyncStorage.getItem("user");
       const parsedUser = user ? JSON.parse(user) : null;
 
@@ -28,14 +60,33 @@ const TransferScreen = () => {
         return;
       }
 
-      const payload = {
+      // Check if trying to transfer to self
+      if (parsedUser._id === recipientId) {
+        Alert.alert("Invalid Transfer", "You cannot transfer to yourself.");
+        return;
+      }
+
+      // Store transfer details and show PIN modal
+      setPendingTransfer({
         senderId: parsedUser._id,
         recipientId,
         amount: Number(amount)
-      };
+      });
+      setShowPinModal(true);
+    } catch (error) {
+      console.error("[TRANSFER] Error:", error);
+      Alert.alert("Error", "Failed to process transfer. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      const response = await axios.post(`${API_BASE_URL}/api/wallet/transfer`, payload);
+  const executeTransfer = async () => {
+    if (!pendingTransfer) return;
 
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/wallet/transfer`, pendingTransfer);
       Alert.alert("Success", "Transfer completed successfully.");
       navigation.goBack();
     } catch (error) {
@@ -43,6 +94,7 @@ const TransferScreen = () => {
       Alert.alert("Transfer Failed", error.response?.data?.message || "An error occurred.");
     } finally {
       setLoading(false);
+      setPendingTransfer(null);
     }
   };
 
@@ -72,6 +124,9 @@ const TransferScreen = () => {
                     onChangeText={setRecipientId}
                     placeholderTextColor="#999"
                   />
+                  {validatingRecipient && (
+                    <ActivityIndicator size="small" color="#2E7D32" />
+                  )}
                 </View>
               </View>
 
@@ -88,6 +143,7 @@ const TransferScreen = () => {
                     placeholderTextColor="#999"
                   />
                 </View>
+                <Text style={styles.minAmountText}>Minimum amount: ₱10.00</Text>
               </View>
 
               <View style={styles.infoContainer}>
@@ -113,6 +169,16 @@ const TransferScreen = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <PinVerificationModal
+        visible={showPinModal}
+        onClose={() => {
+          setShowPinModal(false);
+          setPendingTransfer(null);
+        }}
+        onSuccess={executeTransfer}
+        userId={pendingTransfer?.senderId}
+      />
     </SafeAreaView>
   );
 };
@@ -222,6 +288,12 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     marginLeft: 8,
+  },
+  minAmountText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

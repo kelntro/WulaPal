@@ -55,7 +55,38 @@ const ProfileInformation = () => {
   }, []);
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Add validation for mobile numbers
+    if (field === 'mobile' || field === 'emergencyContact.mobile') {
+      // Allow only numbers and optional + at start
+      if (!/^\+?\d*$/.test(value)) {
+        return;
+      }
+      // Limit to exactly 11 digits for Philippines mobile numbers
+      if (value.length > 11) {
+        return;
+      }
+    }
+
+    // Add validation for zip code
+    if (field === 'address.zipCode') {
+      // Allow only numbers and limit to 4 digits for Philippines
+      if (!/^\d*$/.test(value) || value.length > 4) {
+        return;
+      }
+    }
+
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      setFormData((prev) => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleSave = async () => {
@@ -152,7 +183,7 @@ const ProfileInformation = () => {
   return (
     <div className="p-2 min-h-screen flex flex-col items-start ml-[115px]">
       <h1 className="text-4xl font-bold text-[#285236]">Profile Information</h1>
-      <p className="text-[#6A8C73] mb-4">Here’s your profile information.</p>
+      <p className="text-[#6A8C73] mb-4">Here's your profile information.</p>
 
       {showSuccessModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
@@ -295,7 +326,7 @@ const ProfileInformation = () => {
                 { label: "Date of Birth", key: "dateofBirth", type: "date" },
                 { label: "Country", key: "country", type: "text" },
                 { label: "Mobile", key: "mobile", type: "tel" },
-                { label: "Email", key: "email", type: "email" },
+                { label: "Email", key: "email", type: "email", disabled: true },
                 { label: "Occupation", key: "occupation", type: "text" },
                 {
                   label: "Source of Funds",
@@ -317,7 +348,8 @@ const ProfileInformation = () => {
                           : formData[item.key] || ""
                       }
                       onChange={(e) => handleChange(item.key, e.target.value)}
-                      className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60"
+                      className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60 w-[200px]"
+                      disabled={item.key === "email"}
                     />
                   ) : (
                     <span className="text-[#285236] opacity-60 text-right">
@@ -342,15 +374,12 @@ const ProfileInformation = () => {
                       type={field === "mobile" ? "tel" : "text"}
                       value={formData.emergencyContact?.[field] || ""}
                       onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          emergencyContact: {
-                            ...prev.emergencyContact,
-                            [field]: e.target.value,
-                          },
-                        }))
+                        handleChange(
+                          `emergencyContact.${field}`,
+                          e.target.value
+                        )
                       }
-                      className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60"
+                      className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60 w-[200px]"
                     />
                   ) : (
                     <span className="text-[#285236] opacity-60 text-right">
@@ -363,7 +392,7 @@ const ProfileInformation = () => {
                 Address
               </h3>
               <div className="mt-2 space-y-3">
-                {["street", "barangay", "city", "province", "zip Code"].map(
+                {["street", "barangay", "city", "province", "zipCode"].map(
                   (field, i) => (
                     <div
                       key={i}
@@ -375,15 +404,12 @@ const ProfileInformation = () => {
                           type="text"
                           value={formData.address?.[field] || ""}
                           onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              address: {
-                                ...prev.address,
-                                [field]: e.target.value,
-                              },
-                            }))
+                            handleChange(
+                              `address.${field}`,
+                              e.target.value
+                            )
                           }
-                          className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60"
+                          className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60 w-[200px]"
                         />
                       ) : (
                         <span className="text-[#285236] opacity-60 text-right">

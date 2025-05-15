@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import PinVerificationModal from '../../components/PinVerificationModal';
 
 const WithdrawScreen = () => {
   const navigation = useNavigation();
@@ -29,6 +30,8 @@ const WithdrawScreen = () => {
   const [modalType, setModalType] = useState('success'); // 'success' or 'error'
   const [modalMessage, setModalMessage] = useState('');
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pendingWithdrawal, setPendingWithdrawal] = useState(null);
 
   const showModal = (type, message) => {
     setModalType(type);
@@ -54,13 +57,46 @@ const WithdrawScreen = () => {
     });
   };
 
+  const validateMobileNumber = (number) => {
+    // Remove any non-digit characters (spaces, dashes, etc.)
+    const cleanNumber = number.replace(/\D/g, '');
+    
+    // Check if it's a valid Philippine mobile number
+    // Format: 09XXXXXXXXX (11 digits)
+    const phMobileRegex = /^09\d{9}$/;
+    return phMobileRegex.test(cleanNumber);
+  };
+
+  const formatMobileNumber = (number) => {
+    // Remove any non-digit characters
+    const cleanNumber = number.replace(/\D/g, '');
+    
+    // Format as: 09XX XXX XXXX
+    if (cleanNumber.length <= 3) return cleanNumber;
+    if (cleanNumber.length <= 6) return `${cleanNumber.slice(0, 3)} ${cleanNumber.slice(3)}`;
+    return `${cleanNumber.slice(0, 3)} ${cleanNumber.slice(3, 6)} ${cleanNumber.slice(6, 10)}`;
+  };
+
   const handleWithdraw = async () => {
-    if (!amount || isNaN(amount) || amount <= 0 || !mobileNumber) {
-      showModal('error', 'Please enter a valid amount and mobile number.');
+    // Validate amount
+    if (!amount || isNaN(amount) || Number(amount) < 100) {
+      showModal('error', 'Minimum withdrawal amount is ₱100.00');
       return;
     }
 
-    setLoading(true);
+    // Validate mobile number
+    if (!mobileNumber) {
+      showModal('error', 'Please enter your mobile number.');
+      return;
+    }
+
+    // Clean the mobile number before validation
+    const cleanMobileNumber = mobileNumber.replace(/\D/g, '');
+    if (!validateMobileNumber(cleanMobileNumber)) {
+      showModal('error', 'Please enter a valid Philippine mobile number (09XXXXXXXXX)');
+      return;
+    }
+
     try {
       const user = await AsyncStorage.getItem('user');
       const parsedUser = user ? JSON.parse(user) : null;
@@ -69,19 +105,33 @@ const WithdrawScreen = () => {
         throw new Error('User ID is missing. Please log in again.');
       }
 
-      const response = await axios.post(`${API_BASE_URL}/api/wallet/withdraw`, {
-        amount,
-        mobileNumber,
+      // Store withdrawal details and show PIN modal
+      setPendingWithdrawal({
+        amount: Number(amount),
+        mobileNumber: cleanMobileNumber, // Use the cleaned number
         userId: parsedUser._id,
         channel
       });
+      setShowPinModal(true);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Something went wrong. Please try again.';
+      showModal('error', errorMessage);
+    }
+  };
 
+  const executeWithdrawal = async () => {
+    if (!pendingWithdrawal) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/wallet/withdraw`, pendingWithdrawal);
       showModal('success', response.data.message || 'Withdrawal completed successfully!');
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Something went wrong. Please try again.';
       showModal('error', errorMessage);
     }
     setLoading(false);
+    setPendingWithdrawal(null);
   };
 
   const renderPaymentMethod = (method, icon, label) => (
@@ -185,6 +235,7 @@ const WithdrawScreen = () => {
                     placeholderTextColor="#999"
                   />
                 </View>
+                <Text style={styles.minAmountText}>Minimum amount: ₱100.00</Text>
               </View>
 
               <View style={styles.inputContainer}>
@@ -193,13 +244,15 @@ const WithdrawScreen = () => {
                   <Icon name="phone" size={20} color="#3A6953" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
-                    placeholder="Enter your mobile number"
+                    placeholder="09XX XXX XXXX"
                     keyboardType="numeric"
                     value={mobileNumber}
-                    onChangeText={setMobileNumber}
+                    onChangeText={(text) => setMobileNumber(formatMobileNumber(text))}
                     placeholderTextColor="#999"
+                    maxLength={12} // 09XX XXX XXXX format
                   />
                 </View>
+                <Text style={styles.helperText}>Format: 09XX XXX XXXX</Text>
               </View>
 
               <Text style={styles.sectionTitle}>Select Withdrawal Method</Text>
@@ -239,7 +292,18 @@ const WithdrawScreen = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
       {renderModal()}
+
+      <PinVerificationModal
+        visible={showPinModal}
+        onClose={() => {
+          setShowPinModal(false);
+          setPendingWithdrawal(null);
+        }}
+        onSuccess={executeWithdrawal}
+        userId={pendingWithdrawal?.userId}
+      />
     </SafeAreaView>
   );
 };
@@ -431,6 +495,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  minAmountText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 
