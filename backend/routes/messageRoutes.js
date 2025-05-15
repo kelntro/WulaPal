@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Message = require("../models/Message"); // you need Message model
 const User = require("../models/User"); // double check path if needed
+const { sendPushToUser } = require("../services/pushService");
 
 // @desc    Send message to user
 // @route   POST /api/messages/send
@@ -19,6 +20,12 @@ router.post("/send", async (req, res) => {
       if (!recipient) {
         return res.status(404).json({ message: "Recipient not found" });
       }
+
+      // Get sender details for notification
+      const sender = await User.findById(fromUserId);
+      if (!sender) {
+        return res.status(404).json({ message: "Sender not found" });
+      }
   
       // Create and save message
       const newMessage = new Message({
@@ -29,6 +36,13 @@ router.post("/send", async (req, res) => {
       });
   
       await newMessage.save();
+
+      // Send push notification to recipient
+      await sendPushToUser(
+        toUserId,
+        `New message from ${sender.name}`,
+        content
+      );
   
       res.status(201).json({ message: "Message sent successfully!" });
     } catch (err) {

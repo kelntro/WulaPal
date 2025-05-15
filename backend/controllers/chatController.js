@@ -2,6 +2,7 @@ const GroupChatRoom = require('../models/GroupChatRoom');
 const ChatMessage = require('../models/ChatMessage');
 const Group = require('../models/Group');
 const User = require('../models/User');
+const { sendPushToUser } = require('../services/pushService');
 
 exports.getMessages = async (req, res) => {
   const { groupId } = req.params;
@@ -21,7 +22,7 @@ exports.getMessages = async (req, res) => {
 };
 
 exports.sendMessage = async (req, res) => {
-  const groupId = req.params.groupId; // ✅ get from params, not body
+  const groupId = req.params.groupId;
   const { sender, type, content } = req.body;
 
   try {
@@ -53,7 +54,6 @@ exports.sendMessage = async (req, res) => {
       console.log(`🛠️ Created GroupChatRoom for group ${groupId} with members:`, memberIds);
     }
     
-
     let message = await ChatMessage.create({
       roomId: room._id,
       sender,
@@ -63,7 +63,18 @@ exports.sendMessage = async (req, res) => {
     
     // 🔥 Populate sender name immediately
     message = await message.populate('sender', 'name');
-    
+
+    // Send push notifications to all group members except sender
+    const allMembers = [...group.members.map(m => m.userId), group.handler];
+    const recipients = allMembers.filter(id => id.toString() !== sender);
+
+    for (const recipientId of recipients) {
+      await sendPushToUser(
+        recipientId.toString(),
+        `New message in ${group.name}`,
+        `${user.name}: ${content}`
+      );
+    }
 
     req.app.get('io').in(groupId).emit('new-message', message);
     res.status(201).json(message);
