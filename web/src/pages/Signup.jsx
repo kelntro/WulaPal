@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate } from "react-router-dom";
+import TermsAndConditionsModal from "../components/TermsAndConditionsModal";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -17,6 +18,7 @@ const Signup = () => {
   const [resendDisabled, setResendDisabled] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [verificationClicked, setVerificationClicked] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const handleSignup = async () => {
     setError(null);
@@ -138,7 +140,7 @@ const Signup = () => {
         {/* Left Section - Signup Form */}
         <div className="w-3/5 flex flex-col justify-center p-12">
           <h2 className="text-3xl font-bold text-green-900 mb-6">
-            Let’s Get Started
+            Let's Get Started
           </h2>
 
           {/* Success Message */}
@@ -264,12 +266,12 @@ const Signup = () => {
             />
             <span className="text-sm text-gray-600">
               I agree with the{" "}
-              <a
-                href="#"
+              <button
+                onClick={() => setShowTermsModal(true)}
                 className="text-green-700 font-semibold hover:underline"
               >
                 Terms and Conditions
-              </a>
+              </button>
             </span>
           </div>
 
@@ -321,6 +323,12 @@ const Signup = () => {
           <div className="absolute top-0 left-0 w-full h-full bg-green-800 opacity-10"></div>
         </div>
       </div>
+
+      {/* Terms and Conditions Modal */}
+      <TermsAndConditionsModal 
+        isOpen={showTermsModal} 
+        onClose={() => setShowTermsModal(false)} 
+      />
     </div>
   );
 };
