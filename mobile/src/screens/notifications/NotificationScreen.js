@@ -305,7 +305,7 @@ const [joiningNotification, setJoiningNotification] = useState(null);
 
       <Text style={{ fontSize: 14, color: '#B00020', marginBottom: 10 }}>
         ⚠️ Note:
-        {"\n"}• A 2% share will be deducted from each payout (1% for the organizer, 1% for the system).
+        {"\n"}• A 2% share will be deducted from each payout.
         {"\n"}• A 5% penalty will be charged if you miss your scheduled contribution.
       </Text>
 

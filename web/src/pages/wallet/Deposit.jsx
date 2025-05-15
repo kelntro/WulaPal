@@ -135,6 +135,7 @@ export default function PaymentOption() {
 
       if (data.checkout_url) {
         window.location.href = data.checkout_url;
+        return;
       }
 
       navigate("/wallet/success-deposit");

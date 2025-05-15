@@ -1401,6 +1401,13 @@ app.post("/api/groups/:groupId/approve-request", async (req, res) => {
       date: new Date()
     });
 
+    // Send push notification
+    await sendPushToUser(
+      userId,
+      "Group Join Request Approved",
+      `Your request to join "${group.name}" has been approved. Tap to pay your initial deposit.`
+    );
+
     res.json({ success: true, message: "User approved and notified." });
   } catch (err) {
     console.error("❌ Approve request error:", err.message);

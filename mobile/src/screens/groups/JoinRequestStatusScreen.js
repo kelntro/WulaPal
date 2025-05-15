@@ -153,7 +153,7 @@ const [selectedGroup, setSelectedGroup] = useState(null);
 
             <Text style={[styles.modalSub, { color: '#B00020', marginTop: 8 }]}>
               ⚠️ Note:
-              {"\n"}• A 2% share will be deducted from each payout (1% for the organizer, 1% for the system).
+              {"\n"}• A 2% share will be deducted from each payout.
               {"\n"}• A 5% penalty will be charged if you miss your scheduled contribution.
             </Text>
 
