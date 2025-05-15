@@ -1528,3 +1528,7 @@ app.get("/api/group-transactions/:groupId", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch transactions" });
   }
 });
+
+//Cobtact-formn
+const contactRoute = require("./routes/contact");
+app.use("/api/contact", contactRoute);
