@@ -211,11 +211,9 @@ const handleGoogleLogin = async () => {
     });
 
   } catch (error) {
-    console.error("❌ Google Sign-In Error Details:", error);
     console.log("📛 Error Code:", error.code);
     console.log("📛 Error Message:", error.message);
 
-    Alert.alert("Google Sign-In Error", error.message || "Unknown error during Google login.");
   }
 };
 
@@ -235,14 +233,16 @@ const handleGoogleLogin = async () => {
 
       {/* Email Input */}
       <StyledText className="text-gray-700 mb-1">Email Address</StyledText>
-      <StyledTextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="example@gmail.com"
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-4"
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+      <StyledView className="flex-row border border-gray-300 rounded-lg px-4 py-3 items-center mb-4">
+        <StyledTextInput
+          value={email}
+          onChangeText={setEmail}
+          placeholder="example@gmail.com"
+          className="flex-1"
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+      </StyledView>
 
       {/* Password Input */}
       <StyledText className="text-gray-700 mb-1">Password</StyledText>

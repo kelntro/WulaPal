@@ -61,20 +61,14 @@ const WithdrawScreen = () => {
     // Remove any non-digit characters (spaces, dashes, etc.)
     const cleanNumber = number.replace(/\D/g, '');
     
-    // Check if it's a valid Philippine mobile number
-    // Format: 09XXXXXXXXX (11 digits)
-    const phMobileRegex = /^09\d{9}$/;
-    return phMobileRegex.test(cleanNumber);
+    // Check if it's a valid mobile number (10-11 digits)
+    return /^\d{10,11}$/.test(cleanNumber);
   };
 
   const formatMobileNumber = (number) => {
     // Remove any non-digit characters
     const cleanNumber = number.replace(/\D/g, '');
-    
-    // Format as: 09XX XXX XXXX
-    if (cleanNumber.length <= 3) return cleanNumber;
-    if (cleanNumber.length <= 6) return `${cleanNumber.slice(0, 3)} ${cleanNumber.slice(3)}`;
-    return `${cleanNumber.slice(0, 3)} ${cleanNumber.slice(3, 6)} ${cleanNumber.slice(6, 10)}`;
+    return cleanNumber;
   };
 
   const handleWithdraw = async () => {
@@ -93,7 +87,7 @@ const WithdrawScreen = () => {
     // Clean the mobile number before validation
     const cleanMobileNumber = mobileNumber.replace(/\D/g, '');
     if (!validateMobileNumber(cleanMobileNumber)) {
-      showModal('error', 'Please enter a valid Philippine mobile number (09XXXXXXXXX)');
+      showModal('error', 'Please enter a valid mobile number (10-11 digits)');
       return;
     }
 

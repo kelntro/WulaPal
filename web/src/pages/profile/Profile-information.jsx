@@ -57,11 +57,11 @@ const ProfileInformation = () => {
   const handleChange = (field, value) => {
     // Add validation for mobile numbers
     if (field === 'mobile' || field === 'emergencyContact.mobile') {
-      // Allow only numbers and optional + at start
-      if (!/^\+?\d*$/.test(value)) {
+      // Allow only numbers
+      if (!/^\d*$/.test(value)) {
         return;
       }
-      // Limit to exactly 11 digits for Philippines mobile numbers
+      // Limit to 10-11 digits for mobile numbers
       if (value.length > 11) {
         return;
       }
@@ -94,9 +94,9 @@ const ProfileInformation = () => {
       return alert("Please enter a valid email address.");
     }
 
-    if (formData.mobile && !/^\+?\d*$/.test(formData.mobile)) {
+    if (formData.mobile && !/^\d{10,11}$/.test(formData.mobile)) {
       return alert(
-        "Mobile number should only contain numbers and an optional '+' sign."
+        "Please enter a valid mobile number (10-11 digits)."
       );
     }
 

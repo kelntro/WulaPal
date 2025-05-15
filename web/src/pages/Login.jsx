@@ -16,9 +16,11 @@ const Login = () => {
   const [resendDisabled, setResendDisabled] = useState(false);
   const [resendMessage, setResendMessage] = useState(null);
   const [countdown, setCountdown] = useState(60);
+  const [validationErrors, setValidationErrors] = useState({ email: "", password: "" });
   const navigate = useNavigate();
   const { login } = useAuth();
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   useEffect(() => {
     let timer;
@@ -37,13 +39,30 @@ const Login = () => {
     return () => clearInterval(timer);
   }, [resendDisabled]);
 
+  const validateForm = () => {
+    const errors = { email: "", password: "" };
+    let isValid = true;
+
+    if (!emailRegex.test(email)) {
+      errors.email = "Please enter a valid email address.";
+      isValid = false;
+    }
+
+    if (!passwordRegex.test(password)) {
+      errors.password = "Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, and one number.";
+      isValid = false;
+    }
+
+    setValidationErrors(errors);
+    return isValid;
+  };
+
   const handleLogin = async () => {
     setError(null);
     setResendMessage(null);
     setLoading(true);
 
-    if (!email || !password) {
-      setError("Please enter both email and password.");
+    if (!validateForm()) {
       setLoading(false);
       return;
     }
@@ -185,16 +204,15 @@ const Login = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)} // Allow free typing
-              onBlur={() => {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation regex
-                if (!emailRegex.test(email)) {
-                  alert("Please enter a valid email address."); // Optional: Show feedback
-                }
-              }}
-              className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
+              onChange={(e) => setEmail(e.target.value)}
+              className={`w-full px-2 pb-2 border-b ${
+                validationErrors.email ? "border-red-500" : "border-gray-300"
+              } focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg`}
               required
             />
+            {validationErrors.email && (
+              <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+            )}
           </div>
 
           {/* Password Input with Toggle */}
@@ -209,17 +227,12 @@ const Login = () => {
                 onChange={(e) => {
                   const newPassword = e.target.value;
                   if (newPassword.length <= 30) {
-                    setPassword(newPassword); // Update password only if within max length
+                    setPassword(newPassword);
                   }
                 }}
-                onBlur={() => {
-                  if (!passwordRegex.test(password)) {
-                    alert(
-                      "Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, and one number."
-                    );
-                  }
-                }}
-                className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
+                className={`w-full px-2 pb-2 border-b ${
+                  validationErrors.password ? "border-red-500" : "border-gray-300"
+                } focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg`}
                 required
               />
               <button
@@ -230,6 +243,9 @@ const Login = () => {
                 {showPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
               </button>
             </div>
+            {validationErrors.password && (
+              <p className="text-red-500 text-sm mt-1">{validationErrors.password}</p>
+            )}
           </div>
 
           {/* Login Button */}
@@ -287,7 +303,7 @@ const Login = () => {
 
           {/* Sign Up Link */}
           <p className="mt-6 text-sm text-gray-600 text-center">
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <Link
               to="/signup"
               className="text-green-700 font-semibold hover:underline"
