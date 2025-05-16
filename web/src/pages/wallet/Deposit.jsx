@@ -169,7 +169,7 @@ export default function PaymentOption() {
           <div className="mb-4">
           <label className="text-sm font-medium text-[#3A6953]">Powered by</label>
           <div className="border rounded-lg p-3 flex items-center mt-2">
-            <img src="/assets/xendit-logo.png" alt="Xendit" className="h-[20px] mr-2 ml-[-10px]" />
+            <img src="/assets/xendit-logo.png" alt="Xendit" className="h-[20px] mr-2 ml-[-5px]" />
             <span className="text-gray-700 font-medium">Xendit Payment Gateway</span>
           </div>
         </div>
