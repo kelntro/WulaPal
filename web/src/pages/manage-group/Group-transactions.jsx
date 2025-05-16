@@ -11,7 +11,7 @@ const GroupTransactions = () => {
   console.log("📥 GroupTransactions Loaded. groupId:", groupId);
 
   return (
-    <div className="transition-all duration-300 w-[1150px] mx-auto bg-white p-4 rounded-lg shadow-md">
+    <div className="transition-all duration-300 w-[1150px] mx-auto bg-white p-6 rounded-lg shadow-md">
       <div className="w-full max-w-8xl p-2 flex items-center">
         <button
           onClick={() => navigate(-1)}
@@ -114,7 +114,7 @@ const Transactions = ({ groupId }) => {
   };
 
   return (
-    <div className="col-span-2 p-2">
+    <div className="col-span-2 p-8">
       <select
         className="border border-gray-300 rounded-lg p-2"
         value={cycleFilter}

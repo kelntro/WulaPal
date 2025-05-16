@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
-import { useParams } from "react-router-dom";
+import { HiArrowLeft } from "react-icons/hi";
+import { useParams, useNavigate } from "react-router-dom";
 
 const socket = io("http://localhost:5050");
 
 const GroupChat = () => {
   const { groupId } = useParams();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [file, setFile] = useState(null);
@@ -110,13 +112,21 @@ const GroupChat = () => {
   };
 
   return (
-    <div className="fixed top-[100px] left-1/2 transform -translate-x-1/2 w-[800px] h-[600px] bg-[#f4faf7] shadow-xl rounded-3xl flex flex-col border border-green-200 overflow-hidden">
+    <div className="fixed top-[40px] left-1/2 transform -translate-x-1/2 w-[1200px] h-[680px] bg-[#f4faf7] shadow-xl rounded-3xl flex flex-col border border-green-200 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-green-200 text-2xl font-semibold text-[#3A6953] bg-gradient-to-r from-green-100 to-white shadow">
-        {/* <div className="w-10 h-10 bg-green-200 rounded-full flex items-center justify-center text-[#3A6953] font-bold shadow">
-          {groupDetails?.name?.[0] || 'G'}
-        </div> */}
-        <span>{groupDetails?.name || "Group Chat"}</span>
+      <div className="flex items-center gap-4 px-6 py-4 border-b border-green-200 text-2xl font-semibold text-[#3A6953] bg-gradient-to-r from-green-100 to-white shadow">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center justify-center bg-[#6A8C73] text-white px-6 py-2 rounded-2xl shadow-md hover:bg-[#285236] transition"
+        >
+          <HiArrowLeft className="text-xl" />
+        </button>
+
+        {/* Group Name */}
+        <span className="text-xl font-semibold text-[#3A6953]">
+          {groupDetails?.name || "Group Chat"}
+        </span>
       </div>
 
       {/* Messages Area */}
@@ -140,7 +150,13 @@ const GroupChat = () => {
                   <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
                 )}
                 <div className={`text-xs mt-2 ${isMe ? 'text-right' : 'text-left'} text-gray-400 font-medium`}>
-                  {firstName} • {new Date(msg.timestamp).toLocaleString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {firstName} • {new Date(msg.timestamp).toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
                 </div>
               </div>
             </div>

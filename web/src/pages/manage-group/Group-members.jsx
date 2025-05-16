@@ -73,7 +73,7 @@ const GroupMembers = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#D4E8DB] p-10">
+    <div className="min-h-screen bg-[#D4E8DB] p-8">
         <div className="transition-all duration-300 w-[1150px] mx-auto bg-white p-4 rounded-2xl shadow-md">
       {/* Header */}
       <div className="w-full max-w-6xl mx-auto p-2 flex items-center">
