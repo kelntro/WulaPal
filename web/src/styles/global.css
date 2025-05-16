@@ -8,3 +8,11 @@
     font-weight: normal;
     font-style: normal;
 }
+
+/* ✅ Hide default password eye icon in all browsers */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-credentials-auto-fill-button {
+    display: none !important;
+    appearance: none;
+}

@@ -218,12 +218,12 @@ const Signup = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                {showPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
               </button>
             </div>
           </div>
 
-          {/* Confirm Password Input */}
+          {/* Confirm Password Input with Toggle */}
           <div className="mb-6">
             <label className="block text-gray-500 text-sm font-semibold mb-2">
               Confirm Password
@@ -238,21 +238,17 @@ const Signup = () => {
                     alert("Passwords do not match.");
                   }
                 }}
-                maxLength={30} // Enforce max length of 30 characters
+                maxLength={30}
                 className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600">
                 {showConfirmPassword ? (
-                  <FaEyeSlash size={18} />
+                  <FaEye size={18} onClick={() => setShowConfirmPassword(false)} />
                 ) : (
-                  <FaEye size={18} />
+                  <FaEyeSlash size={18} onClick={() => setShowConfirmPassword(true)} />
                 )}
-              </button>
+              </div>
             </div>
           </div>
 
