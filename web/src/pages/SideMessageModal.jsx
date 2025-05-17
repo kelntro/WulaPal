@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
 
 const SideMessageModal = ({ isOpen, onClose, recipientId, recipientName }) => {
   const [message, setMessage] = useState("");
@@ -48,31 +47,32 @@ const SideMessageModal = ({ isOpen, onClose, recipientId, recipientName }) => {
         });
 
         const uploadData = await uploadRes.json();
+        const fileUrl = uploadData.url.startsWith("http")
+          ? uploadData.url
+          : `http://localhost:5050${uploadData.url}`;
 
-        if (uploadData.url) {
-          const res = await fetch("http://localhost:5050/api/messages/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              toUserId: recipientId,
-              fromUserId: user._id,
-              content: uploadData.url,
-              type: "file"
-            }),
-          });
-
-          if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
-          const newMessage = {
-            content: uploadData.url,
-            from: user._id,
-            timestamp: new Date().toISOString(),
+        const res = await fetch("http://localhost:5050/api/messages/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toUserId: recipientId,
+            fromUserId: user._id,
+            content: fileUrl,
             type: "file"
-          };
+          }),
+        });
 
-          setMessages((prev) => [...prev, newMessage]);
-          setFile(null);
-        }
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+        const newMessage = {
+          content: fileUrl,
+          from: user._id,
+          timestamp: new Date().toISOString(),
+          type: "file"
+        };
+
+        setMessages((prev) => [...prev, newMessage]);
+        setFile(null);
       }
 
       if (message.trim()) {
@@ -105,18 +105,22 @@ const SideMessageModal = ({ isOpen, onClose, recipientId, recipientName }) => {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <>
       {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-40 z-40"
+      <div
+        className={`fixed inset-0 bg-black bg-opacity-40 z-40 transition-opacity duration-300 ${
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
         onClick={onClose}
       />
 
       {/* Side Panel */}
-      <div className="fixed top-0 right-0 h-full w-full md:w-[400px] bg-white shadow-xl z-50 flex flex-col">
+      <div
+        className={`fixed top-0 right-0 h-full w-full md:w-[600px] bg-white shadow-xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-green-200 bg-gradient-to-r from-green-100 to-white">
           <h2 className="text-xl font-semibold text-[#3A6953]">
@@ -130,7 +134,7 @@ const SideMessageModal = ({ isOpen, onClose, recipientId, recipientName }) => {
           </button>
         </div>
 
-        {/* Messages Area */}
+        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 bg-[#F0F8F4] scroll-smooth">
           {messages.map((msg, idx) => {
             const isMe = msg.from === user._id;
@@ -145,30 +149,29 @@ const SideMessageModal = ({ isOpen, onClose, recipientId, recipientName }) => {
                   </div>
                 )}
                 <div className={`relative max-w-[70%] ${isMe ? 'bg-gradient-to-br from-green-200 to-green-100' : 'bg-white'} p-4 rounded-2xl shadow-md flex flex-col`}>
-                {msg.type === "file" ? (
-  msg.content.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-    <img
-      src={msg.content.startsWith("http") ? msg.content : `http://localhost:5050${msg.content}`}
-      alt="attachment"
-      className="rounded-lg max-w-xs max-h-60 object-cover"
-      onError={(e) => {
-        e.target.src = "/fallback.png"; // use a fallback image path if needed
-      }}
-    />
-  ) : (
-    <a
-      href={msg.content}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-blue-600 underline break-all"
-    >
-      📎 View Attachment
-    </a>
-  )
-) : (
-  <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
-)}
-
+                  {msg.type === "file" ? (
+                    msg.content.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                      <img
+                        src={msg.content}
+                        alt="attachment"
+                        className="rounded-lg max-w-xs max-h-60 object-cover"
+                        onError={(e) => {
+                          e.target.src = "/fallback.png";
+                        }}
+                      />
+                    ) : (
+                      <a
+                        href={msg.content}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline break-all"
+                      >
+                        📎 View Attachment
+                      </a>
+                    )
+                  ) : (
+                    <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
+                  )}
                   <div className={`text-xs mt-2 ${isMe ? 'text-right' : 'text-left'} text-gray-400 font-medium`}>
                     {firstName} • {new Date(msg.timestamp).toLocaleString(undefined, {
                       year: 'numeric',
@@ -185,7 +188,7 @@ const SideMessageModal = ({ isOpen, onClose, recipientId, recipientName }) => {
           <div ref={chatRef} />
         </div>
 
-        {/* Input Area */}
+        {/* Input */}
         <div className="px-6 py-4 border-t border-green-200 flex gap-3 bg-white items-center">
           <label className="text-gray-400 cursor-pointer flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mr-2 hover:text-green-700 transition-colors">
@@ -216,4 +219,4 @@ const SideMessageModal = ({ isOpen, onClose, recipientId, recipientName }) => {
   );
 };
 
-export default SideMessageModal; 
+export default SideMessageModal;
