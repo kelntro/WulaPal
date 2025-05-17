@@ -1,13 +1,14 @@
-"use client";
-
-import { useParams } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { HiArrowLeft } from "react-icons/hi";
+import { useParams, useNavigate } from "react-router-dom";
 
 const MessageUser = () => {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [file, setFile] = useState(null);
+  const [userDetails, setUserDetails] = useState(null);
   const user = JSON.parse(localStorage.getItem("user"));
   const chatRef = useRef(null);
 
@@ -17,18 +18,31 @@ const MessageUser = () => {
 
   useEffect(scrollToBottom, [messages]);
 
-  const fetchMessages = async () => {
-    try {
-      const res = await fetch(`http://localhost:5050/api/messages/conversation/${userId}`);
-      const data = await res.json();
-      setMessages(data);
-    } catch (err) {
-      console.error("❌ Error fetching messages:", err.message);
-    }
-  };
-
   useEffect(() => {
-    fetchMessages();
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(`http://localhost:5050/api/messages/conversation/${userId}`);
+        const data = await res.json();
+        setMessages(data);
+      } catch (err) {
+        console.error("❌ Error fetching messages:", err.message);
+      }
+    };
+
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(`http://localhost:5050/api/users/${userId}`);
+        const data = await res.json();
+        setUserDetails(data);
+      } catch (err) {
+        console.error("❌ Error fetching user info:", err.message);
+      }
+    };
+
+    if (userId) {
+      fetchMessages();
+      fetchUser();
+    }
   }, [userId]);
 
   const handleFileChange = (e) => {
@@ -41,13 +55,11 @@ const MessageUser = () => {
     try {
       const res = await fetch("http://localhost:5050/api/messages/send", {
         method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           toUserId: userId,
           fromUserId: user._id,
-          content: message
+          content: message,
         }),
       });
 
@@ -69,27 +81,43 @@ const MessageUser = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-[#f4faf7]">
-      {/* Message area */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-6 bg-[#F0F8F4] scroll-smooth">
+    <div className="fixed top-[40px] left-1/2 transform -translate-x-1/2 w-[1100px] h-[680px] bg-[#f4faf7] shadow-xl rounded-3xl flex flex-col border border-green-200 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-4 px-6 py-4 border-b border-green-200 text-2xl font-semibold text-[#3A6953] bg-gradient-to-r from-green-100 to-white shadow">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center justify-center bg-[#6A8C73] text-white px-6 py-2 rounded-2xl shadow-md hover:bg-[#285236] transition"
+        >
+          <HiArrowLeft className="text-xl" />
+        </button>
+        <span className="text-xl font-semibold text-[#3A6953]">
+          {userDetails?.name || "Direct Message"}
+        </span>
+      </div>
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 bg-[#F0F8F4] scroll-smooth">
         {messages.map((msg, idx) => {
           const isMe = msg.from === user._id;
+          const senderName = isMe ? user.name : userDetails?.name || "User";
+          const firstName = senderName.split(" ")[0];
+
           return (
             <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end`}>
+              {!isMe && (
+                <div className="flex-shrink-0 w-8 h-8 bg-green-200 rounded-full flex items-center justify-center mr-2 text-[#3A6953] font-bold shadow">
+                  {firstName[0]}
+                </div>
+              )}
               <div className={`relative max-w-[70%] ${isMe ? 'bg-gradient-to-br from-green-200 to-green-100' : 'bg-white'} p-4 rounded-2xl shadow-md flex flex-col`}>
-                {msg.attachment && (
-                  <a href={msg.attachment} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                    📎 View Attachment
-                  </a>
-                )}
                 <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
                 <div className={`text-xs mt-2 ${isMe ? 'text-right' : 'text-left'} text-gray-400 font-medium`}>
-                  {new Date(msg.timestamp).toLocaleString(undefined, {
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
+                  {firstName} • {new Date(msg.timestamp).toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
                   })}
                 </div>
               </div>

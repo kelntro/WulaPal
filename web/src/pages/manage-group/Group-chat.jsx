@@ -112,7 +112,7 @@ const GroupChat = () => {
   };
 
   return (
-    <div className="fixed top-[40px] left-1/2 transform -translate-x-1/2 w-[1200px] h-[680px] bg-[#f4faf7] shadow-xl rounded-3xl flex flex-col border border-green-200 overflow-hidden">
+    <div className="fixed top-[40px] left-1/2 transform -translate-x-1/2 w-[1100px] h-[680px] bg-[#f4faf7] shadow-xl rounded-3xl flex flex-col border border-green-200 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-4 px-6 py-4 border-b border-green-200 text-2xl font-semibold text-[#3A6953] bg-gradient-to-r from-green-100 to-white shadow">
         {/* Back Button */}
