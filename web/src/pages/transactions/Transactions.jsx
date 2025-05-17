@@ -37,7 +37,7 @@ const Transactions = () => {
 
   const currentYear = new Date().getFullYear();
   const years = [""]; // blank option first
-  for (let year = 2020; year <= currentYear; year++) {
+  for (let year = 2021; year <= currentYear; year++) {
     years.push(year.toString());
   }
 
