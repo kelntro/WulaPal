@@ -177,7 +177,7 @@ const JoinRequests = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <p className="text-gray-700 text-lg mb-2">
-                        <span className="mr-2"><HiOutlineSpeakerphone className="text-white" /></span>
+                        <span className="mr-2"><HiOutlineSpeakerphone className="text-[#3A6953]" /></span>
                         {req.message}
                       </p>
                       <p className="text-sm text-gray-500">
@@ -192,7 +192,7 @@ const JoinRequests = () => {
                       onClick={() => navigate(`/user/${req.userId}`)}
                       disabled={processingId === req._id}
                     >
-                      <span className="mr-2"><IoPersonSharp className="text-white" /></span>
+                      <span className="mr-2"><IoPersonSharp className="text-[#3A6953]" /></span>
                       View Profile
                     </button>
                     
