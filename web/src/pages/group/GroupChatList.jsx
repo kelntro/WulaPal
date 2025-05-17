@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MessageCircle, Users, Search } from "lucide-react";
+import { HiArrowLeft } from "react-icons/hi";
 
 const globalStyle = `
   html, body {
@@ -98,13 +99,24 @@ const GroupChatList = () => {
   );
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center" style={{ background: "#d6ede3" }}>
-      <div className="max-w-4xl w-full mx-auto mt-16 px-4">
+    <div className="min-h-screen w-full flex justify-center" style={{ background: "#d6ede3" }}>
+      <div className="max-w-6xl w-full mx-auto my-8 px-4 sm:px-6">
         <div className="bg-white rounded-2xl shadow-xl px-6 py-8 max-h-[75vh] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-[#3A6953] flex items-center gap-2">
-              <MessageCircle size={28} className="text-[#3A6953]" /> Chats
-            </h1>
+            {/* Back + Title */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center justify-center bg-[#6A8C73] text-white px-6 py-2 rounded-2xl shadow-md hover:bg-[#285236] transition"
+              >
+                <HiArrowLeft className="text-xl" />
+              </button>
+              <h1 className="text-2xl font-bold text-[#3A6953] flex items-center">
+                Messages
+              </h1>
+            </div>
+
+            {/* Search */}
             <div className="relative">
               <input
                 type="text"
