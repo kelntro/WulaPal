@@ -233,7 +233,7 @@ const SignUpScreen = ({ navigation }) => {
       {/* Already have an account? Login */}
       <StyledView className="flex-row justify-center">
         <StyledText className="text-gray-600">Already have an account? </StyledText>
-        <TouchableOpacity onPress={() => navigation.navigate("LoginScreen")}>
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
           <StyledText className="text-green-600 font-bold">Login</StyledText>
         </TouchableOpacity>
       </StyledView>

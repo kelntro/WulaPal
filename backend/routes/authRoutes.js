@@ -242,8 +242,7 @@ router.post("/resend-verification", async (req, res) => {
   }
 });
 
-// ✅ Login Route (BLOCKS Unverified Users and Initiates OTP for Verified Users)
-// ✅ Login Route (No OTP for Members, Email Verification for Organizers)
+// ✅ Login Route (With OTP for All Users)
 router.post("/login", async (req, res) => {
   try {
     const { email, password, role } = req.body;
@@ -252,7 +251,6 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid role. Must be 'organizer', 'member', or 'superadmin'." });
     }    
 
-    
     const user = await User.findOne({ email, role });
     if (!user) {
       return res.status(400).json({ error: "Invalid credentials." });
@@ -267,19 +265,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid email or password." });
     }
 
-// ✅ No OTP Required for Members and Superadmin
-if (role === "member" || role === "superadmin") {
-  const token = jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
-  );
-
-  return res.json({ success: true, token, user });
-}
-
-
-    // ✅ Organizers Continue Using Email Verification
+    // Generate and send OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     user.otp = otp;
     user.otpExpires = new Date(Date.now() + 60 * 1000); // OTP expires in 60 seconds
@@ -298,6 +284,7 @@ if (role === "member" || role === "superadmin") {
       success: true,
       otpSent: true,
       message: "OTP has been sent to your email. It expires in 60 seconds.",
+      user: { _id: user._id, role: user.role, email: user.email }
     });
   } catch (error) {
     console.error("❌ Login error:", error);
@@ -345,32 +332,46 @@ router.post("/request-otp", async (req, res) => {
   }
 });
 
-// ✅ Verify OTP Route
+// ✅ Verify OTP Route (Updated for both login and signup)
 router.post("/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
     const user = await User.findOne({ email });
+    
     if (!user) {
       return res.status(400).json({ error: "User not found." });
     }
+
     if (!user.otp || !user.otpExpires || user.otpExpires < new Date()) {
-      return res
-        .status(400)
-        .json({ error: "OTP expired. Please request a new one." });
+      return res.status(400).json({ error: "OTP expired. Please request a new one." });
     }
+
     if (user.otp !== otp) {
       return res.status(400).json({ error: "Invalid OTP." });
     }
+
     // OTP is valid, clear OTP fields and generate JWT token
     user.otp = null;
     user.otpExpires = null;
     await user.save();
+
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
-    res.json({ success: true, token, user });
+
+    res.json({ 
+      success: true, 
+      token, 
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileImage: user.profileImage
+      }
+    });
   } catch (error) {
     console.error("❌ OTP verification error:", error);
     res.status(500).json({ error: "Server error" });
@@ -479,7 +480,7 @@ router.post("/google-login", async (req, res) => {
 
 
 
-// ✅ Google Sign-In for Member (Mobile Only)
+// ✅ Google Sign-In for Member (Mobile Only) with MFA
 router.post("/google-login-member", async (req, res) => {
   try {
     console.log("📥 Google Sign-In Request Body:", req.body);
@@ -494,49 +495,45 @@ router.post("/google-login-member", async (req, res) => {
     let member = await User.findOne({ email, role: "member" });
     console.log("🔍 Found member user:", member ? member._id : "None");
 
-    if (member) {
-      console.log("✅ Member already exists, logging in...");
+    if (!member) {
+      // Create new member account
+      console.log("🆕 Creating new member account...");
+      const userId = await generateUserId();
+      member = await User.create({
+        userId,
+        name,
+        email,
+        profileImage,
+        password: "google_oauth", // placeholder
+        role: "member",
+        isVerified: true,
+      });
 
-      const token = jwt.sign(
-        { id: member._id, role: member.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-
-      return res.json({ token, user: member });
+      await Wallet.create({ userId: member._id, balance: 0 });
+      console.log(`✅ Wallet created for ${member.email}`);
     }
 
-    // 🔍 Check if same email exists for other role (organizer)
-    const existingUser = await User.findOne({ email });
+    // Generate and send OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    member.otp = otp;
+    member.otpExpires = new Date(Date.now() + 60 * 1000); // OTP expires in 60 seconds
+    await member.save();
 
-    if (existingUser && existingUser.role !== "member") {
-      console.log("⚠️ Same email used by different role (organizer), creating separate member account...");
+    // Send OTP Email
+    if (!(await sendOTPEmail(member.email, otp))) {
+      return res.status(500).json({
+        error: "Failed to send OTP. Please try again later.",
+        user: { _id: member._id, role: member.role, email: member.email },
+      });
     }
 
-    console.log("🆕 Creating new member account...");
-    const userId = await generateUserId();
-    const newUser = await User.create({
-      userId,
-      name,
-      email,
-      profileImage,
-      password: "google_oauth", // placeholder
-      role: "member",
-      isVerified: true,
+    // Respond indicating that OTP has been sent
+    res.json({
+      success: true,
+      otpSent: true,
+      message: "OTP has been sent to your email. It expires in 60 seconds.",
+      user: { _id: member._id, role: member.role, email: member.email }
     });
-
-    await Wallet.create({ userId: newUser._id, balance: 0 });
-    console.log(`✅ Wallet created for ${newUser.email}`);
-
-    const token = jwt.sign(
-      { id: newUser._id, role: newUser.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    console.log("✅ JWT Token generated for new user");
-
-    res.json({ token, user: newUser });
 
   } catch (error) {
     console.error("❌ Google Login Member Error:", error);

@@ -39,7 +39,7 @@ const AuditTrailScreen = ({ route }) => {
   const transactionTypes = [
     { id: 'all', label: 'All' },
     { id: 'deposit', label: 'Deposits' },
-    { id: 'receive', label: 'Payouts' },
+    { id: 'payout', label: 'Payouts' },
     { id: 'transfer', label: 'Contributions' },
     { id: 'refund', label: 'Refunds' }
   ];
@@ -86,7 +86,7 @@ const AuditTrailScreen = ({ route }) => {
     <View style={styles.card}>
       <Text style={styles.user}>{item.user}</Text>
       <Text style={styles.detail}>
-        {item.type?.toUpperCase()} • ₱{item.amountPHP}
+        {item.type === 'payout' ? 'PAYOUT' : item.type?.toUpperCase()} • ₱{item.amountPHP}
         {item.amountUSDT ? ` • ≈ ${item.amountUSDT} USDT` : ''}
       </Text>
       <Text style={styles.status}>Status: {item.status}</Text>

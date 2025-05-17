@@ -231,9 +231,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     maxWidth: '70%',
   },
-  incoming: { backgroundColor: '#ddd', alignSelf: 'flex-start' },
-  outgoing: { backgroundColor: '#3A6953', alignSelf: 'flex-end' },
-  messageText: { color: 'white' },
+  incoming: { backgroundColor: '#fff', alignSelf: 'flex-start' },
+  outgoing: { backgroundColor: '#DFF0DA', alignSelf: 'flex-end' },
+  messageText: { color: '#333' },
   inputRow: {
     flexDirection: 'row',
     padding: 10,
