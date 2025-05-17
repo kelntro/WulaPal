@@ -46,17 +46,17 @@ const OTPVerificationScreen = ({ navigation, route }) => {
       if (mode === 'signup') {
         // Handle signup verification
         response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password, role: "member", otp }),
-        });
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role: "member", otp }),
+      });
         data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || "OTP verification failed.");
-        }
-        
-        Alert.alert("Success", "Your account is registered! Please log in.");
+  
+      if (!response.ok) {
+        throw new Error(data.error || "OTP verification failed.");
+      }
+  
+      Alert.alert("Success", "Your account is registered! Please log in.");
         navigation.replace("Login");
       } else {
         // Handle login verification
@@ -151,7 +151,7 @@ const OTPVerificationScreen = ({ navigation, route }) => {
   const handleCompleteProfile = () => {
     setShowProfileModal(false);
     navigation.navigate("Profile");
-  };
+  };  
 
   return (
     <StyledView className="flex-1 justify-center bg-white px-6">

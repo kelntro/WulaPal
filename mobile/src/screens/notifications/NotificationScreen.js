@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet,
-  Alert, SafeAreaView, Modal, Pressable
+  Alert, SafeAreaView, Modal, Pressable, ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -17,9 +17,10 @@ const NotificationScreen = () => {
   const [customDate, setCustomDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
-const [depositInput, setDepositInput] = useState("");
-const [joiningNotification, setJoiningNotification] = useState(null);
-
+  const [depositInput, setDepositInput] = useState("");
+  const [joiningNotification, setJoiningNotification] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState("");
 
   const handleFilterChange = (filter, date = null) => {
     setSelectedFilter(filter);
@@ -132,62 +133,92 @@ const [joiningNotification, setJoiningNotification] = useState(null);
 
   const confirmContribution = async (notification) => {
     try {
-      const user = await AsyncStorage.getItem("user");
-      const parsed = user ? JSON.parse(user) : null;
-      if (!parsed?._id || !notification.groupId) return;
-
-      // First check if user has already contributed
-      const checkRes = await axios.get(`${API_BASE_URL}/api/groups/${notification.groupId}/check-contribution`, {
-        params: { userId: parsed._id }
-      });
-
-      if (checkRes.data.hasContributed) {
-        const nextCycleDate = new Date(checkRes.data.nextCycleDate);
+      // Check if user has already contributed
+      if (notification.hasContributed) {
         Alert.alert(
-          "⛔ Already Contributed",
-          `You've already contributed for cycle ${checkRes.data.currentCycle + 1}. Next cycle starts on ${nextCycleDate.toLocaleDateString()}`
+          "Already Contributed",
+          "You have already contributed to this cycle."
         );
         return;
       }
 
       // Check if user is the current payout recipient
-      if (checkRes.data.isCurrentRecipient) {
+      if (notification.isCurrentPayoutRecipient) {
         Alert.alert(
-          "⛔ Cannot Contribute",
-          `You are the payout recipient for cycle ${checkRes.data.currentCycle + 1}. You don't need to contribute this cycle.`
+          "Cannot Contribute",
+          "You are the current payout recipient. You cannot contribute to this cycle."
         );
         return;
       }
 
-      // Check if cycle is already complete
-      if (checkRes.data.cycleComplete) {
+      // Check if cycle is complete
+      if (notification.isCycleComplete) {
         Alert.alert(
-          "⛔ Cycle Complete",
-          `This cycle already has enough contributions. Next cycle starts on ${new Date(checkRes.data.nextCycleDate).toLocaleDateString()}`
+          "Cycle Complete",
+          "This cycle is already complete. You cannot contribute."
         );
         return;
       }
 
-      // If not contributed yet, proceed with confirmation
-      const res = await axios.post(`${API_BASE_URL}/api/confirm-contribution`, {
-        userId: parsed._id,
-        groupId: notification.groupId
-      });
+      // Show processing state
+      setIsProcessing(true);
+      setProcessingMessage("Confirming contribution...");
 
-      if (res.data.success) {
-        Alert.alert("✅ Confirmed", "Your contribution has been confirmed.");
-        fetchNotifications(selectedFilter);
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found');
       }
-    } catch (err) {
-      const message =
-        err?.response?.data?.error === "Already contributed this cycle."
-          ? "⛔ You've already contributed for the current cycle."
-          : err?.response?.data?.error || "Failed to confirm contribution.";
-  
-      Alert.alert("❌ Contribution Failed", message);
+
+      // Call API to confirm contribution using axios
+      const response = await axios.post(
+        `${API_BASE_URL}/api/confirm-contribution`,
+        {
+          userId: notification.userId,
+          groupId: notification.groupId
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      // Update local state
+      setNotifications(prevNotifications =>
+        prevNotifications.map(n =>
+          n.id === notification.id
+            ? { ...n, hasContributed: true }
+            : n
+        )
+      );
+
+      // Show success message
+      Alert.alert(
+        "Success",
+        "Your contribution has been confirmed successfully."
+      );
+
+    } catch (error) {
+      console.error('Error confirming contribution:', error);
+      
+      // Handle axios error response
+      const errorMessage = error.response?.data?.message 
+        || error.response?.data?.error 
+        || error.message 
+        || "Failed to confirm contribution. Please try again.";
+      
+      Alert.alert(
+        "Error",
+        errorMessage
+      );
+    } finally {
+      // Hide processing state
+      setIsProcessing(false);
+      setProcessingMessage("");
     }
-  };  
-
+  };
+  
   const confirmJoin = async (notification) => {
     console.log("📨 [confirmJoin] Received notification:", notification);
   
@@ -394,6 +425,21 @@ const [joiningNotification, setJoiningNotification] = useState(null);
           }}
         />
       )}
+
+      {/* Processing Modal */}
+      <Modal
+        visible={isProcessing}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}} // Prevent closing
+      >
+        <View style={styles.processingModal}>
+          <View style={styles.processingContent}>
+            <ActivityIndicator size="large" color="#3A6953" />
+            <Text style={styles.processingText}>{processingMessage}</Text>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -457,6 +503,23 @@ const styles = StyleSheet.create({
   cancelText: { 
     color: "#666",
     fontSize: 16,
+  },
+  processingModal: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  processingContent: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  processingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#3A6953",
   },
 });
 

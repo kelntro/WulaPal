@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -9,12 +9,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   Linking,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DocumentPicker from 'react-native-document-picker';
 import { useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import io from 'socket.io-client';
 import { API_BASE_URL } from '@env';
+
+const socket = io(API_BASE_URL);
 
 const MessageUserScreen = () => {
   const route = useRoute();
@@ -23,6 +27,8 @@ const MessageUserScreen = () => {
   const [messages, setMessages] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [userName, setUserName] = useState('');
+  const [typingUsers, setTypingUsers] = useState([]);
+  const chatRef = useRef(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -42,7 +48,37 @@ const MessageUserScreen = () => {
 
     loadUser();
     fetchMessages();
-  }, []);
+
+    // Socket connection for real-time messaging
+    socket.emit('join-private', { userId, currentUserId: currentUserId });
+
+    socket.on('new-private-message', (msg) => {
+      setMessages(prev => [...prev, msg]);
+    });
+
+    socket.on('typing', ({ user }) => {
+      setTypingUsers(prev => [...new Set([...prev, user])]);
+      setTimeout(() => {
+        setTypingUsers(prev => prev.filter(u => u !== user));
+      }, 3000);
+    });
+
+    return () => {
+      socket.emit('leave-private', { userId, currentUserId: currentUserId });
+      socket.off('new-private-message');
+      socket.off('typing');
+    };
+  }, [userId, currentUserId]);
+
+  useEffect(() => {
+    chatRef.current?.scrollToEnd({ animated: true });
+  }, [messages]);
+
+  const handleTyping = () => {
+    if (userName) {
+      socket.emit('typing', { userId, user: userName });
+    }
+  };
 
   const fetchMessages = async () => {
     try {
@@ -50,7 +86,12 @@ const MessageUserScreen = () => {
         `${API_BASE_URL}/api/messages/conversation/${userId}`
       );
       const data = await res.json();
-      setMessages(data);
+      const normalized = data.map(msg => ({
+        ...msg,
+        type: msg.type || (msg.content.match(/\.(jpg|jpeg|png|gif)$/i) ? 'file' : 'text')
+      }));
+      setMessages(normalized);
+      
     } catch (err) {
       console.error('❌ Error fetching conversation:', err.message);
     }
@@ -67,6 +108,7 @@ const MessageUserScreen = () => {
           toUserId: userId,
           fromUserId: currentUserId,
           content: message,
+          type: 'text'
         }),
       });
 
@@ -75,6 +117,7 @@ const MessageUserScreen = () => {
       const newMessage = {
         content: message,
         from: currentUserId,
+        type: 'text',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, newMessage]);
@@ -87,15 +130,21 @@ const MessageUserScreen = () => {
 
   const pickAndSendFile = async () => {
     try {
+      console.log("📁 Starting file pick...");
       const res = await DocumentPicker.pickSingle({ type: DocumentPicker.types.allFiles });
+      console.log("📁 File picked:", res);
 
       const formData = new FormData();
-      formData.append('file', {
+      const fileToUpload = {
         uri: Platform.OS === 'ios' ? res.uri.replace('file://', '') : res.uri,
         type: res.type || 'application/octet-stream',
         name: res.name,
-      });
+      };
+      console.log("📁 Preparing file for upload:", fileToUpload);
+      
+      formData.append('file', fileToUpload);
 
+      console.log("📤 Uploading file to:", `${API_BASE_URL}/api/upload-chat-file`);
       const upload = await fetch(`${API_BASE_URL}/api/upload-chat-file`, {
         method: 'POST',
         headers: {
@@ -105,13 +154,15 @@ const MessageUserScreen = () => {
         body: formData,
       });
 
-      if (!upload.ok) {
-        throw new Error(`Upload failed with status: ${upload.status}`);
-      }
-
+      console.log("📤 Upload response status:", upload.status);
       const data = await upload.json();
+      console.log("📤 Upload response data:", data);
 
       if (data.url) {
+        // Ensure the URL is properly formatted
+        const fileUrl = data.url.startsWith('http') ? data.url : `${API_BASE_URL}${data.url.startsWith('/') ? '' : '/'}${data.url}`;
+        console.log("📤 Sending message with file URL:", fileUrl);
+        
         const messageRes = await fetch(`${API_BASE_URL}/api/messages/send`, {
           method: "POST",
           headers: { 
@@ -121,17 +172,18 @@ const MessageUserScreen = () => {
           body: JSON.stringify({
             toUserId: userId,
             fromUserId: currentUserId,
-            content: data.url,
+            content: fileUrl,
             type: 'file'
           }),
         });
+        console.log("📤 Message send response status:", messageRes.status);
 
         if (!messageRes.ok) {
           throw new Error(`Message send failed with status: ${messageRes.status}`);
         }
 
         const newMessage = {
-          content: data.url,
+          content: fileUrl,
           from: currentUserId,
           type: 'file',
           timestamp: new Date().toISOString(),
@@ -140,11 +192,53 @@ const MessageUserScreen = () => {
       }
     } catch (err) {
       if (!DocumentPicker.isCancel(err)) {
-        console.error("❌ File Upload Error:", err);
+        console.error("❌ File Upload Error Details:", {
+          message: err.message,
+          stack: err.stack,
+          name: err.name
+        });
         alert("Failed to upload file. Please try again.");
       }
     }
   };
+
+    const renderItem = ({ item }) => {
+      const isMe = item.from === currentUserId;
+      const normalizedUrl = item.content.includes('localhost')
+        ? item.content.replace('http://localhost:5050', API_BASE_URL)
+        : item.content.startsWith('http')
+          ? item.content
+          : `${API_BASE_URL}${item.content.startsWith('/') ? '' : '/'}${item.content}`;
+    
+      return (
+        <View style={[styles.messageBubble, isMe ? styles.outgoing : styles.incoming]}>
+          {item.type === 'file' ? (
+            item.content.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+              <Image
+                source={{ uri: normalizedUrl, cache: 'reload' }}
+                style={styles.messageImage}
+                resizeMode="cover"
+                onError={(error) => {
+                  console.error("❌ Image loading error:", error.nativeEvent);
+                  console.log("🔍 Attempted URL:", normalizedUrl);
+                }}
+                onLoad={() => console.log("✅ Image loaded successfully:", normalizedUrl)}
+              />
+            ) : (
+              <TouchableOpacity onPress={() => Linking.openURL(normalizedUrl)}>
+                <Text style={[styles.messageText, isMe && styles.senderText]}>📎 View File</Text>
+              </TouchableOpacity>
+            )
+          ) : (
+            <Text style={[styles.messageText, isMe && styles.senderText]}>{item.content}</Text>
+          )}
+          <Text style={[styles.timestamp, isMe && styles.senderTimestamp]}>
+            {new Date(item.timestamp).toLocaleString()}
+          </Text>
+        </View>
+      );
+    };
+    
 
   return (
     <KeyboardAvoidingView
@@ -155,41 +249,23 @@ const MessageUserScreen = () => {
         <Text style={styles.headerTitle}>{userName}</Text>
       </View>
       <FlatList
+        ref={chatRef}
         data={messages}
         keyExtractor={(_, idx) => idx.toString()}
         contentContainerStyle={{ padding: 20 }}
-        renderItem={({ item }) => {
-          const isMe = item.from === currentUserId;
-          return (
-            <View
-              style={[
-                styles.messageBubble,
-                isMe ? styles.outgoing : styles.incoming,
-              ]}
-            >
-              {item.type === 'file' ? (
-                <TouchableOpacity onPress={() => {
-                  const fileUrl = item.content.startsWith('http') ? item.content : `${API_BASE_URL}${item.content}`;
-                  Linking.openURL(fileUrl);
-                }}>
-                  <Text style={styles.messageText}>📎 View File</Text>
-                </TouchableOpacity>
-              ) : (
-                <Text style={styles.messageText}>{item.content}</Text>
-              )}
-              <Text style={[styles.timestamp, isMe && styles.senderTimestamp]}>
-                {new Date(item.timestamp).toLocaleString(undefined, {
-                  year: 'numeric',
-                  month: 'numeric',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </Text>
-            </View>
-          );
-        }}
+        renderItem={renderItem}
+        ListEmptyComponent={
+          <Text style={{ textAlign: 'center', color: '#888' }}>
+            No messages yet.
+          </Text>
+        }
       />
+
+      {typingUsers.length > 0 && (
+        <Text style={styles.typingIndicator}>
+          {typingUsers.join(", ")} {typingUsers.length > 1 ? "are" : "is"} typing...
+        </Text>
+      )}
 
       <View style={styles.inputRow}>
         <TouchableOpacity onPress={pickAndSendFile}>
@@ -198,7 +274,10 @@ const MessageUserScreen = () => {
         <TextInput
           placeholder="Type a message..."
           value={message}
-          onChangeText={setMessage}
+          onChangeText={(text) => {
+            setMessage(text);
+            handleTyping();
+          }}
           onSubmitEditing={handleSend}
           style={styles.input}
         />
@@ -234,6 +313,7 @@ const styles = StyleSheet.create({
   incoming: { backgroundColor: '#fff', alignSelf: 'flex-start' },
   outgoing: { backgroundColor: '#DFF0DA', alignSelf: 'flex-end' },
   messageText: { color: '#333' },
+  senderText: { color: '#2E7D32' },
   inputRow: {
     flexDirection: 'row',
     padding: 10,
@@ -266,6 +346,18 @@ const styles = StyleSheet.create({
   senderTimestamp: {
     color: '#2E7D32',
     alignSelf: 'flex-end',
+  },
+  messageImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 4,
+  },
+  typingIndicator: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 4,
+    marginLeft: 12,
   },
 });
 

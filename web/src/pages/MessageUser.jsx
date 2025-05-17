@@ -53,27 +53,67 @@ const MessageUser = () => {
     if (!message.trim() && !file) return;
 
     try {
-      const res = await fetch("http://localhost:5050/api/messages/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          toUserId: userId,
-          fromUserId: user._id,
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadRes = await fetch("http://localhost:5050/api/upload-chat-file", {
+          method: "POST",
+          body: formData,
+        });
+
+        const uploadData = await uploadRes.json();
+
+        if (uploadData.url) {
+          const res = await fetch("http://localhost:5050/api/messages/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toUserId: userId,
+              fromUserId: user._id,
+              content: uploadData.url,
+              type: "file"
+            }),
+          });
+
+          if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+          const newMessage = {
+            content: uploadData.url,
+            from: user._id,
+            timestamp: new Date().toISOString(),
+            type: "file"
+          };
+
+          setMessages((prev) => [...prev, newMessage]);
+          setFile(null);
+        }
+      }
+
+      if (message.trim()) {
+        const res = await fetch("http://localhost:5050/api/messages/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toUserId: userId,
+            fromUserId: user._id,
+            content: message,
+            type: "text"
+          }),
+        });
+
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+        const newMessage = {
           content: message,
-        }),
-      });
+          from: user._id,
+          timestamp: new Date().toISOString(),
+          type: "text"
+        };
 
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
-      const newMessage = {
-        content: message,
-        from: user._id,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, newMessage]);
-      setMessage("");
-      setFile(null);
+        setMessages((prev) => [...prev, newMessage]);
+        setMessage("");
+      }
     } catch (err) {
       console.error("❌ Error sending message:", err.message);
       alert("Failed to send message.");
@@ -110,7 +150,13 @@ const MessageUser = () => {
                 </div>
               )}
               <div className={`relative max-w-[70%] ${isMe ? 'bg-gradient-to-br from-green-200 to-green-100' : 'bg-white'} p-4 rounded-2xl shadow-md flex flex-col`}>
-                <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
+                {msg.type === "file" ? (
+                  <a href={msg.content} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                    📎 View Attachment
+                  </a>
+                ) : (
+                  <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
+                )}
                 <div className={`text-xs mt-2 ${isMe ? 'text-right' : 'text-left'} text-gray-400 font-medium`}>
                   {firstName} • {new Date(msg.timestamp).toLocaleString(undefined, {
                     year: 'numeric',

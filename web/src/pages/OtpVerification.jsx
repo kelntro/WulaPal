@@ -47,6 +47,8 @@ const OtpVerification = () => {
         throw new Error(data.error || "OTP verification failed");
       }
       login(data.token, data.user); // ✅ updates context and localStorage
+      localStorage.setItem("userId", data.user._id);
+
       navigate("/dashboard");
     } catch (err) {
       setOtpError(err.message);

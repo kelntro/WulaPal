@@ -250,7 +250,7 @@ router.post("/login", async (req, res) => {
     if (!role || !["organizer", "member", "superadmin"].includes(role)) {
       return res.status(400).json({ error: "Invalid role. Must be 'organizer', 'member', or 'superadmin'." });
     }    
-
+    
     const user = await User.findOne({ email, role });
     if (!user) {
       return res.status(400).json({ error: "Invalid credentials." });
@@ -463,14 +463,27 @@ router.post("/google-login", async (req, res) => {
       console.log(`✅ ${role} wallet created via Google Sign-In for ${email}`);
     }
 
-    // 🔐 Generate JWT
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    // Generate and send OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otp = otp;
+    user.otpExpires = new Date(Date.now() + 60 * 1000); // OTP expires in 60 seconds
+    await user.save();
 
-    res.json({ token, user });
+    // Send OTP Email
+    if (!(await sendOTPEmail(user.email, otp))) {
+      return res.status(500).json({
+        error: "Failed to send OTP. Please try again later.",
+        user: { _id: user._id, role: user.role, email: user.email },
+      });
+    }
+
+    // Respond indicating that OTP has been sent
+    res.json({
+      success: true,
+      otpSent: true,
+      message: "OTP has been sent to your email. It expires in 60 seconds.",
+      user: { _id: user._id, role: user.role, email: user.email }
+    });
 
   } catch (error) {
     console.error("❌ Google Login error:", error.message);
@@ -497,17 +510,17 @@ router.post("/google-login-member", async (req, res) => {
 
     if (!member) {
       // Create new member account
-      console.log("🆕 Creating new member account...");
-      const userId = await generateUserId();
+    console.log("🆕 Creating new member account...");
+    const userId = await generateUserId();
       member = await User.create({
-        userId,
-        name,
-        email,
-        profileImage,
-        password: "google_oauth", // placeholder
-        role: "member",
-        isVerified: true,
-      });
+      userId,
+      name,
+      email,
+      profileImage,
+      password: "google_oauth", // placeholder
+      role: "member",
+      isVerified: true,
+    });
 
       await Wallet.create({ userId: member._id, balance: 0 });
       console.log(`✅ Wallet created for ${member.email}`);

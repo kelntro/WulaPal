@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Linking,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DocumentPicker from 'react-native-document-picker';
@@ -107,24 +108,37 @@ const MemberGroupChat = () => {
 
   const pickAndSendFile = async () => {
     try {
+      console.log("📁 Starting file pick...");
       const res = await DocumentPicker.pickSingle({ type: DocumentPicker.types.allFiles });
+      console.log("📁 File picked:", res);
 
       const formData = new FormData();
-      formData.append('file', {
-        uri: res.uri,
-        type: res.type,
+      const fileToUpload = {
+        uri: Platform.OS === 'ios' ? res.uri.replace('file://', '') : res.uri,
+        type: res.type || 'application/octet-stream',
         name: res.name,
-      });
+      };
+      console.log("📁 Preparing file for upload:", fileToUpload);
+      
+      formData.append('file', fileToUpload);
 
+      console.log("📤 Uploading file to:", `${API_BASE_URL}/api/upload-chat-file`);
       const upload = await fetch(`${API_BASE_URL}/api/upload-chat-file`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json',
+        },
         body: formData,
       });
 
+      console.log("📤 Upload response status:", upload.status);
       const data = await upload.json();
+      console.log("📤 Upload response data:", data);
 
       if (data.url) {
-        await fetch(`${API_BASE_URL}/api/chat/group/${groupId}/send`, {
+        console.log("📤 Sending message with file URL:", data.url);
+        const messageRes = await fetch(`${API_BASE_URL}/api/chat/group/${groupId}/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -134,10 +148,16 @@ const MemberGroupChat = () => {
             content: data.url,
           }),
         });
+        console.log("📤 Message send response status:", messageRes.status);
       }
     } catch (err) {
       if (!DocumentPicker.isCancel(err)) {
-        console.error("❌ File Upload Error:", err);
+        console.error("❌ File Upload Error Details:", {
+          message: err.message,
+          stack: err.stack,
+          name: err.name
+        });
+        alert("Failed to upload file. Please try again.");
       }
     }
   };
@@ -153,14 +173,36 @@ const MemberGroupChat = () => {
             {item.sender.name || 'Unknown'}
           </Text>
         )}
+        
         <View style={[styles.message, isSender && styles.sender]}>
+          
           {item.type === 'file' ? (
-            <TouchableOpacity onPress={() => {
-              const fileUrl = item.content.startsWith('http') ? item.content : `${API_BASE_URL}${item.content}`;
-              Linking.openURL(fileUrl);
-            }}>
-              <Text style={[styles.fileLink, isSender && styles.senderText]}>📎 View File</Text>
-            </TouchableOpacity>
+            item.content.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+              
+              <Image
+                source={{
+                  uri: item.content.startsWith('http')
+                    ? item.content.replace('http://localhost:5050', API_BASE_URL)
+                    : `${API_BASE_URL}${item.content.startsWith('/') ? '' : '/'}${item.content}`,
+                  cache: 'reload'
+                }}
+                style={styles.messageImage}
+                resizeMode="cover"
+                onError={(error) => {
+                  console.error("❌ Image loading error:", error.nativeEvent);
+                  console.log("🔍 Attempted URL:", item.content);
+                }}
+                onLoad={() => console.log("✅ Image loaded successfully:", item.content)}
+              />
+            ) : (
+              <TouchableOpacity onPress={() => {
+                const fileUrl = item.content.startsWith('http') ? item.content : `${API_BASE_URL}${item.content}`;
+                console.log("🔗 Opening file URL:", fileUrl);
+                Linking.openURL(fileUrl);
+              }}>
+                <Text style={[styles.fileLink, isSender && styles.senderText]}>📎 View File</Text>
+              </TouchableOpacity>
+            )
           ) : (
             <Text style={[styles.messageText, isSender && styles.senderText]}>
               {item.content}
@@ -325,6 +367,12 @@ const styles = StyleSheet.create({
   senderTimestamp: {
     color: '#2E7D32',
     alignSelf: 'flex-end',
+  },
+  messageImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 4,
   },
 });
 

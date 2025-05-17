@@ -81,13 +81,21 @@ const PaluwaganGroups = () => {
       .then(async (response) => {
         const text = await response.text();
         console.log("📥 Raw API Response:", text);
-        return JSON.parse(text);
+        try {
+          const data = JSON.parse(text);
+          // Ensure data is an array
+          const groupsArray = Array.isArray(data) ? data : [];
+          console.log("✅ Organizer Groups:", groupsArray);
+          setGroups(groupsArray);
+        } catch (error) {
+          console.error("❌ Error parsing response:", error);
+          setGroups([]); // Set empty array on error
+        }
       })
-      .then((data) => {
-        console.log("✅ Organizer Groups:", data);
-        setGroups(data);
-      })
-      .catch((error) => console.error("❌ Error fetching groups:", error));
+      .catch((error) => {
+        console.error("❌ Error fetching groups:", error);
+        setGroups([]); // Set empty array on error
+      });
 
     socket.on("groupUpdated", (updatedGroup) => {
       setGroups((prevGroups) =>

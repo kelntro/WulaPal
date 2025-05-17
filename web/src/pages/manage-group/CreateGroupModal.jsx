@@ -181,9 +181,17 @@ const [frequency, setFrequency] = useState("Weekly");
               placeholder="e.g. 2500" 
               value={contributionAmount}
               onChange={(e) => setContributionAmount(e.target.value)}
-              className="w-2/3 p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#99C6A9]" 
+              min={100}
+              className={`w-2/3 p-3 border rounded-lg focus:outline-none focus:ring-1 ${
+                contributionAmount && contributionAmount < 100
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'focus:ring-[#99C6A9]'
+              }`}
             />
           </div>
+          {contributionAmount && contributionAmount < 100 && (
+            <p className="text-red-500 text-sm ml-[33%]">Minimum contribution amount is 100.</p>
+          )}
 
           <div className="flex items-center">
             <label className="w-1/3 text-[#3A6953] font-medium">Profile image*</label>

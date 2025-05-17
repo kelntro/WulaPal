@@ -172,14 +172,19 @@ const Login = () => {
         console.error("❌ Google login failed:", data);
         throw new Error(data.error || "Google sign-in failed");
       }
-  
-      login(data.token, data.user);
-      localStorage.setItem("userId", data.user._id); // ✅ Add this line
-      await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" }
-      });
-      navigate("/dashboard");
+
+      // If OTP has been sent, navigate to OTP verification page
+      if (data.otpSent) {
+        navigate("/otp", { state: { email } });
+      } else {
+        login(data.token, data.user);
+        localStorage.setItem("userId", data.user._id);
+        await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" }
+        });
+        navigate("/dashboard");
+      }
     } catch (err) {
       console.error("Google Sign-In Error:", err.message);
       setError("Google Sign-In failed. Please try again.");

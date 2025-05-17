@@ -3,7 +3,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { HiArrowLeft } from "react-icons/hi";
-import DirectMessage from "./DirectMessage"; // ✅ updated import
+import SideMessageModal from "./SideMessageModal"; // Update import
 
 const getLastActiveLabel = (timestamp) => {
   if (!timestamp) return "Offline";
@@ -227,37 +227,13 @@ const UserProfile = () => {
         )}
       </div>
 
-      {/* ✅ Modal MessageUser */}
-      {showMessage && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        {/* Overlay */}
-        <div
-          className="absolute inset-0 bg-black opacity-40"
-          onClick={() => setShowMessage(false)}
-        ></div>
-
-        {/* Modal Box */}
-        <div className="relative z-50 w-[90%] max-w-4xl h-[680px] bg-white rounded-3xl shadow-xl border border-green-200 overflow-hidden flex flex-col">
-          
-          {/* ✅ Combined Header with Username and X Button */}
-          <div className="flex justify-between items-center px-6 py-4 border-b border-green-200 bg-gradient-to-r from-green-100 to-white shadow">
-            <span className="text-xl font-semibold text-[#3A6953]">
-              {user?.name || "Direct Message"}
-            </span>
-            <button
-              onClick={() => setShowMessage(false)}
-              className="text-gray-600 hover:text-red-600 text-2xl font-bold"
-            >
-              &times;
-            </button>
-          </div>
-
-          {/* ✅ Chat Component */}
-          <DirectMessage userId={userId} fromModal={true} />
-        </div>
-      </div>
-    )}
-
+      {/* Replace the old MessageUser panel with the new SideMessageModal */}
+      <SideMessageModal
+        isOpen={showMessage}
+        onClose={() => setShowMessage(false)}
+        recipientId={userId}
+        recipientName={user?.name}
+      />
     </div>
   );
 };
