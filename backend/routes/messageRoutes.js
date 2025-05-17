@@ -7,7 +7,7 @@ const User = require("../models/User"); // double check path if needed
 // @route   POST /api/messages/send
 // backend: messageRoutes.js
 router.post("/send", async (req, res) => {
-    const { toUserId, fromUserId, content } = req.body;  // 🔥 receive fromUserId!
+  const { toUserId, fromUserId, content, type = "text" } = req.body;
   
     if (!toUserId || !content || !fromUserId) {
       return res.status(400).json({ message: "Missing fields" });
@@ -23,10 +23,11 @@ router.post("/send", async (req, res) => {
       // Create and save message
       const newMessage = new Message({
         to: toUserId,
-        from: fromUserId,  // 🔥 use the correct sender id
+        from: fromUserId,
         content,
+        type, // ✅ Add this
         timestamp: new Date(),
-      });
+      });      
   
       await newMessage.save();
   

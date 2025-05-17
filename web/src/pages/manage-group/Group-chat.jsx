@@ -142,13 +142,25 @@ const GroupChat = () => {
                 </div>
               )}
               <div className={`relative max-w-[70%] ${isMe ? 'bg-gradient-to-br from-green-200 to-green-100' : 'bg-white'} p-4 rounded-2xl shadow-md flex flex-col`}>
-                {msg.type === "file" ? (
-                  <a href={msg.content} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                    📎 View Attachment
-                  </a>
-                ) : (
-                  <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
-                )}
+              {msg.type === "file" ? (
+  /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content) ? (
+    <img
+      src={msg.content.startsWith("http") ? msg.content : `http://localhost:5050${msg.content}`}
+      alt="attachment"
+      className="rounded-lg max-w-xs max-h-60 object-cover"
+      onError={(e) => {
+        e.target.src = "/fallback.png"; // optional fallback image
+      }}
+    />
+  ) : (
+    <a href={msg.content} target="_blank" rel="noreferrer" className="text-blue-600 underline break-all">
+      📎 View Attachment
+    </a>
+  )
+) : (
+  <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
+)}
+
                 <div className={`text-xs mt-2 ${isMe ? 'text-right' : 'text-left'} text-gray-400 font-medium`}>
                   {firstName} • {new Date(msg.timestamp).toLocaleString(undefined, {
                     year: 'numeric',
