@@ -131,54 +131,55 @@ const GroupsScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#3A6953' }}>
+        <Text style={{ fontSize: 22, fontWeight: '900', color: '#3A6953' }}>
           Paluwagan
         </Text>
         <TouchableOpacity onPress={() => navigation.navigate('JoinRequestStatus')}>
-          <Icon name="account-check-outline" size={28} color="#2E7D32" />
+          <Icon name="account-check" size={28} color="#3A6953" />
         </TouchableOpacity>
       </View>
 
       <View style={styles.toggleContainer}>
         <TouchableOpacity
           style={[
-            styles.toggleButton,
-            selectedTab === 'your' && styles.activeTab,
+            styles.toggleBtn,
+            selectedTab === 'your' && styles.toggleActive,
           ]}
           onPress={() => setSelectedTab('your')}
         >
           <MaterialIcons
             name="group"
             size={20}
-            color={selectedTab === 'your' ? '#fff' : '#888'}
+            color={selectedTab === 'your' ? '#fff' : '#3A6953'}
             style={{ marginRight: 6 }}
           />
           <Text
             style={[
               styles.toggleText,
-              selectedTab === 'your' && styles.activeText,
+              selectedTab === 'your' && styles.toggleTextActive,
             ]}
           >
             My Groups
           </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={[
-            styles.toggleButton,
-            selectedTab === 'join' && styles.activeTab,
+            styles.toggleBtn,
+            selectedTab === 'join' && styles.toggleActive,
           ]}
           onPress={() => setSelectedTab('join')}
         >
           <MaterialIcons
             name="person-search"
             size={20}
-            color={selectedTab === 'join' ? '#fff' : '#888'}
+            color={selectedTab === 'join' ? '#fff' : '#3A6953'}
             style={{ marginRight: 6 }}
           />
           <Text
             style={[
               styles.toggleText,
-              selectedTab === 'join' && styles.activeText,
+              selectedTab === 'join' && styles.toggleTextActive,
             ]}
           >
             Join Groups
@@ -186,11 +187,12 @@ const GroupsScreen = () => {
         </TouchableOpacity>
       </View>
 
+
       {/* Search Bar and Filter */}
       <View style={styles.searchFilterContainer}>
         <TextInput
           style={[styles.searchInput, { flex: 1 }]}
-          placeholder="🔍 Search groups..."
+          placeholder=" Search groups..."
           value={searchText}
           onChangeText={setSearchText}
         />
@@ -255,6 +257,7 @@ const GroupsScreen = () => {
               renderItem={({ item }) => (
                 <GroupCard group={item} currentUserId={currentUserId} />
               )}
+              ListFooterComponent={<View style={{ height: 80 }} />} // 👈 Add space here
             />
 
           ) : (
@@ -308,39 +311,39 @@ console.log('🌐 Final Image URL:', imageUrl);
             style={styles.infoIcon}
           />
 
-<Text style={styles.infoText}>
-  {group.slots - group.members.length} / {group.slots} Slots Available
-</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Ionicons
-            name="calendar-outline"
-            size={16}
-            color="#285236"
-            style={styles.infoIcon}
-          />
-
           <Text style={styles.infoText}>
-            ₱{group.contributionAmount} {group.frequency}
+            {group.slots - group.members.length} / {group.slots} Slots Available
           </Text>
-        </View>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={16}
+                      color="#285236"
+                      style={styles.infoIcon}
+                    />
 
-        <View style={styles.infoRow}>
-          <Ionicons
-            name="person-outline"
-            size={16}
-            color="#285236"
-            style={styles.infoIcon}
-          />
-          <Text style={styles.handlerText}>
-            Handler: <Text style={{color: '#3A6953'}}>{handlerName}</Text>
-          </Text>
-        </View>
-        <View style={styles.descriptionWrapper}>
-  <Text style={styles.descriptionText} numberOfLines={2} ellipsizeMode="tail">
-    {group.description}
-  </Text>
-</View>
+                    <Text style={styles.infoText}>
+                      ₱{group.contributionAmount} {group.frequency}
+                    </Text>
+                  </View>
+
+                  <View style={styles.infoRow}>
+                    <Ionicons
+                      name="person-outline"
+                      size={16}
+                      color="#285236"
+                      style={styles.infoIcon}
+                    />
+                    <Text style={styles.handlerText}>
+                      Handler: <Text style={{color: '#3A6953'}}>{handlerName}</Text>
+                    </Text>
+                  </View>
+                  <View style={styles.descriptionWrapper}>
+            <Text style={styles.descriptionText} numberOfLines={2} ellipsizeMode="tail">
+              {group.description}
+            </Text>
+          </View>
 
 
         <View style={styles.avatars}>
@@ -381,39 +384,38 @@ console.log('🌐 Final Image URL:', imageUrl);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F8F7',
+    backgroundColor: '#ffffff',
     padding: 16,
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#F0F4F3',
     borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#3A6953',
-    overflow: 'hidden',
+    padding: 4,
     alignSelf: 'center',
-    marginVertical: 20,
+    marginTop: 10,
+    marginBottom: 20,
   },
-  toggleButton: {
+  toggleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    backgroundColor: '#fff',
-    minWidth: 120,
+    paddingVertical: 6,
+    paddingHorizontal: 30,
+    borderRadius: 30,
   },
-  activeTab: {
-    backgroundColor: '#3A6953',
+  toggleActive: {
+    backgroundColor: '#6A8C73',
   },
   toggleText: {
-    color: '#888',
+    fontSize: 14,
     fontWeight: '600',
-    fontSize: 16,
+    color: '#3A6953',
   },
-  activeText: {
-    color: '#fff',
+  toggleTextActive: {
+    color: '#ffffff',
   },
+
   searchFilterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -423,7 +425,7 @@ const styles = StyleSheet.create({
   searchInput: {
     backgroundColor: 'white',
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 35,
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#CCC',

@@ -93,7 +93,7 @@ const GroupChats = () => {
         <Icon 
           name={item.type === 'group' ? "chatbubble-ellipses-outline" : "person-outline"} 
           size={24} 
-          color="#2E7D32" 
+          color="#3A6953" 
         />
       </View>
       <View>
@@ -112,7 +112,7 @@ const GroupChats = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Chats</Text>
+      <Text style={styles.title}>Messages</Text>
       <FlatList
         data={allChats}
         keyExtractor={item => item._id}
@@ -125,7 +125,7 @@ const GroupChats = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#F4F8F7' },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#2E7D32', marginBottom: 20 },
+  title: { fontSize: 22, fontWeight: '900', color: '#3A6953', marginBottom: 20 },
   item: {
     backgroundColor: '#fff',
     padding: 15,

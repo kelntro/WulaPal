@@ -101,7 +101,7 @@ const DepositScreen = () => {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <View style={styles.header}>
-              <Icon name="account-balance-wallet" size={40} color="#2E7D32" />
+              <Icon name="account-balance-wallet" size={40} color="#3A6953" />
               <Text style={styles.title}>Deposit Funds</Text>
               <Text style={styles.subtitle}>Add money to your wallet securely</Text>
             </View>
@@ -124,11 +124,11 @@ const DepositScreen = () => {
 
             <View style={styles.infoContainer}>
               <View style={styles.infoItem}>
-                <Icon name="security" size={24} color="#2E7D32" />
+                <Icon name="security" size={24} color="#6A8C73" />
                 <Text style={styles.infoText}>Secure Payment Processing</Text>
               </View>
               <View style={styles.infoItem}>
-                <Icon name="access-time" size={24} color="#2E7D32" />
+                <Icon name="access-time" size={24} color="#6A8C73" />
                 <Text style={styles.infoText}>Instant Credit After Payment</Text>
               </View>
             </View>
@@ -143,7 +143,6 @@ const DepositScreen = () => {
               ) : (
                 <>
                   <Text style={styles.buttonText}>Proceed to Payment</Text>
-                  <Icon name="arrow-forward" size={20} color="#fff" style={styles.buttonIcon} />
                 </>
               )}
             </TouchableOpacity>
@@ -164,10 +163,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    marginTop: -150,
   },
   container: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 26,
     justifyContent: 'center',
   },
   header: {
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#3A6953',
     marginTop: 16,
     marginBottom: 8,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#3A6953',
+    borderColor: '#6A8C73',
     paddingHorizontal: 16,
   },
   currencySymbol: {

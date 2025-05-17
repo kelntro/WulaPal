@@ -1275,10 +1275,10 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#ffffff'},
   header: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: '#3A6953',
     textAlign: 'center',
-    marginTop: 60,
+    marginTop: 20,
   },
   toggleContainer: {
     flexDirection: 'row',
@@ -1299,7 +1299,7 @@ const styles = StyleSheet.create({
   toggleTextActive: {color: '#ffffff'},
   scrollBody: {flex: 1},
   section: {paddingHorizontal: 20, marginTop: 0, backgroundColor: '#DBE7DF'},
-  sectionSettings: {paddingHorizontal: 20, backgroundColor: '#DBE7DF'},
+  sectionSettings: {paddingHorizontal: 20, backgroundColor: '#DBE7DF', paddingTop: 10, paddingBottom: 180},
   profilePicture: {
     alignItems: 'center',
     marginBottom: 20,

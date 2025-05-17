@@ -107,7 +107,7 @@ const TransferScreen = () => {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
             <View style={styles.header}>
-              <Icon name="swap-horiz" size={40} color="#2E7D32" />
+              <Icon name="swap-horiz" size={40} color="#3A6953" />
               <Text style={styles.title}>Transfer Funds</Text>
               <Text style={styles.subtitle}>Send money to another member</Text>
             </View>
@@ -116,7 +116,7 @@ const TransferScreen = () => {
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Recipient ID</Text>
                 <View style={styles.inputWrapper}>
-                  <Icon name="person" size={20} color="#2E7D32" style={styles.inputIcon} />
+                  <Icon name="person" size={20} color="#6A8C73" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="Enter recipient's ID"
@@ -125,7 +125,7 @@ const TransferScreen = () => {
                     placeholderTextColor="#999"
                   />
                   {validatingRecipient && (
-                    <ActivityIndicator size="small" color="#2E7D32" />
+                    <ActivityIndicator size="small" color="#6A8C73" />
                   )}
                 </View>
               </View>
@@ -148,11 +148,11 @@ const TransferScreen = () => {
 
               <View style={styles.infoContainer}>
                 <View style={styles.infoItem}>
-                  <Icon name="security" size={24} color="#2E7D32" />
+                  <Icon name="security" size={24} color="#6A8C73" />
                   <Text style={styles.infoText}>Secure Transfer</Text>
                 </View>
                 <View style={styles.infoItem}>
-                  <Icon name="access-time" size={24} color="#2E7D32" />
+                  <Icon name="access-time" size={24} color="#6A8C73" />
                   <Text style={styles.infoText}>Instant Processing</Text>
                 </View>
               </View>
@@ -163,7 +163,6 @@ const TransferScreen = () => {
                 disabled={loading}
               >
                 <Text style={styles.buttonText}>Send Money</Text>
-                <Icon name="arrow-forward" size={20} color="#fff" style={styles.buttonIcon} />
               </TouchableOpacity>
             </View>
           </View>
@@ -193,10 +192,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    marginTop: 50,
   },
   container: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 26,
   },
   header: {
     alignItems: 'center',
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#3A6953',
     marginTop: 16,
     marginBottom: 8,
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#3A6953',
+    borderColor: '#6A8C73',
     paddingHorizontal: 16,
   },
   inputIcon: {

@@ -447,7 +447,7 @@ const NotificationScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F4F8F7", padding: 20 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  title: { fontSize: 22, fontWeight: "bold", color: "#3A6953" },
+  title: { fontSize: 22, fontWeight: "900", color: "#3A6953", paddingBottom: 10 },
   loading: { color: "#666", textAlign: "center" },
   empty: { color: "#666", textAlign: "center", marginTop: 50, fontStyle: "italic" },
   notificationItem: {

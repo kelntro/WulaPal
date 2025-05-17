@@ -185,7 +185,7 @@ const handleGoogleLogin = async () => {
           autoCapitalize="none"
         />
         <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
-          <Icon name={passwordVisible ? "eye-off" : "eye"} size={20} color="gray" />
+          <Icon name={passwordVisible ? "eye" : "eye-off"} size={20} color="gray" />
         </TouchableOpacity>
       </StyledView>
 

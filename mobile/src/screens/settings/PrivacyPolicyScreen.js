@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   container: {padding: 20},
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: '#3A6953',
     marginBottom: 10,
     textAlign: 'center',

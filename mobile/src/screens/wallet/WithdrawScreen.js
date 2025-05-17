@@ -235,7 +235,7 @@ const WithdrawScreen = () => {
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Mobile Number</Text>
                 <View style={styles.inputWrapper}>
-                  <Icon name="phone" size={20} color="#3A6953" style={styles.inputIcon} />
+                  <Icon name="phone" size={20} color="#6A8C73" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="09XX XXX XXXX"
@@ -259,11 +259,11 @@ const WithdrawScreen = () => {
 
               <View style={styles.infoContainer}>
                 <View style={styles.infoItem}>
-                  <Icon name="security" size={24} color="#3A6953" />
+                  <Icon name="security" size={24} color="#6A8C73" />
                   <Text style={styles.infoText}>Secure Withdrawal</Text>
                 </View>
                 <View style={styles.infoItem}>
-                  <Icon name="access-time" size={24} color="#3A6953" />
+                  <Icon name="access-time" size={24} color="#6A8C73" />
                   <Text style={styles.infoText}>Instant Processing</Text>
                 </View>
               </View>
@@ -278,7 +278,6 @@ const WithdrawScreen = () => {
                 ) : (
                   <>
                     <Text style={styles.buttonText}>Confirm Withdrawal</Text>
-                    <Icon name="arrow-forward" size={20} color="#fff" style={styles.buttonIcon} />
                   </>
                 )}
               </TouchableOpacity>
@@ -312,10 +311,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    marginTop: 50,
   },
   container: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 26,
+    paddingBottom: 100,
   },
   header: {
     alignItems: 'center',
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#3A6953',
     marginTop: 16,
     marginBottom: 8,
@@ -351,7 +352,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#3A6953',
+    borderColor: '#6A8C73',
     paddingHorizontal: 16,
   },
   inputIcon: {
@@ -384,7 +385,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#3A6953',
+    borderColor: '#6A8C73',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
