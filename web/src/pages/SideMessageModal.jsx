@@ -1,0 +1,219 @@
+import React, { useEffect, useState, useRef } from "react";
+import { useParams } from "react-router-dom";
+
+const SideMessageModal = ({ isOpen, onClose, recipientId, recipientName }) => {
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [file, setFile] = useState(null);
+  const user = JSON.parse(localStorage.getItem("user"));
+  const chatRef = useRef(null);
+
+  const scrollToBottom = () => {
+    chatRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(scrollToBottom, [messages]);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(`http://localhost:5050/api/messages/conversation/${recipientId}`);
+        const data = await res.json();
+        setMessages(data);
+      } catch (err) {
+        console.error("❌ Error fetching messages:", err.message);
+      }
+    };
+
+    if (recipientId && isOpen) {
+      fetchMessages();
+    }
+  }, [recipientId, isOpen]);
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const sendMessage = async () => {
+    if (!message.trim() && !file) return;
+
+    try {
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadRes = await fetch("http://localhost:5050/api/upload-chat-file", {
+          method: "POST",
+          body: formData,
+        });
+
+        const uploadData = await uploadRes.json();
+
+        if (uploadData.url) {
+          const res = await fetch("http://localhost:5050/api/messages/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toUserId: recipientId,
+              fromUserId: user._id,
+              content: uploadData.url,
+              type: "file"
+            }),
+          });
+
+          if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+          const newMessage = {
+            content: uploadData.url,
+            from: user._id,
+            timestamp: new Date().toISOString(),
+            type: "file"
+          };
+
+          setMessages((prev) => [...prev, newMessage]);
+          setFile(null);
+        }
+      }
+
+      if (message.trim()) {
+        const res = await fetch("http://localhost:5050/api/messages/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toUserId: recipientId,
+            fromUserId: user._id,
+            content: message,
+            type: "text"
+          }),
+        });
+
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+        const newMessage = {
+          content: message,
+          from: user._id,
+          timestamp: new Date().toISOString(),
+          type: "text"
+        };
+
+        setMessages((prev) => [...prev, newMessage]);
+        setMessage("");
+      }
+    } catch (err) {
+      console.error("❌ Error sending message:", err.message);
+      alert("Failed to send message.");
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-40 z-40"
+        onClick={onClose}
+      />
+
+      {/* Side Panel */}
+      <div className="fixed top-0 right-0 h-full w-full md:w-[400px] bg-white shadow-xl z-50 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-green-200 bg-gradient-to-r from-green-100 to-white">
+          <h2 className="text-xl font-semibold text-[#3A6953]">
+            {recipientName || "Direct Message"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-600 hover:text-red-600 text-2xl font-bold"
+          >
+            &times;
+          </button>
+        </div>
+
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 bg-[#F0F8F4] scroll-smooth">
+          {messages.map((msg, idx) => {
+            const isMe = msg.from === user._id;
+            const senderName = isMe ? user.name : recipientName || "User";
+            const firstName = senderName.split(" ")[0];
+
+            return (
+              <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end`}>
+                {!isMe && (
+                  <div className="flex-shrink-0 w-8 h-8 bg-green-200 rounded-full flex items-center justify-center mr-2 text-[#3A6953] font-bold shadow">
+                    {firstName[0]}
+                  </div>
+                )}
+                <div className={`relative max-w-[70%] ${isMe ? 'bg-gradient-to-br from-green-200 to-green-100' : 'bg-white'} p-4 rounded-2xl shadow-md flex flex-col`}>
+                {msg.type === "file" ? (
+  msg.content.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+    <img
+      src={msg.content.startsWith("http") ? msg.content : `http://localhost:5050${msg.content}`}
+      alt="attachment"
+      className="rounded-lg max-w-xs max-h-60 object-cover"
+      onError={(e) => {
+        e.target.src = "/fallback.png"; // use a fallback image path if needed
+      }}
+    />
+  ) : (
+    <a
+      href={msg.content}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-600 underline break-all"
+    >
+      📎 View Attachment
+    </a>
+  )
+) : (
+  <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
+)}
+
+                  <div className={`text-xs mt-2 ${isMe ? 'text-right' : 'text-left'} text-gray-400 font-medium`}>
+                    {firstName} • {new Date(msg.timestamp).toLocaleString(undefined, {
+                      year: 'numeric',
+                      month: 'numeric',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={chatRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="px-6 py-4 border-t border-green-200 flex gap-3 bg-white items-center">
+          <label className="text-gray-400 cursor-pointer flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mr-2 hover:text-green-700 transition-colors">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7.828a4 4 0 010 5.656l-4.95 4.95a3 3 0 01-4.243-4.243l7.071-7.071a2 2 0 112.828 2.828l-7.071 7.071" />
+            </svg>
+            <input type="file" onChange={handleFileChange} className="hidden" />
+            <span className="sr-only">Choose File</span>
+          </label>
+          <input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-green-600 bg-[#F0F8F4] shadow-inner"
+            placeholder="Type a message..."
+          />
+          {file && <span className="ml-2 text-green-600 font-medium truncate max-w-[120px]">{file.name}</span>}
+          <button
+            onClick={sendMessage}
+            className="w-12 h-12 flex items-center justify-center rounded-full bg-[#3A6953] text-white font-semibold hover:bg-green-800 transition-all shadow-lg text-xl"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21l16.5-9-16.5-9v7.5l13.5 1.5-13.5 1.5V21z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default SideMessageModal; 
