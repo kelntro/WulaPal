@@ -111,7 +111,7 @@ const Wallet = () => {
     <div className="p-2 flex justify-center ml-[40px]">
       <div className="max-w-[1500px] p-2">
         <h1 className="text-4xl font-bold text-[#285236]">WulaPal Wallet</h1>
-        <p className="text-[#6A8C73] mb-6">Here's your Wulapal wallet data.</p>
+        <p className="text-[#6A8C73] mb-6">Here's your WulaPal wallet data.</p>
 
         <div className="grid grid-cols-3 gap-[30px]">
           {/* Left Column - Account Balance */}
