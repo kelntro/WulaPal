@@ -76,7 +76,6 @@ const Login = () => {
         body: JSON.stringify({ email, password, role }),
       });
       
-
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Login failed");
@@ -86,7 +85,7 @@ const Login = () => {
       if (data.otpSent) {
         navigate("/otp", { state: { email } });
       } else {
-        // ✅ Add this to support direct dashboard access (superadmin or verified organizer)
+        // Direct login for superadmin
         login(data.token, data.user);
         localStorage.setItem("userId", data.user._id);
       
@@ -97,17 +96,6 @@ const Login = () => {
       
         navigate("/dashboard");
       }
-      
-      // ✅ Update lastActive
-      if (data?.user?._id) {
-        localStorage.setItem("userId", data.user._id); // ✅ Save it for Dashboard use
-      
-        await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" }
-        });
-      }
-      
     } catch (err) {
       setError(err.message);
     } finally {

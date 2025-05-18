@@ -527,25 +527,32 @@ const handleAutoContribution = async () => {
         });
         console.log(`📝 [Transaction] Payout recorded with reference: ${referenceId}`);
 
-        // Handle system fee
-        const systemWallet = await Wallet.findOne({ userId: process.env.SYSTEM_WALLET_ID });
-        if (systemWallet) {
-          systemWallet.balance += systemFee;
-          await systemWallet.save();
-      
-          await Transaction.create({
-            userId: process.env.SYSTEM_WALLET_ID,
-            type: 'payout_share',
-            amount: systemFee,
-            referenceId: `system-share-${Date.now()}`,
-            status: 'confirmed',
-            metadata: {
-              groupId: group._id.toString(),
-              from: 'payout_processing',
-              note: '1% system share from payout',
-              hideFromAudit: true
-            }
-          });
+        // Handle system fee (super admin's share)
+        const superAdmin = await User.findOne({ role: 'superadmin' });
+        if (superAdmin) {
+          const systemWallet = await Wallet.findOne({ userId: superAdmin._id });
+          if (systemWallet) {
+            systemWallet.balance += systemFee;
+            await systemWallet.save();
+        
+            await Transaction.create({
+              userId: superAdmin._id,
+              type: 'payout_share',
+              amount: systemFee,
+              referenceId: `system-share-${Date.now()}`,
+              status: 'confirmed',
+              metadata: {
+                groupId: group._id.toString(),
+                from: 'payout_processing',
+                note: '1% system share from payout',
+                groupName: group.name,
+                totalAmount: totalPHP,
+                contributionAmount: contributionAmountPHP,
+                numberOfContributions: expectedContributions
+              }
+            });
+            console.log(`💰 [System] Fee of ₱${systemFee} credited to super admin wallet`);
+          }
         }
 
         // Handle organizer fee
@@ -564,7 +571,10 @@ const handleAutoContribution = async () => {
               groupId: group._id.toString(),
               from: 'payout_processing',
               note: '1% organizer share from payout',
-              hideFromAudit: true
+              groupName: group.name,
+              totalAmount: totalPHP,
+              contributionAmount: contributionAmountPHP,
+              numberOfContributions: expectedContributions
             }
           });
       

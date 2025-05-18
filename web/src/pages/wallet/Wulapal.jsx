@@ -19,10 +19,13 @@ import {
 } from "recharts";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 dayjs.extend(customParseFormat);
 
 const AccountBalanceCard = () => {
   const [balance, setBalance] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -40,6 +43,154 @@ const AccountBalanceCard = () => {
       });
   }, []);
 
+  const loadLogoBase64 = (url) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.src = url;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = reject;
+    });
+  
+  const generateIncomeStatement = async () => {
+    setLoading(true);
+    const userId = localStorage.getItem("userId");
+  
+    if (!userId) {
+      console.warn("User ID missing");
+      setLoading(false);
+      return;
+    }
+  
+    try {
+      const res = await fetch(`http://localhost:5050/api/wallet/transactions?userId=${userId}`);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+  
+      const transactions = await res.json();
+      if (!Array.isArray(transactions)) throw new Error("Invalid transactions data received");
+  
+      let totalIncome = 0, totalExpenses = 0, deposits = 0, withdrawals = 0, transfers = 0, receives = 0;
+      transactions.forEach((txn) => {
+        if (!txn.type || typeof txn.amount !== 'number') return;
+        if (txn.type === "deposit") { deposits += txn.amount; totalIncome += txn.amount; }
+        if (txn.type === "withdraw") { withdrawals += txn.amount; totalExpenses += txn.amount; }
+        if (txn.type === "transfer") { transfers += txn.amount; totalExpenses += txn.amount; }
+        if (txn.type === "receive") { receives += txn.amount; totalIncome += txn.amount; }
+      });
+  
+      const doc = new jsPDF();
+      doc.setFont("helvetica", "normal"); // 🧠 Fixes ₱ encoding issue
+  
+      const logoBase64 = await loadLogoBase64(`${window.location.origin}/assets/1.png`);
+      doc.addImage(logoBase64, 'PNG', 180, 10, 20, 20); // 🖼 New aligned logo
+  
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(58, 105, 83);
+      doc.text("WulaPal", 20, 20);
+      doc.setFontSize(16);
+      doc.text("Income Statement", 20, 30);
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 40);
+  
+      // Summary Table
+      doc.setFontSize(14);
+      doc.setTextColor(58, 105, 83);
+      doc.text("Summary", 20, 55);
+      autoTable(doc, {
+        startY: 60,
+        head: [["Category", "Amount"]],
+        body: [
+          ["Total Income", `PHP ${totalIncome.toLocaleString()}`],
+          ["Total Expenses", `PHP ${totalExpenses.toLocaleString()}`],
+          ["Net Balance", `PHP ${(totalIncome - totalExpenses).toLocaleString()}`]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [58, 105, 83] },
+        styles: { fontSize: 9, cellPadding: 4 },
+        columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 60, halign: 'right' } }
+      });
+  
+      // Details Table
+      doc.setFontSize(14);
+      doc.setTextColor(58, 105, 83);
+      doc.text("Transaction Details", 20, doc.lastAutoTable.finalY + 15);
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [["Type", "Amount"]],
+        body: [
+          ["Deposits", `PHP ${deposits.toLocaleString()}`],
+          ["Receives", `PHP ${receives.toLocaleString()}`],
+          ["Withdrawals", `PHP ${withdrawals.toLocaleString()}`],
+          ["Transfers", `PHP ${transfers.toLocaleString()}`]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [58, 105, 83] },
+        styles: { fontSize: 9, cellPadding: 4 },
+        columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 60, halign: 'right' } }
+      });
+  
+      // Transaction History Table
+      doc.setFontSize(14);
+      doc.setTextColor(58, 105, 83);
+      doc.text("Transaction History", 20, doc.lastAutoTable.finalY + 15);
+      const transactionData = transactions.map(txn => [
+        new Date(txn.timestamp).toLocaleDateString(),
+        txn.type.toUpperCase(),
+        `PHP ${txn.amount.toLocaleString()}`,
+        txn.status || 'N/A',
+        txn.metadata?.to || txn.metadata?.from || '-'
+      ]);
+  
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [["Date", "Type", "Amount", "Status", "Details"]],
+        body: transactionData,
+        theme: 'grid',
+        headStyles: { fillColor: [58, 105, 83] },
+        styles: { fontSize: 9, cellPadding: 4 },
+        columnStyles: {
+          0: { cellWidth: 28 }, // Date
+          1: { cellWidth: 25 }, // Type
+          2: { cellWidth: 35, halign: 'right' }, // Amount
+          3: { cellWidth: 25 }, // Status
+          4: { cellWidth: 55 }  // Details (wider now)
+        }
+      });
+  
+      // Footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+  
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text("Powered by WulaPal – Secure Group Savings Made Simple", 20, doc.internal.pageSize.height - 20);
+      }
+  
+      doc.save(`income-statement-${new Date().toISOString().split('T')[0]}.pdf`);
+      console.log("✅ PDF generated successfully");
+  
+    } catch (error) {
+      console.error("Error generating statement:", error);
+      alert(`Failed to generate income statement: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
   return (
     <div className="w-[375px] bg-white rounded-[20px] shadow-md p-6">
       <h2 className="text-[#3a6953] text-[22px] font-bold">Account Balance</h2>
@@ -52,8 +203,22 @@ const AccountBalanceCard = () => {
           ₱{balance.toLocaleString()}
         </span>
       </div>
-      <button className="w-full mt-4 h-10 rounded-[10px] border border-[#6a8c73] text-[#3a6953] text-xs font-normal">
-        Get Income Statement
+      <button 
+        className="w-full mt-4 h-10 rounded-[10px] border border-[#6a8c73] text-[#3a6953] text-xs font-normal hover:bg-[#6a8c73] hover:text-white transition-colors duration-200 flex items-center justify-center"
+        onClick={generateIncomeStatement}
+        disabled={loading}
+      >
+        {loading ? (
+          <span className="flex items-center">
+            <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-[#3a6953]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Generating...
+          </span>
+        ) : (
+          "Get Income Statement"
+        )}
       </button>
     </div>
   );
@@ -525,8 +690,8 @@ const CashActivityChart = () => {
       date: dayjs(
         `${selectedYear}-${selectedMonth}-${String(i + 1).padStart(2, "0")}`
       ).format("YYYY-MM-DD"),
-      income: 0,
-      contribution: 0,
+      Income: 0,
+      Transfer: 0,
     }));
 
     rawTransactions.forEach((txn) => {
@@ -542,10 +707,10 @@ const CashActivityChart = () => {
         const dayEntry = dayMap.find((d) => d.date === txnDate);
         if (dayEntry) {
           if (txn.type === "deposit" || txn.type === "receive") {
-            dayEntry.income += txn.amount;
+            dayEntry.Income += txn.amount;
           }
           if (txn.type === "transfer") {
-            dayEntry.contribution += txn.amount;
+            dayEntry.Transfer += txn.amount;
           }
         }
       }
@@ -620,7 +785,7 @@ const CashActivityChart = () => {
           {/* Income Line */}
           <Line
             type="monotone"
-            dataKey="income"
+            dataKey="Income"
             stroke="#6A8C73"
             strokeWidth={3}
             dot={false}
@@ -629,12 +794,11 @@ const CashActivityChart = () => {
           {/* Contribution Line */}
           <Line
             type="monotone"
-            dataKey="contribution"
-            stroke="#FF9AA2"
+            dataKey="Transfer"
+            stroke="#8CB6E6"
             strokeWidth={3}
             dot={false}
             strokeLinecap="round"
-            strokeDasharray="5 5"
           />
         </LineChart>
       </ResponsiveContainer>

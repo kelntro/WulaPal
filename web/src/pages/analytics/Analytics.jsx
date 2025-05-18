@@ -120,9 +120,10 @@ const PerformanceOverview = () => {
 const fetchIncomeData = async (organizerId) => {
   console.log("🔵 Fetching income data for organizer:", organizerId);
   try {
-    const res = await fetch(`http://localhost:5050/api/organizer-groups?organizerId=${organizerId}`); // ✅ FIXED
-    const groups = await res.json();
-    console.log("📥 [IncomeFlow] Raw groups fetched:", groups);
+    // Fetch transactions instead of groups
+    const res = await fetch(`http://localhost:5050/api/wallet/transactions?userId=${organizerId}`);
+    const transactions = await res.json();
+    console.log("📥 [IncomeFlow] Raw transactions fetched:", transactions);
 
     const monthlyData = months.map((month) => ({
       month,
@@ -130,22 +131,21 @@ const fetchIncomeData = async (organizerId) => {
       transferred: 0,
     }));
 
-    groups.forEach((group) => {
-      const createdAt = new Date(group.createdAt);
-      const year = createdAt.getFullYear();
-      const monthIdx = createdAt.getMonth(); // 0 = Jan
+    transactions.forEach((txn) => {
+      if (txn.status === "confirmed") {
+        const date = new Date(txn.timestamp);
+        const year = date.getFullYear();
+        const monthIdx = date.getMonth();
 
-      if (year === new Date().getFullYear()) {
-        const contributionAmount = parseFloat(group.contributionAmount) || 0;
-        const membersCount = group.members.length || 0;
-
-        // 💵 Organizer earns when members contribute
-        monthlyData[monthIdx].income += contributionAmount * membersCount;
-
-        // 💸 Organizer pays out when group is active/completed
-        if (group.status === "active" || group.status === "completed") {
-          monthlyData[monthIdx].transferred += contributionAmount * (membersCount - 1);
-          // -1 because payout recipient does not contribute
+        if (year === new Date().getFullYear()) {
+          // Calculate income from receive and payout_share transactions
+          if (txn.type === "receive" || txn.type === "payout_share") {
+            monthlyData[monthIdx].income += txn.amount;
+          }
+          // Calculate transferred amount from transfer transactions
+          if (txn.type === "transfer") {
+            monthlyData[monthIdx].transferred += txn.amount;
+          }
         }
       }
     });
@@ -281,7 +281,7 @@ const fetchTransactionData = async (userId) => {
     transactions.forEach((txn) => {
       if (txn.status === "confirmed") {
         if (txn.type === "deposit") deposit += txn.amount;
-        if (txn.type === "withdraw") income += txn.amount;
+        if (txn.type === "receive" || txn.type === "payout_share") income += txn.amount;
         if (txn.type === "transfer") transfer += txn.amount;
       }
     });
@@ -505,7 +505,7 @@ const Analytics= () => {
         <div className="ml-[20px] : ml-[20px] col-span-2">
           <h1 className="text-4xl font-bold text-[#285236] mb-2">Analytics</h1>
           <p className="text-[#6A8C73] font-normal mb-6">
-          Here’s your analysis of your Paluwagan today. You can view your income 
+          Here's your analysis of your Paluwagan today. You can view your income 
           flow and group performance.
           </p>
 

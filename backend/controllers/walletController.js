@@ -200,25 +200,31 @@ export const transferFunds = async (req, res) => {
             await recipientWallet.save();
         }
 
-        // Sender transaction
-await Transaction.create({
-    userId: senderId,
-    type: 'transfer',
-    amount: Number(amount),
-    referenceId: `transfer-${Date.now()}`,
-    status: 'confirmed',
-    metadata: { to: recipientId }
-  });
+        // Create transaction for sender (type: transfer)
+        await Transaction.create({
+            userId: senderId,
+            type: 'transfer',
+            amount: Number(amount),
+            referenceId: `transfer-${Date.now()}`,
+            status: 'confirmed',
+            metadata: { 
+                to: recipientId,
+                type: 'fund_transfer'
+            }
+        });
   
-  // Optionally: log for recipient too
-  await Transaction.create({
-    userId: recipientId,
-    type: 'transfer',
-    amount: Number(amount),
-    referenceId: `receive-${Date.now()}`,
-    status: 'confirmed',
-    metadata: { from: senderId }
-  });
+        // Create transaction for recipient (type: receive)
+        await Transaction.create({
+            userId: recipientId,
+            type: 'receive',
+            amount: Number(amount),
+            referenceId: `receive-${Date.now()}`,
+            status: 'confirmed',
+            metadata: { 
+                from: senderId,
+                type: 'fund_transfer'
+            }
+        });
   
         return res.status(200).json({ message: "Transfer successful." });
     } catch (err) {

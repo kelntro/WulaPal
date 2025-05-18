@@ -170,10 +170,7 @@ const WalletScreen = () => {
                   <Text style={styles.contributionText}>
                     {item.type === 'deposit' && 'Deposited'}
                     {item.type === 'receive' && 'Received'}
-                    {item.type === 'transfer' && 'Contributed'}
-                    {' '}
-                    {item.metadata?.to ? `to ${item.metadata.to}` : ''}
-                    {item.metadata?.from ? `from ${item.metadata.from}` : ''}
+                    {item.type === 'transfer' && 'Transfer'}
                   </Text>
                   <Text style={styles.contributionDate}>
                     {new Date(item.timestamp || item.createdAt).toLocaleDateString()}
