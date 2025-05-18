@@ -128,7 +128,7 @@ const JoinRequests = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[#D4E8DB] py-8">
       {toast && (
         <Toast
           message={toast.message}
