@@ -296,8 +296,12 @@ const ProfileInfo = ({form, setForm, navigation}) => {
       'address.zipCode',
     ];
 
-    // Check if profile image is captured
-    if (!profileImage) {
+    // Check if profile image is captured or already exists
+    const hasExistingProfileImage = user?.profileImage && 
+      user.profileImage !== 'null' && 
+      user.profileImage !== '';
+
+    if (!profileImage && !hasExistingProfileImage) {
       Alert.alert(
         'Profile Picture Required',
         'Please capture a profile picture before saving.',
