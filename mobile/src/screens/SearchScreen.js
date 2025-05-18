@@ -41,6 +41,7 @@ const SearchScreen = () => {
     <View style={styles.container}>
       <TextInput
         placeholder="Search by name, email or ID..."
+        placeholderTextColor="#999999"  // ← sets placeholder to black
         value={searchQuery}
         onChangeText={setSearchQuery}
         onSubmitEditing={handleSearch}

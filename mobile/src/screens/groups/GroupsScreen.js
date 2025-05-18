@@ -193,6 +193,7 @@ const GroupsScreen = () => {
         <TextInput
           style={[styles.searchInput, { flex: 1 }]}
           placeholder=" Search groups..."
+          placeholderTextColor="#999999"  // ← sets placeholder to black
           value={searchText}
           onChangeText={setSearchText}
         />

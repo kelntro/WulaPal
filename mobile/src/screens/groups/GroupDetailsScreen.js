@@ -225,7 +225,7 @@ const GroupDetailsScreen = ({ route }) => {
               style={[styles.joinButton, { backgroundColor: '#6A8C73', marginTop: 12 }]}
               onPress={() => navigation.navigate('AuditTrailScreen', { groupId })}
             >
-              <Text style={styles.joinButtonText}>🔍 View Audit Trail</Text>
+              <Text style={styles.joinButtonText}> View Audit Trail</Text>
             </TouchableOpacity>
           </>
         )}

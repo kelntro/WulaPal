@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   greetingContainer: {
-    marginTop: 20,
+    marginTop: 22,
     marginHorizontal: 15,
     marginBottom: 5,
   },

@@ -427,7 +427,7 @@ const ProfileInfo = ({form, setForm, navigation}) => {
   return (
     <ScrollView
       style={styles.scrollBody}
-      contentContainerStyle={{paddingBottom: 120}}>
+      contentContainerStyle={{paddingBottom: 60}}>
       <View style={styles.section}>
         <View style={styles.profilePicture}>
           <Image
@@ -1302,7 +1302,7 @@ const styles = StyleSheet.create({
   toggleText: {fontSize: 14, fontWeight: '600', color: '#3A6953'},
   toggleTextActive: {color: '#ffffff'},
   scrollBody: {flex: 1},
-  section: {paddingHorizontal: 20, marginTop: 0, backgroundColor: '#DBE7DF'},
+  section: {paddingHorizontal: 20, paddingBottom: 50, marginTop: 0, backgroundColor: '#DBE7DF'},
   sectionSettings: {paddingHorizontal: 20, backgroundColor: '#DBE7DF', paddingTop: 10, paddingBottom: 180},
   profilePicture: {
     alignItems: 'center',

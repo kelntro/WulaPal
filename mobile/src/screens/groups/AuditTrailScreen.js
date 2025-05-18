@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Linking,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
@@ -25,12 +25,12 @@ const AuditTrailScreen = ({ route }) => {
   const fetchAuditTrail = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/group-transactions/${groupId}`);
-      const sortedTransactions = response.data.sort((a, b) => 
-        new Date(b.timestamp) - new Date(a.timestamp)
+      const sortedTransactions = response.data.sort(
+        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
       );
       setTransactions(sortedTransactions);
     } catch (error) {
-      console.error("❌ Failed to fetch audit trail:", error.message);
+      console.error('❌ Failed to fetch audit trail:', error.message);
     } finally {
       setLoading(false);
     }
@@ -41,40 +41,36 @@ const AuditTrailScreen = ({ route }) => {
     { id: 'deposit', label: 'Deposits' },
     { id: 'payout', label: 'Payouts' },
     { id: 'transfer', label: 'Contributions' },
-    { id: 'refund', label: 'Refunds' }
+    { id: 'refund', label: 'Refunds' },
   ];
 
-  const filteredTransactions = transactions.filter(tx => {
+  const filteredTransactions = transactions.filter((tx) => {
     const matchesType = selectedType === 'all' || tx.type === selectedType;
-  
-    // ✅ Filter out based on the main `type` field OR metadata type
+
     const isExcluded =
       ['organizer_share', 'system_share', 'admin_share', 'payout_share'].includes(tx.type) ||
       ['organizer_share', 'system_share', 'admin_share', 'payout_share'].includes(tx.metadata?.type);
-  
+
     return matchesType && !isExcluded;
   });
-  
 
   const renderTypeSelector = () => (
-    <ScrollView 
-      horizontal 
-      showsHorizontalScrollIndicator={false}
-      style={styles.typeSelector}
-    >
-      {transactionTypes.map(type => (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeSelector}>
+      {transactionTypes.map((type) => (
         <TouchableOpacity
           key={type.id}
           style={[
             styles.typeButton,
-            selectedType === type.id && styles.selectedTypeButton
+            selectedType === type.id && styles.selectedTypeButton,
           ]}
           onPress={() => setSelectedType(type.id)}
         >
-          <Text style={[
-            styles.typeButtonText,
-            selectedType === type.id && styles.selectedTypeButtonText
-          ]}>
+          <Text
+            style={[
+              styles.typeButtonText,
+              selectedType === type.id && styles.selectedTypeButtonText,
+            ]}
+          >
             {type.label}
           </Text>
         </TouchableOpacity>
@@ -90,15 +86,12 @@ const AuditTrailScreen = ({ route }) => {
         {item.amountUSDT ? ` • ≈ ${item.amountUSDT} USDT` : ''}
       </Text>
       <Text style={styles.status}>Status: {item.status}</Text>
-      <Text style={styles.datetime}>{item.date} at {item.time}</Text>
-      {item.metadata?.type && (
-        <Text style={styles.metadata}>Type: {item.metadata.type}</Text>
-      )}
-
+      <Text style={styles.datetime}>
+        {item.date} at {item.time}
+      </Text>
+      {item.metadata?.type && <Text style={styles.metadata}>Type: {item.metadata.type}</Text>}
       {item.txHash && (
-        <TouchableOpacity
-          onPress={() => Linking.openURL(`https://amoy.polygonscan.com/tx/${item.txHash}`)}
-        >
+        <TouchableOpacity onPress={() => Linking.openURL(`https://amoy.polygonscan.com/tx/${item.txHash}`)}>
           <Text style={styles.link}>🔗 View on PolygonScan</Text>
         </TouchableOpacity>
       )}
@@ -114,8 +107,8 @@ const AuditTrailScreen = ({ route }) => {
           {renderTypeSelector()}
           {filteredTransactions.length === 0 ? (
             <Text style={styles.emptyText}>
-              {selectedType === 'all' 
-                ? "No transactions found for this group."
+              {selectedType === 'all'
+                ? 'No transactions found for this group.'
                 : `No ${selectedType} transactions found.`}
             </Text>
           ) : (
@@ -137,17 +130,17 @@ const AuditTrailScreen = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#fff', 
-    padding: 16 
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 16,
   },
   listContent: {
-    paddingTop: 8,
+    paddingTop: 0, // pull cards closer to type selector
     paddingBottom: 16,
   },
   typeSelector: {
-    marginBottom: 16,
+    marginBottom: 8, // reduced spacing
   },
   typeButton: {
     paddingHorizontal: 20,
@@ -178,48 +171,47 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#9BB3A7',
     borderRadius: 8,
     padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#f9f9f9',
-    flex: 1,
+    marginBottom: 10,
+    backgroundColor: '#DBE7DF',
   },
-  user: { 
-    fontSize: 16, 
+  user: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#333'
+    color: '#333',
   },
-  detail: { 
-    fontSize: 14, 
+  detail: {
+    fontSize: 14,
     marginTop: 4,
     fontWeight: '500',
-    color: '#333'
+    color: '#333',
   },
-  status: { 
-    fontSize: 14, 
-    color: '#333', 
-    marginTop: 4 
+  status: {
+    fontSize: 14,
+    color: '#333',
+    marginTop: 4,
   },
-  datetime: { 
-    fontSize: 13, 
-    color: '#555', 
-    marginTop: 2 
+  datetime: {
+    fontSize: 13,
+    color: '#555',
+    marginTop: 2,
   },
-  metadata: { 
-    fontSize: 13, 
-    color: '#666', 
-    marginTop: 2 
+  metadata: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
   },
-  link: { 
-    marginTop: 6, 
+  link: {
+    marginTop: 6,
     fontWeight: '500',
-    color: '#3A6953'
+    color: '#3A6953',
   },
-  emptyText: { 
-    marginTop: 20, 
-    textAlign: 'center', 
-    color: '#888' 
+  emptyText: {
+    marginTop: 20,
+    textAlign: 'center',
+    color: '#888',
   },
 });
 
