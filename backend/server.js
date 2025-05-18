@@ -429,18 +429,17 @@ app.post("/api/groups/:groupId/confirm-member", async (req, res) => {
 
     const referenceId = `SECURITY-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 
-await Transaction.create({
-  userId,
-  type: "deposit",
-  amount: parsedDeposit,
-  referenceId, // ✅ Fix: add this field
-  metadata: {
-    groupId: group._id.toString(),
-    type: "security_deposit"
-  },
-  status: "confirmed",
-});
-
+    await Transaction.create({
+      userId,
+      type: "deposit",
+      amount: parsedDeposit,
+      referenceId, // ✅ Fix: add this field
+      metadata: {
+        groupId: group._id.toString(),
+        type: "security_deposit"
+      },
+      status: "confirmed",
+    });
 
     group.members.push({
       userId: new mongoose.Types.ObjectId(userId),
@@ -504,6 +503,13 @@ await Transaction.create({
           message,
           date: new Date()
         });
+
+        // Add push notification for payout schedule
+        await sendPushToUser(
+          user._id.toString(),
+          "WulaPal",
+          message
+        );
       }
     
       // Notify organizer
@@ -535,6 +541,13 @@ await Transaction.create({
           message: `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`,
           date: new Date()
         });
+
+        // Add push notification for group completion
+        await sendPushToUser(
+          member.userId.toString(),
+          "WulaPal",
+          `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`
+        );
       }
     }
     
@@ -836,6 +849,13 @@ app.post("/api/join-group", async (req, res) => {
           message,
           date: new Date()
         });
+
+        // Add push notification for payout schedule
+        await sendPushToUser(
+          user._id.toString(),
+          "WulaPal",
+          message
+        );
       }
 
       const organizer = await User.findById(group.handler);
@@ -865,6 +885,13 @@ app.post("/api/join-group", async (req, res) => {
           message: `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`,
           date: new Date()
         });
+
+        // Add push notification for group completion
+        await sendPushToUser(
+          member.userId.toString(),
+          "WulaPal",
+          `🎉 Group "${group.name}" is now complete. The payout cycle is starting!`
+        );
       }
     }
 
@@ -935,6 +962,7 @@ app.post("/api/confirm-contribution", async (req, res) => {
               type: "deposit_refunded"
             });
 
+            // Add push notification for deposit refund
             await sendPushToUser(
               member.userId.toString(),
               "WulaPal",
@@ -946,6 +974,38 @@ app.post("/api/confirm-contribution", async (req, res) => {
 
       group.status = "completed";
       await group.save();
+
+      // Notify all members about group completion
+      for (const member of group.members) {
+        await MemberNotification.create({
+          userId: member.userId,
+          groupId: group._id,
+          message: `✅ Group "${group.name}" has completed all payout cycles.`,
+          type: "group_completed"
+        });
+
+        // Add push notification for group completion
+        await sendPushToUser(
+          member.userId.toString(),
+          "WulaPal",
+          `✅ Group "${group.name}" has completed all payout cycles. 🎉`
+        );
+      }
+
+      // Notify organizer about group completion
+      const organizer = await User.findById(group.handler);
+      if (organizer) {
+        await Notification.create({
+          organizerId: organizer._id,
+          message: `✅ Group "${group.name}" has completed all cycles and deposits have been refunded.`,
+        });
+
+        io.emit("groupUpdated", {
+          organizerId: organizer._id.toString(),
+          message: `✅ Group "${group.name}" has completed all cycles and deposits have been refunded.`,
+          date: new Date(),
+        });
+      }
 
       return res.status(400).json({ 
         error: "All cycles have been completed for this group. Deposits have been refunded."

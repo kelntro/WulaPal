@@ -44,7 +44,7 @@ const AccountBalanceCard = () => {
     <div className="w-[375px] bg-white rounded-[20px] shadow-md p-6">
       <h2 className="text-[#3a6953] text-[22px] font-bold">Account Balance</h2>
       <p className="text-[#6A8C73] text-sm mt-2">
-        Here’s your remaining balance
+        Here's your remaining balance
       </p>
       <div className="w-full h-[150px] mt-4 rounded-[20px] bg-gradient-to-b from-[#99c6a9] to-[#6a8c73] flex flex-col justify-center p-6">
         <span className="text-white text-sm">Current Balance</span>
@@ -88,7 +88,7 @@ const Wallet = () => {
         transactions.forEach((txn) => {
           if (txn.type === "deposit") deposit += txn.amount;
           if (txn.type === "withdraw") withdraw += txn.amount;
-          if (txn.type === "receive") receive += txn.amount;
+          if (txn.type === "receive" || txn.type === "payout_share") receive += txn.amount;
           if (txn.type === "transfer") transfer += txn.amount;
         });
 
@@ -111,7 +111,7 @@ const Wallet = () => {
     <div className="p-2 flex justify-center ml-[40px]">
       <div className="max-w-[1500px] p-2">
         <h1 className="text-4xl font-bold text-[#285236]">WulaPal Wallet</h1>
-        <p className="text-[#6A8C73] mb-6">Here’s your Wulapal wallet data.</p>
+        <p className="text-[#6A8C73] mb-6">Here's your Wulapal wallet data.</p>
 
         <div className="grid grid-cols-3 gap-[30px]">
           {/* Left Column - Account Balance */}
@@ -357,7 +357,7 @@ const AnalyticsChart = () => {
         const month = date.getMonth(); // 0-11
         if (txn.type === "deposit") monthlyData[month].deposit += txn.amount;
         if (txn.type === "withdraw") monthlyData[month].withdraw += txn.amount;
-        if (txn.type === "receive") monthlyData[month].receive += txn.amount;
+        if (txn.type === "receive" || txn.type === "payout_share") monthlyData[month].receive += txn.amount;
         if (txn.type === "transfer") monthlyData[month].transfer += txn.amount;
       });
 
@@ -379,7 +379,7 @@ const AnalyticsChart = () => {
         }
         if (txn.type === "deposit") yearlyDataMap[year].deposit += txn.amount;
         if (txn.type === "withdraw") yearlyDataMap[year].withdraw += txn.amount;
-        if (txn.type === "receive") yearlyDataMap[year].receive += txn.amount;
+        if (txn.type === "receive" || txn.type === "payout_share") yearlyDataMap[year].receive += txn.amount;
         if (txn.type === "transfer") yearlyDataMap[year].transfer += txn.amount;
       });
 

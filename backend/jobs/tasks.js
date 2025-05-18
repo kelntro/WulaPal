@@ -310,7 +310,7 @@ const handleAutoContribution = async () => {
             // Notify recipient
             await MemberNotification.create({
               userId: payout.recipientId,
-              message: `🎉 You received your payout from group "${group.name}".`,
+              message: `🎉 You received your payout of ₱${Number(group.contributionAmount) * (group.requiredMembers - 1)} from group "${group.name}".`,
               type: "payout_received",
               groupId: group._id,
             });
@@ -318,7 +318,7 @@ const handleAutoContribution = async () => {
             await sendPushToUser(
               payout.recipientId.toString(),
               "WulaPal",
-              `🎉 You received your payout from "${group.name}".`
+              `🎉 You received your payout of ₱${Number(group.contributionAmount) * (group.requiredMembers - 1)} from "${group.name}".`
             );
             console.log(`📨 [User: ${payout.recipientId}] Sent payout notification`);
             

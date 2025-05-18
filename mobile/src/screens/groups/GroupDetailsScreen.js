@@ -50,10 +50,20 @@ const GroupDetailsScreen = ({ route }) => {
         const res = await fetch(`${API_BASE_URL}/api/groups/${groupId}`);
         const data = await res.json();
         setGroupData(data);
-
-        const isUserMember = data.members.some(
-          (m) => (typeof m === 'object' ? m.userId || m._id : m)?.toString() === userId
-        );
+  
+        // 🔁 More robust membership check
+        const isUserMember = data.members.some((m) => {
+          if (typeof m === 'string') return m === userId;
+          if (typeof m === 'object') {
+            return (
+              m._id === userId ||
+              m.id === userId ||
+              m.userId === userId ||
+              (m.user && m.user._id === userId)
+            );
+          }
+          return false;
+        });
 
         setIsMember(isUserMember);
       } catch (err) {
