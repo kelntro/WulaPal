@@ -109,7 +109,7 @@ const PinCodeScreen = ({ navigation, route }) => {
     <View style={styles.container}>
       <Text style={styles.title}>Please enter your</Text>
       <Text style={styles.subtitle}>Pin Code</Text>
-      <Text style={styles.setLabel}>Set Pin Code (6-digit)</Text>
+      <Text style={styles.setLabel}>Pin Code (6-digit)</Text>
 
       {renderCircles()}
       {renderKeypad()}
