@@ -88,15 +88,13 @@ const AccountBalanceCard = () => {
       const doc = new jsPDF();
       doc.setFont("helvetica", "normal"); // 🧠 Fixes ₱ encoding issue
   
-      const logoBase64 = await loadLogoBase64(`${window.location.origin}/assets/1.png`);
-      doc.addImage(logoBase64, 'PNG', 180, 10, 20, 20); // 🖼 New aligned logo
-  
-      // Header
-      doc.setFontSize(22);
-      doc.setTextColor(58, 105, 83);
-      doc.text("WulaPal", 20, 20);
+      const logoBase64 = await loadLogoBase64(`${window.location.origin}/assets/4.png`);
+      doc.addImage(logoBase64, 'PNG', -15, 10, 110, 20); // Top-left logo
+
       doc.setFontSize(16);
-      doc.text("Income Statement", 20, 30);
+      doc.setTextColor(58, 105, 83);
+      doc.text("Income Statement", 20, 35);
+
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
       doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 40);
@@ -152,7 +150,7 @@ const AccountBalanceCard = () => {
   
       autoTable(doc, {
         startY: doc.lastAutoTable.finalY + 20,
-        head: [["Date", "Type", "Amount", "Status", "Details"]],
+        head: [["Date", "Type", "Amount", "Status"]],
         body: transactionData,
         theme: 'grid',
         headStyles: { fillColor: [58, 105, 83] },
@@ -162,7 +160,6 @@ const AccountBalanceCard = () => {
           1: { cellWidth: 25 }, // Type
           2: { cellWidth: 35, halign: 'right' }, // Amount
           3: { cellWidth: 25 }, // Status
-          4: { cellWidth: 55 }  // Details (wider now)
         }
       });
   

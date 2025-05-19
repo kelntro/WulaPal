@@ -63,7 +63,7 @@ const SearchResults = () => {
         ) : results.length === 0 ? (
           <div className="text-gray-500 text-lg">No users found.</div>
         ) : (
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-[150px]">
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
             {results.map((user) => (
               <div
                 key={user._id}
