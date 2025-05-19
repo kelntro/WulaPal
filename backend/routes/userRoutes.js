@@ -60,8 +60,17 @@ router.get("/search", async (req, res) => {
       }
   
       const users = await User.find(query);
+      
+      // Add full URL for profile images
+      const usersWithFullUrls = users.map(user => {
+        const userObj = user.toObject();
+        if (userObj.profileImage) {
+          userObj.profileImage = `http://localhost:5050${userObj.profileImage}`;
+        }
+        return userObj;
+      });
   
-      res.json(users); // returns an array ✅
+      res.json(usersWithFullUrls); // returns an array with full URLs ✅
     } catch (err) {
       console.error("❌ [Search API Error]:", err.message);
       res.status(500).json({ message: "Internal Server Error" });

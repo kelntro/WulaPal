@@ -5,6 +5,7 @@ const MessageSchema = new mongoose.Schema({
   to: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   type: { type: String, enum: ["text", "file"], default: "text" },
   content: { type: String, required: true },
+  seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   timestamp: { type: Date, default: Date.now },
 });
 
