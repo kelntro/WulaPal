@@ -91,6 +91,15 @@ const MessageUserScreen = () => {
         type: msg.type || (msg.content.match(/\.(jpg|jpeg|png|gif)$/i) ? 'file' : 'text')
       }));
       setMessages(normalized);
+
+      // Mark messages as read
+      if (currentUserId) {
+        await fetch(`${API_BASE_URL}/api/messages/mark-read/${userId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: currentUserId })
+        });
+      }
       
     } catch (err) {
       console.error('❌ Error fetching conversation:', err.message);
@@ -108,7 +117,8 @@ const MessageUserScreen = () => {
           toUserId: userId,
           fromUserId: currentUserId,
           content: message,
-          type: 'text'
+          type: 'text',
+          senderName: userName
         }),
       });
 

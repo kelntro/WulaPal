@@ -28,6 +28,8 @@ const HomeScreen = () => {
   const [userName, setUserName] = useState('');
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [user, setUser] = useState(null);
+  const [hasUnread, setHasUnread] = useState(false);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
   const fetchBalance = async (userId) => {
     try {
@@ -43,6 +45,26 @@ const HomeScreen = () => {
       }
     } catch (error) {
       console.error('❌ Error fetching balance:', error.message);
+    }
+  };
+
+  const checkUnreadMessages = async (userId) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/messages/unread-count/${userId}`);
+      if (res.data.total > 0) setHasUnread(true);
+      else setHasUnread(false);
+    } catch (err) {
+      console.error("❌ Failed to check unread messages:", err.message);
+    }
+  };
+
+  const checkUnreadNotifications = async (userId) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/member-notifications/${userId}`);
+      const hasUnread = res.data.some(notification => !notification.read);
+      setHasUnreadNotifications(hasUnread);
+    } catch (err) {
+      console.error("❌ Failed to check unread notifications:", err.message);
     }
   };
 
@@ -122,7 +144,9 @@ const HomeScreen = () => {
 
       await Promise.all([
         fetchBalance(parsedUser._id),
-        fetchContributions(parsedUser._id)
+        fetchContributions(parsedUser._id),
+        checkUnreadMessages(parsedUser._id),
+        checkUnreadNotifications(parsedUser._id)
       ]);
 
     } catch (error) {
@@ -141,7 +165,9 @@ const HomeScreen = () => {
       if (user?._id) {
         Promise.all([
           fetchBalance(user._id),
-          fetchContributions(user._id)
+          fetchContributions(user._id),
+          checkUnreadMessages(user._id),
+          checkUnreadNotifications(user._id)
         ]);
       }
     }, [user])
@@ -160,15 +186,36 @@ const HomeScreen = () => {
       {/* Header Icons */}
       <View style={styles.header}>
         <View style={styles.iconRow}>
-        <TouchableOpacity onPress={() => navigation.navigate('SearchScreen')}>
-          <Icon name="search" size={26} color="#3A6953" />
-        </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('GroupChats')}>
-            <Icon name="chatbubbles" size={26} color="#3A6953" />
+          <TouchableOpacity onPress={() => navigation.navigate('SearchScreen')}>
+            <Icon name="search" size={26} color="#3A6953" />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Notifications')}>
+          <TouchableOpacity onPress={() => navigation.navigate('GroupChats')} style={{ position: 'relative' }}>
+            <Icon name="chatbubbles" size={26} color="#3A6953" />
+            {hasUnread && (
+              <View style={{
+                position: 'absolute',
+                top: -2,
+                right: -2,
+                width: 10,
+                height: 10,
+                backgroundColor: 'red',
+                borderRadius: 5,
+              }} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ position: 'relative' }}>
             <Icon name="notifications" size={26} color="#3A6953" />
+            {hasUnreadNotifications && (
+              <View style={{
+                position: 'absolute',
+                top: -2,
+                right: -2,
+                width: 10,
+                height: 10,
+                backgroundColor: 'red',
+                borderRadius: 5,
+              }} />
+            )}
           </TouchableOpacity>
         </View>
       </View>

@@ -3,7 +3,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { HiArrowLeft } from "react-icons/hi";
-import SideMessageModal from "./SideMessageModal"; // Update import
+import SideMessageModal from "./SideMessageModal";
 
 const getLastActiveLabel = (timestamp) => {
   if (!timestamp) return "Offline";
@@ -35,15 +35,19 @@ const UserProfile = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    console.log("📌 useParams userId:", userId);
     fetchUser();
     fetchReviews();
   }, []);
 
   const fetchUser = async () => {
+    console.log("🔍 Fetching user data...");
     try {
       const res = await fetch(`http://localhost:5050/api/users/${userId}`);
+      console.log("📥 Response status:", res.status);
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
+      console.log("✅ User data received:", data);
       setUser(data);
     } catch (err) {
       console.error("❌ Error fetching user:", err.message);
@@ -57,6 +61,7 @@ const UserProfile = () => {
     try {
       const res = await fetch(`http://localhost:5050/api/reviews/${userId}`);
       const data = await res.json();
+      console.log("✅ Reviews loaded:", data);
       setReviews(data);
     } catch (err) {
       console.error("❌ Error fetching reviews:", err.message);
@@ -76,6 +81,8 @@ const UserProfile = () => {
       return null;
     }
 
+    console.log("📍 Parsed address:", parsed);
+
     return (
       <>
         {parsed.street && <p>Street: {parsed.street}</p>}
@@ -93,6 +100,7 @@ const UserProfile = () => {
 
     setSubmitting(true);
     try {
+      console.log("📝 Submitting review:", { rating, comment });
       const res = await fetch("http://localhost:5050/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,6 +113,7 @@ const UserProfile = () => {
       });
 
       if (!res.ok) throw new Error("Failed to submit review");
+      console.log("✅ Review submitted");
       setRating(0);
       setComment("");
       fetchReviews();
@@ -139,6 +148,7 @@ const UserProfile = () => {
                     : "/assets/Profile.jpg"
                 }
                 onError={(e) => {
+                  console.warn("⚠️ Failed to load profile image:", user?.profileImage);
                   e.target.onerror = null;
                   e.target.src = "/assets/Profile.jpg";
                 }}
@@ -146,7 +156,6 @@ const UserProfile = () => {
                 alt="Profile"
                 className="w-32 h-32 rounded-full border border-gray-300 mb-3 object-cover"
               />
-
               <h1 className="text-3xl font-bold text-[#285236] mb-1">{user.name}</h1>
               <p className="text-gray-500 italic mb-1">{getLastActiveLabel(user.lastActive)}</p>
               <p className="text-sm text-gray-600">{user.email}</p>
@@ -168,7 +177,6 @@ const UserProfile = () => {
               Message
             </button>
 
-            {/* REVIEW FORM */}
             {currentUser && currentUser._id !== userId && (
               <form onSubmit={submitReview} className="border-t pt-6 mt-6 mb-10">
                 <h2 className="text-xl font-semibold mb-2">Leave a Review</h2>
@@ -206,7 +214,6 @@ const UserProfile = () => {
               </form>
             )}
 
-            {/* REVIEWS LIST */}
             <div className="border-t pt-6 mt-6">
               <h2 className="text-xl font-semibold mb-4">User Reviews</h2>
               {reviews.length === 0 ? (
@@ -227,7 +234,6 @@ const UserProfile = () => {
         )}
       </div>
 
-      {/* Replace the old MessageUser panel with the new SideMessageModal */}
       <SideMessageModal
         isOpen={showMessage}
         onClose={() => setShowMessage(false)}

@@ -132,7 +132,7 @@ const WalletScreen = () => {
             </View>
             <View style={styles.summaryBox}>
               <Feather name="trending-up" size={20} color="#3A6953" />
-              <Text style={styles.summaryLabel}>Contribution</Text>
+              <Text style={styles.summaryLabel}>Transfer</Text>
               <Text style={styles.summaryValue}>₱{contribution.toLocaleString()}</Text>
             </View>
           </View>
@@ -171,13 +171,16 @@ const WalletScreen = () => {
                     {item.type === 'deposit' && 'Deposited'}
                     {item.type === 'receive' && 'Received'}
                     {item.type === 'transfer' && 'Transfer'}
+                    {item.type === 'refund' && 'Refund'}
+                    {item.type === 'payout' && 'Payout'}
+                    {item.type === 'payout_share' && 'Payout Share'}
                   </Text>
                   <Text style={styles.contributionDate}>
                     {new Date(item.timestamp || item.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
                 <Text style={styles.contributionAmount}>
-                  {item.type === 'deposit' || item.type === 'receive' ? '+' : '-'} ₱{(item.amount || 0).toLocaleString()}
+                  {(item.type === 'deposit' || item.type === 'receive' || item.type === 'refund' || item.type === 'payout' || item.type === 'payout_share') ? '+' : '-'} ₱{(item.amount || 0).toLocaleString()}
                 </Text>
               </View>
             ))

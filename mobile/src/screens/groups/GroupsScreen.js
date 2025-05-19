@@ -118,11 +118,16 @@ const GroupsScreen = () => {
   // Filter groups based on search text and status
   const filteredGroups =
     selectedTab === 'your'
-      ? userGroups.filter(group => {
-          const matchesSearch = group.name.toLowerCase().includes(searchText.toLowerCase());
-          const matchesStatus = statusFilter === 'all' || group.status === statusFilter;
-          return matchesSearch && matchesStatus;
-        })
+      ? userGroups
+          .filter(group => {
+            const matchesSearch = group.name.toLowerCase().includes(searchText.toLowerCase());
+            const matchesStatus = statusFilter === 'all' || group.status === statusFilter;
+            return matchesSearch && matchesStatus;
+          })
+          .sort((a, b) => {
+            const statusOrder = { active: 0, open: 1, completed: 2 };
+            return statusOrder[a.status] - statusOrder[b.status];
+          })
       : availableGroups.filter(group =>
           group.name.toLowerCase().includes(searchText.toLowerCase()),
         );
@@ -283,7 +288,7 @@ const baseUrl = API_BASE_URL.replace(/\/$/, '');
 // Build imageUrl
 const imageUrl = group.image
   ? (group.image.startsWith('http')
-      ? group.image.replace(/^http:\/\/[^\/]+/, baseUrl) // 👈 Replace any base IP:PORT to your env base
+      ? group.image.replace(/^http:\/\/[^\/]+/, baseUrl)
       : `${baseUrl}/${group.image.replace(/\\/g, '/')}`)
   : 'https://via.placeholder.com/150';
 
@@ -296,6 +301,20 @@ console.log('🌐 Final Image URL:', imageUrl);
     return id.toString() === currentUserId;
   });  
 
+  // Get status color based on group status
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'open':
+        return '#4CAF50'; // Green
+      case 'active':
+        return '#2196F3'; // Blue
+      case 'completed':
+        return '#9E9E9E'; // Grey
+      default:
+        return '#9E9E9E';
+    }
+  };
+
   return (
     <View style={styles.card}>
       <Image source={{uri: imageUrl}} style={styles.cardImage} 
@@ -303,7 +322,9 @@ console.log('🌐 Final Image URL:', imageUrl);
             onLoad={() => console.log('✅ Image loaded successfully:', imageUrl)}
             />
       <View style={styles.cardContent}>
-        <Text style={styles.groupTitle}>{group.name}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.groupTitle}>{group.name}</Text>
+        </View>
         <View style={styles.infoRow}>
           <Ionicons
             name="people-outline"
@@ -315,36 +336,43 @@ console.log('🌐 Final Image URL:', imageUrl);
           <Text style={styles.infoText}>
             {group.slots - group.members.length} / {group.slots} Slots Available
           </Text>
-                  </View>
-                  <View style={styles.infoRow}>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={16}
-                      color="#285236"
-                      style={styles.infoIcon}
-                    />
+        </View>
+        <View style={styles.infoRow}>
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color="#285236"
+            style={styles.infoIcon}
+          />
 
-                    <Text style={styles.infoText}>
-                      ₱{group.contributionAmount} {group.frequency}
-                    </Text>
-                  </View>
+          <Text style={styles.infoText}>
+            ₱{group.contributionAmount} {group.frequency}
+          </Text>
+        </View>
 
-                  <View style={styles.infoRow}>
-                    <Ionicons
-                      name="person-outline"
-                      size={16}
-                      color="#285236"
-                      style={styles.infoIcon}
-                    />
-                    <Text style={styles.handlerText}>
-                      Handler: <Text style={{color: '#3A6953'}}>{handlerName}</Text>
-                    </Text>
-                  </View>
-                  <View style={styles.descriptionWrapper}>
-            <Text style={styles.descriptionText} numberOfLines={2} ellipsizeMode="tail">
-              {group.description}
-            </Text>
-          </View>
+        <View style={styles.infoRow}>
+          <Ionicons
+            name="time-outline"
+            size={16}
+            color="#285236"
+            style={styles.infoIcon}
+          />
+          <Text style={styles.infoText}>
+            Status: <Text style={{color: getStatusColor(group.status)}}>{group.status.charAt(0).toUpperCase() + group.status.slice(1)}</Text>
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Ionicons
+            name="person-outline"
+            size={16}
+            color="#285236"
+            style={styles.infoIcon}
+          />
+          <Text style={styles.handlerText}>
+            Handler: <Text style={{color: '#3A6953'}}>{handlerName}</Text>
+          </Text>
+        </View>
 
 
         <View style={styles.avatars}>
@@ -598,6 +626,23 @@ const styles = StyleSheet.create({
   },
   selectedFilterText: {
     color: '#fff',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  statusText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

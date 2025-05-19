@@ -103,9 +103,6 @@ const TransactionsScreen = () => {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.sortButton}>
-          <Ionicons name="filter" size={22} color="#3A6953" />
-        </TouchableOpacity>
       </View>
 
       {loading ? (

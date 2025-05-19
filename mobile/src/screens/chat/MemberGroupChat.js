@@ -100,6 +100,8 @@ const MemberGroupChat = () => {
         sender: user._id,
         type: 'text',
         content: input,
+        senderName: user.name,
+        groupName: groupName
       }),
     });
 

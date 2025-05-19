@@ -152,6 +152,15 @@ const GroupDetailsScreen = ({ route }) => {
         </View>
 
         <View style={styles.infoRow}>
+          <Ionicons name="time-outline" size={18} color="#285236" style={styles.icon} />
+          <Text style={styles.infoText}>
+            Status: <Text style={{color: groupData?.status === 'open' ? '#4CAF50' : groupData?.status === 'active' ? '#2196F3' : '#9E9E9E'}}>
+              {groupData?.status?.charAt(0).toUpperCase() + groupData?.status?.slice(1) || 'N/A'}
+            </Text>
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
           <Ionicons name="person-outline" size={18} color="#285236" style={styles.icon} />
           <Text style={styles.infoText}>Handler: {handlerName}</Text>
         </View>
@@ -186,40 +195,49 @@ const GroupDetailsScreen = ({ route }) => {
 
         {isMember && (
           <>
-            <TouchableOpacity
-              style={[styles.joinButton, { backgroundColor: isPaying ? '#AAA' : '#285236' }]}
-              disabled={isPaying}
-              onPress={async () => {
-                try {
-                  setIsPaying(true);
-                  const userData = await AsyncStorage.getItem('user');
-                  const user = JSON.parse(userData);
-                  const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}/contribute-now`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: user._id }),
-                  });
-                  const data = await response.json();
+            {groupData?.status === 'completed' ? (
+              <TouchableOpacity
+                style={[styles.joinButton, { backgroundColor: '#6A8C73' }]}
+                disabled={true}
+              >
+                <Text style={styles.joinButtonText}>Group Completed</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.joinButton, { backgroundColor: isPaying ? '#AAA' : '#285236' }]}
+                disabled={isPaying}
+                onPress={async () => {
+                  try {
+                    setIsPaying(true);
+                    const userData = await AsyncStorage.getItem('user');
+                    const user = JSON.parse(userData);
+                    const response = await fetch(`${API_BASE_URL}/api/groups/${groupId}/contribute-now`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: user._id }),
+                    });
+                    const data = await response.json();
 
-                  const nextCycleDate = data.nextCycleDate && new Date(data.nextCycleDate).toLocaleDateString();
-                  if (data.success) {
-                    setModalMessage(`✅ ${data.message}\n\nNext contribution cycle starts on ${nextCycleDate}`);
-                  } else {
-                    setModalMessage(`${data.message || data.error}\n\n${nextCycleDate ? `Next cycle: ${nextCycleDate}` : ''}`);
+                    const nextCycleDate = data.nextCycleDate && new Date(data.nextCycleDate).toLocaleDateString();
+                    if (data.success) {
+                      setModalMessage(`✅ ${data.message}\n\nNext contribution cycle starts on ${nextCycleDate}`);
+                    } else {
+                      setModalMessage(`${data.message || data.error}\n\n${nextCycleDate ? `Next cycle: ${nextCycleDate}` : ''}`);
+                    }
+
+                    setModalVisible(true);
+                  } catch (err) {
+                    console.error("❌ Advance contribution failed:", err);
+                    setModalMessage("❌ Something went wrong while processing payment.");
+                    setModalVisible(true);
+                  } finally {
+                    setIsPaying(false);
                   }
-
-                  setModalVisible(true);
-                } catch (err) {
-                  console.error("❌ Advance contribution failed:", err);
-                  setModalMessage("❌ Something went wrong while processing payment.");
-                  setModalVisible(true);
-                } finally {
-                  setIsPaying(false);
-                }
-              }}
-            >
-              <Text style={styles.joinButtonText}>Pay ₱{contribution} Now</Text>
-            </TouchableOpacity>
+                }}
+              >
+                <Text style={styles.joinButtonText}>Pay ₱{contribution} Now</Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={[styles.joinButton, { backgroundColor: '#6A8C73', marginTop: 12 }]}
