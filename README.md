@@ -175,10 +175,5 @@ npx react-native doctor
 
 ---
 
-## License
-This project is licensed under the [MIT License](LICENSE).
-
----
-
 ## Author
-Developed by the WulaPal Capstone Team – 2025
+Developed by RAM_S Team – 2025
