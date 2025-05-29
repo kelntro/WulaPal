@@ -453,6 +453,7 @@ const RecentTransactions = () => {
               <th className="pb-3">Date</th>
               <th className="pb-3">Amount</th>
               <th className="pb-3">Status</th>
+              <th className="pb-3">Details</th>
             </tr>
           </thead>
           <tbody>
@@ -466,20 +467,27 @@ const RecentTransactions = () => {
                   {txn.type === "payout_share" && "Group Payout Share"}
                 </td>
                 <td className="py-3">
-  {new Date(txn.timestamp).toLocaleDateString()}{" "}
-  {new Date(txn.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-</td>
+                  {new Date(txn.timestamp).toLocaleDateString()}{" "}
+                  {new Date(txn.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </td>
                 <td className="py-3">₱{Number(txn.amount).toLocaleString()}</td>
                 <td className="py-3">
                   <span className="bg-[#EAE8C3] text-[#85830F] px-3 py-1 rounded-full text-sm">
                     {txn.status.charAt(0).toUpperCase() + txn.status.slice(1)}
                   </span>
                 </td>
+                <td className="py-3">
+                  {txn.type === "payout_share" && txn.metadata?.groupName ? (
+                    <span className="text-[#3A6953]">{txn.metadata.groupName}</span>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </td>
               </tr>
             ))}
             {transactions.length === 0 && (
               <tr>
-                <td colSpan="4" className="text-center py-5 text-gray-400">
+                <td colSpan="5" className="text-center py-5 text-gray-400">
                   No transactions yet.
                 </td>
               </tr>

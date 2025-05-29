@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -15,6 +15,8 @@ const TransferScreen = () => {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pendingTransfer, setPendingTransfer] = useState(null);
   const [validatingRecipient, setValidatingRecipient] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [transferDetails, setTransferDetails] = useState(null);
 
   const validateRecipient = async (id) => {
     if (!id) return false;
@@ -87,8 +89,17 @@ const TransferScreen = () => {
     setLoading(true);
     try {
       const response = await axios.post(`${API_BASE_URL}/api/wallet/transfer`, pendingTransfer);
-      Alert.alert("Success", "Transfer completed successfully.");
-      navigation.goBack();
+      
+      // Set transfer details for receipt
+      setTransferDetails({
+        amount: pendingTransfer.amount,
+        recipientId: pendingTransfer.recipientId,
+        timestamp: new Date().toISOString(),
+        referenceId: response.data.referenceId || `transfer-${Date.now()}`
+      });
+
+      // Show receipt modal
+      setShowReceipt(true);
     } catch (error) {
       console.error("[TRANSFER] Error:", error.response?.data || error.message);
       Alert.alert("Transfer Failed", error.response?.data?.message || "An error occurred.");
@@ -97,6 +108,69 @@ const TransferScreen = () => {
       setPendingTransfer(null);
     }
   };
+
+  const ReceiptModal = () => (
+    <Modal
+      visible={showReceipt}
+      transparent={true}
+      animationType="fade"
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.receiptContainer}>
+          <View style={styles.receiptHeader}>
+            <Text style={styles.receiptTitle}>Transfer Receipt</Text>
+            <Text style={styles.receiptSubtitle}>Transaction Successful</Text>
+          </View>
+
+          <View style={styles.receiptDetails}>
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Amount</Text>
+              <Text style={styles.receiptValue}>₱{transferDetails?.amount.toLocaleString()}</Text>
+            </View>
+
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Recipient ID</Text>
+              <Text style={styles.receiptValue}>{transferDetails?.recipientId}</Text>
+            </View>
+
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Date & Time</Text>
+              <Text style={styles.receiptValue}>
+                {transferDetails?.timestamp ? new Date(transferDetails.timestamp).toLocaleString() : ''}
+              </Text>
+            </View>
+
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Reference ID</Text>
+              <Text style={styles.receiptValue}>{transferDetails?.referenceId}</Text>
+            </View>
+
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Status</Text>
+              <Text style={[styles.receiptValue, styles.statusText]}>Completed</Text>
+            </View>
+          </View>
+
+          <View style={styles.receiptFooter}>
+            <View style={styles.securityInfo}>
+              <Icon name="security" size={16} color="#666" />
+              <Text style={styles.securityText}>Secure Transaction</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.doneButton}
+              onPress={() => {
+                setShowReceipt(false);
+                navigation.goBack();
+              }}
+            >
+              <Text style={styles.doneButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -178,6 +252,8 @@ const TransferScreen = () => {
         onSuccess={executeTransfer}
         userId={pendingTransfer?.senderId}
       />
+
+      <ReceiptModal />
     </SafeAreaView>
   );
 };
@@ -294,6 +370,83 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
     marginLeft: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  receiptContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  receiptHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  receiptTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3A6953',
+    marginBottom: 8,
+  },
+  receiptSubtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+  receiptDetails: {
+    marginBottom: 24,
+  },
+  receiptRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+  },
+  receiptLabel: {
+    fontSize: 16,
+    color: '#666',
+  },
+  receiptValue: {
+    fontSize: 16,
+    color: '#3A6953',
+    fontWeight: '600',
+  },
+  statusText: {
+    color: '#4CAF50',
+  },
+  receiptFooter: {
+    alignItems: 'center',
+  },
+  securityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  securityText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
+  },
+  doneButton: {
+    backgroundColor: '#3A6953',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  doneButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

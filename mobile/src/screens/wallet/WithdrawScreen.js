@@ -32,6 +32,8 @@ const WithdrawScreen = () => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [showPinModal, setShowPinModal] = useState(false);
   const [pendingWithdrawal, setPendingWithdrawal] = useState(null);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [withdrawalDetails, setWithdrawalDetails] = useState(null);
 
   const showModal = (type, message) => {
     setModalType(type);
@@ -119,7 +121,18 @@ const WithdrawScreen = () => {
     setLoading(true);
     try {
       const response = await axios.post(`${API_BASE_URL}/api/wallet/withdraw`, pendingWithdrawal);
-      showModal('success', response.data.message || 'Withdrawal completed successfully!');
+      
+      // Set withdrawal details for receipt
+      setWithdrawalDetails({
+        amount: pendingWithdrawal.amount,
+        mobileNumber: `+63${pendingWithdrawal.mobileNumber}`,
+        timestamp: new Date().toISOString(),
+        referenceId: response.data.referenceId || `withdraw-${Date.now()}`,
+        channel: pendingWithdrawal.channel
+      });
+
+      // Show receipt modal
+      setShowReceipt(true);
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Something went wrong. Please try again.';
       showModal('error', errorMessage);
@@ -197,6 +210,77 @@ const WithdrawScreen = () => {
             </Text>
           </TouchableOpacity>
         </Animated.View>
+      </View>
+    </Modal>
+  );
+
+  const ReceiptModal = () => (
+    <Modal
+      visible={showReceipt}
+      transparent={true}
+      animationType="fade"
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.receiptContainer}>
+          <View style={styles.receiptHeader}>
+            <Text style={styles.receiptTitle}>Withdrawal Receipt</Text>
+            <Text style={styles.receiptSubtitle}>Transaction Successful</Text>
+          </View>
+
+          <View style={styles.receiptDetails}>
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Amount</Text>
+              <Text style={styles.receiptValue}>₱{withdrawalDetails?.amount.toLocaleString()}</Text>
+            </View>
+
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Mobile Number</Text>
+              <Text style={styles.receiptValue}>{withdrawalDetails?.mobileNumber}</Text>
+            </View>
+
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Date & Time</Text>
+              <Text style={styles.receiptValue}>
+                {withdrawalDetails?.timestamp ? new Date(withdrawalDetails.timestamp).toLocaleString() : ''}
+              </Text>
+            </View>
+
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Reference ID</Text>
+              <Text style={styles.receiptValue}>{withdrawalDetails?.referenceId}</Text>
+            </View>
+
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Channel</Text>
+              <Text style={styles.receiptValue}>
+                {withdrawalDetails?.channel === 'PH_GCASH' ? 'GCash' :
+                 withdrawalDetails?.channel === 'PH_MAYA' ? 'Maya' : 'Bank Transfer'}
+              </Text>
+            </View>
+
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Status</Text>
+              <Text style={[styles.receiptValue, styles.statusText]}>Completed</Text>
+            </View>
+          </View>
+
+          <View style={styles.receiptFooter}>
+            <View style={styles.securityInfo}>
+              <Icon name="security" size={16} color="#666" />
+              <Text style={styles.securityText}>Secure Transaction</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.doneButton}
+              onPress={() => {
+                setShowReceipt(false);
+                navigation.goBack();
+              }}
+            >
+              <Text style={styles.doneButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </Modal>
   );
@@ -297,6 +381,8 @@ const WithdrawScreen = () => {
         onSuccess={executeWithdrawal}
         userId={pendingWithdrawal?.userId}
       />
+
+      <ReceiptModal />
     </SafeAreaView>
   );
 };
@@ -502,6 +588,76 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
     marginLeft: 4,
+  },
+  receiptContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  receiptHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  receiptTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3A6953',
+    marginBottom: 8,
+  },
+  receiptSubtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+  receiptDetails: {
+    marginBottom: 24,
+  },
+  receiptRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+  },
+  receiptLabel: {
+    fontSize: 16,
+    color: '#666',
+  },
+  receiptValue: {
+    fontSize: 16,
+    color: '#3A6953',
+    fontWeight: '600',
+  },
+  statusText: {
+    color: '#4CAF50',
+  },
+  receiptFooter: {
+    alignItems: 'center',
+  },
+  securityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  securityText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
+  },
+  doneButton: {
+    backgroundColor: '#3A6953',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  doneButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

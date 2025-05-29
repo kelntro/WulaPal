@@ -21,6 +21,8 @@ const NotificationScreen = () => {
   const [joiningNotification, setJoiningNotification] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState("");
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [selectedContribution, setSelectedContribution] = useState(null);
 
   const handleFilterChange = (filter, date = null) => {
     setSelectedFilter(filter);
@@ -111,6 +113,10 @@ const NotificationScreen = () => {
             },
           ]
         );
+      } else if (item.type === "contribution_processed") {
+        // Show receipt modal for contribution notifications
+        setSelectedContribution(item);
+        setShowReceiptModal(true);
       }
     };    
 
@@ -120,12 +126,12 @@ const NotificationScreen = () => {
         onPress={handlePress}
         onLongPress={() => deleteNotification(item._id)}
       >
-<Text style={styles.notificationText}>
-  {item.message}
-  {item.cycle !== undefined && item.cycle !== null
-    ? ` (Cycle ${item.cycle + 1})`
-    : ""}
-</Text>
+        <Text style={styles.notificationText}>
+          {item.message}
+          {item.cycle !== undefined && item.cycle !== null
+            ? ` (Cycle ${item.cycle + 1})`
+            : ""}
+        </Text>
         {!item.read && <View style={styles.unreadDot} />}
       </TouchableOpacity>
     );
@@ -440,6 +446,76 @@ const NotificationScreen = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Receipt Modal */}
+      <Modal
+        visible={showReceiptModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowReceiptModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.receiptContainer}>
+            <View style={styles.receiptHeader}>
+              <Text style={styles.receiptTitle}>Contribution Receipt</Text>
+              <Text style={styles.receiptSubtitle}>Transaction Successful</Text>
+            </View>
+
+            {selectedContribution && (
+              <View style={styles.receiptDetails}>
+                <View style={styles.receiptRow}>
+                  <Text style={styles.receiptLabel}>Amount</Text>
+                  <Text style={styles.receiptValue}>
+                    {selectedContribution.message.match(/₱(\d+(\.\d{2})?)/)?.[0] || "N/A"}
+                  </Text>
+                </View>
+
+                <View style={styles.receiptRow}>
+                  <Text style={styles.receiptLabel}>Group Name</Text>
+                  <Text style={styles.receiptValue}>
+                    {selectedContribution.message.split('"')[1] || "N/A"}
+                  </Text>
+                </View>
+
+                <View style={styles.receiptRow}>
+                  <Text style={styles.receiptLabel}>Date & Time</Text>
+                  <Text style={styles.receiptValue}>
+                    {new Date(selectedContribution.date).toLocaleString()}
+                  </Text>
+                </View>
+
+                {selectedContribution.cycle !== undefined && (
+                  <View style={styles.receiptRow}>
+                    <Text style={styles.receiptLabel}>Cycle</Text>
+                    <Text style={styles.receiptValue}>
+                      {selectedContribution.cycle + 1}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.receiptRow}>
+                  <Text style={styles.receiptLabel}>Status</Text>
+                  <Text style={[styles.receiptValue, styles.statusText]}>Completed</Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.receiptFooter}>
+              <View style={styles.securityInfo}>
+                <Icon name="security" size={16} color="#666" />
+                <Text style={styles.securityText}>Secure Transaction</Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.doneButton}
+                onPress={() => setShowReceiptModal(false)}
+              >
+                <Text style={styles.doneButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -520,6 +596,83 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: "#3A6953",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  receiptContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  receiptHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  receiptTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3A6953',
+    marginBottom: 8,
+  },
+  receiptSubtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+  receiptDetails: {
+    marginBottom: 24,
+  },
+  receiptRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+  },
+  receiptLabel: {
+    fontSize: 16,
+    color: '#666',
+  },
+  receiptValue: {
+    fontSize: 16,
+    color: '#3A6953',
+    fontWeight: '600',
+  },
+  statusText: {
+    color: '#4CAF50',
+  },
+  receiptFooter: {
+    alignItems: 'center',
+  },
+  securityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  securityText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
+  },
+  doneButton: {
+    backgroundColor: '#3A6953',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  doneButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

@@ -77,19 +77,26 @@ const AccountBalanceCard = () => {
       if (!Array.isArray(transactions)) throw new Error("Invalid transactions data received");
   
       let totalIncome = 0, totalExpenses = 0, deposits = 0, withdrawals = 0, transfers = 0, receives = 0;
+      let payoutShares = [];
+      
       transactions.forEach((txn) => {
         if (!txn.type || typeof txn.amount !== 'number') return;
         if (txn.type === "deposit") { deposits += txn.amount; totalIncome += txn.amount; }
         if (txn.type === "withdraw") { withdrawals += txn.amount; totalExpenses += txn.amount; }
         if (txn.type === "transfer") { transfers += txn.amount; totalExpenses += txn.amount; }
         if (txn.type === "receive") { receives += txn.amount; totalIncome += txn.amount; }
+        if (txn.type === "payout_share") { 
+          receives += txn.amount; 
+          totalIncome += txn.amount;
+          payoutShares.push(txn);
+        }
       });
   
       const doc = new jsPDF();
-      doc.setFont("helvetica", "normal"); // 🧠 Fixes ₱ encoding issue
+      doc.setFont("helvetica", "normal");
   
       const logoBase64 = await loadLogoBase64(`${window.location.origin}/assets/4.png`);
-      doc.addImage(logoBase64, 'PNG', -15, 10, 110, 20); // Top-left logo
+      doc.addImage(logoBase64, 'PNG', -15, 10, 110, 20);
 
       doc.setFontSize(16);
       doc.setTextColor(58, 105, 83);
@@ -135,6 +142,30 @@ const AccountBalanceCard = () => {
         styles: { fontSize: 9, cellPadding: 4 },
         columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 60, halign: 'right' } }
       });
+
+      // Payout Shares Table
+      if (payoutShares.length > 0) {
+        doc.setFontSize(14);
+        doc.setTextColor(58, 105, 83);
+        doc.text("Payout Shares", 20, doc.lastAutoTable.finalY + 15);
+        autoTable(doc, {
+          startY: doc.lastAutoTable.finalY + 20,
+          head: [["Date", "Group Name", "Amount"]],
+          body: payoutShares.map(share => [
+            new Date(share.timestamp).toLocaleDateString(),
+            share.metadata?.groupName || 'N/A',
+            `PHP ${share.amount.toLocaleString()}`
+          ]),
+          theme: 'grid',
+          headStyles: { fillColor: [58, 105, 83] },
+          styles: { fontSize: 9, cellPadding: 4 },
+          columnStyles: {
+            0: { cellWidth: 30 }, // Date
+            1: { cellWidth: 70 }, // Group Name
+            2: { cellWidth: 40, halign: 'right' } // Amount
+          }
+        });
+      }
   
       // Transaction History Table
       doc.setFontSize(14);

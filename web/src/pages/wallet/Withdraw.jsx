@@ -16,6 +16,8 @@ export default function PaymentOption() {
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState("error");
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [withdrawalDetails, setWithdrawalDetails] = useState(null);
 
   const handleDepositChange = (e) => {
     const amount = e.target.value;
@@ -110,8 +112,25 @@ export default function PaymentOption() {
         throw new Error(data.message || "Withdrawal failed");
       }
 
-      // Directly navigate to success page on successful withdrawal
-      navigate("/wallet/success-withdraw");
+      // Set withdrawal details for receipt
+      setWithdrawalDetails({
+        amount: parseFloat(depositAmount),
+        mobileNumber: `+63${mobileNumber}`,
+        timestamp: new Date().toISOString(),
+        referenceId: data.referenceId || `withdraw-${Date.now()}`,
+        channel: "GCash"
+      });
+
+      setModalMessage("Withdrawal successful!");
+      setModalType("success");
+      setShowModal(true);
+      
+      // Show receipt after a short delay
+      setTimeout(() => {
+        setShowModal(false);
+        setShowReceipt(true);
+      }, 1500);
+
     } catch (error) {
       setModalMessage("Withdrawal failed: " + error.message);
       setModalType("error");
@@ -222,7 +241,84 @@ export default function PaymentOption() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Receipt Modal */}
+      {showReceipt && withdrawalDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 relative">
+            <button
+              onClick={() => {
+                setShowReceipt(false);
+                navigate("/wallet");
+              }}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="text-2xl text-[#3A6953] font-bold mb-2">Withdrawal Receipt</div>
+              <div className="text-sm text-gray-500">Transaction Successful</div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">Amount</span>
+                <span className="text-[#3A6953] font-semibold">₱{withdrawalDetails.amount.toLocaleString()}</span>
+              </div>
+              
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">GCash Number</span>
+                <span className="text-[#3A6953] font-semibold">{withdrawalDetails.mobileNumber}</span>
+              </div>
+
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">Date & Time</span>
+                <span className="text-[#3A6953] font-semibold">
+                  {new Date(withdrawalDetails.timestamp).toLocaleString()}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">Reference ID</span>
+                <span className="text-[#3A6953] font-semibold text-sm">
+                  {withdrawalDetails.referenceId}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">Channel</span>
+                <span className="text-[#3A6953] font-semibold">{withdrawalDetails.channel}</span>
+              </div>
+
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">Status</span>
+                <span className="text-green-600 font-semibold">Completed</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <button
+                onClick={() => {
+                  setShowReceipt(false);
+                  navigate("/wallet");
+                }}
+                className="bg-[#3A6953] text-white px-6 py-2 rounded-md hover:bg-[#2d5342] transition-colors"
+              >
+                Done
+              </button>
+            </div>
+
+            <div className="mt-6 text-center">
+              <div className="text-gray-500 text-sm flex items-center justify-center">
+                <IoIosLock className="mr-1" />
+                Secure Transaction
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Existing Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 relative">

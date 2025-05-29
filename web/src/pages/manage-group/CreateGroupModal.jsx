@@ -39,39 +39,15 @@ const CreateGroupModal = ({ onClose }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [warning, setWarning] = useState(null);
-
-  useEffect(() => {
-    const checkActiveGroups = async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) return;
-
-        const response = await fetch(`http://localhost:5050/api/organizer-groups?organizerId=${user.name}`);
-        const groups = await response.json();
-        
-        const activeGroups = groups.filter(g => g.status === "open" || g.status === "active");
-        
-        if (user.plan === "Free" && activeGroups.length >= 1) {
-          setWarning("You've reached your Free plan limit of 1 active group. Upgrade to create more groups.");
-        } else if (user.plan === "Basic" && activeGroups.length >= 4) {
-          setWarning("You're approaching your Basic plan limit of 5 active groups. Consider upgrading to Pro for unlimited groups.");
-        }
-      } catch (err) {
-        console.error("Failed to check active groups:", err);
-      }
-    };
-
-    checkActiveGroups();
-  }, []);
 
   // Handle image selection
-const handleImageUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) {
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
       setImage(file);
-  }
-};
+    }
+  };
+
   // Handle image selection
   const uploadImage = async (file) => {
     if (!file) return ""; // ✅ Ensure a file is selected
@@ -80,23 +56,23 @@ const handleImageUpload = (event) => {
     formData.append("image", file);
 
     try {
-        const response = await fetch("http://localhost:5050/api/upload-image", {
-            method: "POST",
-            body: formData,
-        });
+      const response = await fetch("http://localhost:5050/api/upload-image", {
+        method: "POST",
+        body: formData,
+      });
 
-        const data = await response.json();
-        if (!data.url) throw new Error("Image upload failed.");
+      const data = await response.json();
+      if (!data.url) throw new Error("Image upload failed.");
 
-        console.log("📤 Uploaded image URL:", data.url); // ✅ Log the image URL
-        return data.url; // ✅ Return the uploaded image URL
+      console.log("📤 Uploaded image URL:", data.url); // ✅ Log the image URL
+      return data.url; // ✅ Return the uploaded image URL
     } catch (error) {
-        console.error("❌ Image upload failed:", error);
-        return ""; // ✅ Return an empty string if upload fails
+      console.error("❌ Image upload failed:", error);
+      return ""; // ✅ Return an empty string if upload fails
     }
-};
+  };
 
-const [frequency, setFrequency] = useState("Weekly");
+  const [frequency, setFrequency] = useState("Weekly");
 
   // Handle form submission
   const handleSubmit = async (event) => {
@@ -104,65 +80,65 @@ const [frequency, setFrequency] = useState("Weekly");
 
     if (!groupName || !contributionAmount || !slots || !description || !frequency) {
       setError("All fields are required.");
-        return;
+      return;
     }
 
     setLoading(true);
     setError(null);
 
     try {
-        console.log("🔹 Uploading image...");
-        const imageUrl = image ? await uploadImage(image) : "";
+      console.log("🔹 Uploading image...");
+      const imageUrl = image ? await uploadImage(image) : "";
 
-        if (image && !imageUrl) {
-            throw new Error("Image upload failed. Please try again.");
-        }
+      if (image && !imageUrl) {
+        throw new Error("Image upload failed. Please try again.");
+      }
 
-        const user = JSON.parse(localStorage.getItem("user"));
-        const organizerName = user?.name || "Unknown Organizer";
-        if (!organizerName) {
-            throw new Error("Organizer name not found. Please log in again.");
-        }
-        const frequencyMap = {
-          "Weekly": 300,        // 5 minutes
-          "Bi-Weekly": 600,     // 10 minutes
-          "Monthly": 900        // 15 minutes
-        };
-        
-        const payload = {
-            name: groupName,
-            contributionAmount: parseFloat(contributionAmount),
-            frequency: frequencyMap[frequency] * 1e6,
-            requiredMembers: parseInt(slots),
-            slots: parseInt(slots),
-            description,
-            handler: organizerName,
-            image: imageUrl,
-        };
+      const user = JSON.parse(localStorage.getItem("user"));
+      const organizerName = user?.name || "Unknown Organizer";
+      if (!organizerName) {
+        throw new Error("Organizer name not found. Please log in again.");
+      }
+      const frequencyMap = {
+        "Weekly": 300,        // 5 minutes
+        "Bi-Weekly": 600,     // 10 minutes
+        "Monthly": 900        // 15 minutes
+      };
+      
+      const payload = {
+        name: groupName,
+        contributionAmount: parseFloat(contributionAmount),
+        frequency: frequencyMap[frequency] * 1e6,
+        requiredMembers: parseInt(slots),
+        slots: parseInt(slots),
+        description,
+        handler: organizerName,
+        image: imageUrl,
+      };
 
-        console.log("📤 Sending request to backend:", payload);
+      console.log("📤 Sending request to backend:", payload);
 
-        const response = await fetch("http://localhost:5050/api/create-group", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
+      const response = await fetch("http://localhost:5050/api/create-group", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-        const data = await response.json();
-        console.log("📥 Response from backend:", data);
+      const data = await response.json();
+      console.log("📥 Response from backend:", data);
 
-        if (!response.ok) {
-            throw new Error(data.error || "Failed to create group.");
-        }
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create group.");
+      }
 
-        setShowSuccessModal(true);
+      setShowSuccessModal(true);
     } catch (err) {
-        console.error("❌ Error in frontend:", err.message);
-        setError(err.message);
+      console.error("❌ Error in frontend:", err.message);
+      setError(err.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
   const handleSuccessClose = () => {
     setShowSuccessModal(false);
@@ -223,40 +199,39 @@ const [frequency, setFrequency] = useState("Weekly");
             </div>
 
             <div className="flex items-center">
-            <label className="w-1/3 text-[#3A6953] font-medium">Frequency*</label>
-            <select
-              value={frequency}
-              onChange={(e) => setFrequency(e.target.value)}
-              className="w-2/3 p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#99C6A9]"
-            >
-              <option value="Weekly">Weekly</option>
-              <option value="Bi-Weekly">Bi-Weekly</option>
-              <option value="Monthly">Monthly</option>
-            </select>
-          </div>
+              <label className="w-1/3 text-[#3A6953] font-medium">Frequency*</label>
+              <select
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value)}
+                className="w-2/3 p-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#99C6A9]"
+              >
+                <option value="Weekly">Weekly</option>
+                <option value="Bi-Weekly">Bi-Weekly</option>
+                <option value="Monthly">Monthly</option>
+              </select>
+            </div>
 
-          <div className="flex flex-col space-y-1 w-full">
-    <div className="flex items-center">
-      <label className="w-1/3 text-[#3A6953] font-medium">Open Slots*</label>
-      <input 
-        type="number" 
-        placeholder="Min. 2, Max. 12 Slots" 
-        value={slots}
-        onChange={(e) => setSlots(e.target.value)}
-        min={2}
-        max={12}
-        className={`w-2/3 p-3 border rounded-lg focus:outline-none focus:ring-1 ${
-          slots && (slots < 2 || slots > 12)
-            ? 'border-red-500 focus:ring-red-500'
-            : 'focus:ring-[#99C6A9]'
-        }`}
-      />
-    </div>
-    {slots && (slots < 2 || slots > 12) && (
-      <p className="text-red-500 text-sm ml-[33%]">Slots must be between 2 and 12.</p>
-    )}
-  </div>
-
+            <div className="flex flex-col space-y-1 w-full">
+              <div className="flex items-center">
+                <label className="w-1/3 text-[#3A6953] font-medium">Open Slots*</label>
+                <input 
+                  type="number" 
+                  placeholder="Min. 2, Max. 12 Slots" 
+                  value={slots}
+                  onChange={(e) => setSlots(e.target.value)}
+                  min={2}
+                  max={12}
+                  className={`w-2/3 p-3 border rounded-lg focus:outline-none focus:ring-1 ${
+                    slots && (slots < 2 || slots > 12)
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'focus:ring-[#99C6A9]'
+                  }`}
+                />
+              </div>
+              {slots && (slots < 2 || slots > 12) && (
+                <p className="text-red-500 text-sm ml-[33%]">Slots must be between 2 and 12.</p>
+              )}
+            </div>
 
             <div className="flex items-center">
               <label className="w-1/3 text-[#3A6953] font-medium">Description*</label>
@@ -285,11 +260,6 @@ const [frequency, setFrequency] = useState("Weekly");
                 {loading ? "Creating..." : "Create"}
               </button>
             </div>
-            {warning && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700">
-                {warning}
-              </div>
-            )}
           </form>
         </div>
       </div>

@@ -18,6 +18,8 @@ const PaluwaganGroups = () => {
   const navigate = useNavigate();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [missingFields, setMissingFields] = useState([]);
+  const [showPlanLimitModal, setShowPlanLimitModal] = useState(false);
+  const [planLimitMessage, setPlanLimitMessage] = useState("");
 
   const socket = io(SERVER_URL, {
     transports: ["websocket", "polling"],
@@ -113,6 +115,43 @@ const PaluwaganGroups = () => {
       group.description?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleCreateGroupClick = async () => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      const response = await fetch(`http://localhost:5050/api/users/${storedUser._id}`);
+      const freshUser = await response.json();
+
+      localStorage.setItem("user", JSON.stringify(freshUser));
+      const missing = getMissingProfileFields(freshUser);
+
+      if (missing.length > 0) {
+        setMissingFields(missing);
+        setShowProfileModal(true);
+        return;
+      }
+
+      // Check active groups count
+      const groupsResponse = await fetch(`http://localhost:5050/api/organizer-groups?organizerId=${freshUser.name}`);
+      const groups = await groupsResponse.json();
+      const activeGroups = groups.filter(g => g.status === "open" || g.status === "active");
+
+      if (freshUser.plan === "Free" && activeGroups.length >= 1) {
+        setPlanLimitMessage("You've reached your Free plan limit of 1 active group. Please upgrade to create more groups.");
+        setShowPlanLimitModal(true);
+        return;
+      } else if (freshUser.plan === "Basic" && activeGroups.length >= 5) {
+        setPlanLimitMessage("You've reached your Basic plan limit of 5 active groups. Please upgrade to Pro for unlimited groups.");
+        setShowPlanLimitModal(true);
+        return;
+      }
+
+      setShowModal(true);
+    } catch (err) {
+      console.error("❌ Failed to fetch updated user profile:", err);
+      alert("Unable to verify your profile. Please try again later.");
+    }
+  };
+
   return (
     <div className="p-2 sm:ml-[90px]">
       <div className="flex justify-between items-center mb-4">
@@ -142,27 +181,7 @@ const PaluwaganGroups = () => {
         {/* Buttons */}
         <div className="flex space-x-4 ml-6">
           <button
-            onClick={async () => {
-              try {
-                const storedUser = JSON.parse(localStorage.getItem("user"));
-                const response = await fetch(`http://localhost:5050/api/users/${storedUser._id}`);
-                const freshUser = await response.json();
-
-                localStorage.setItem("user", JSON.stringify(freshUser));
-                const missing = getMissingProfileFields(freshUser);
-
-                if (missing.length > 0) {
-                  setMissingFields(missing);
-                  setShowProfileModal(true);
-                  return;
-                }
-
-                setShowModal(true);
-              } catch (err) {
-                console.error("❌ Failed to fetch updated user profile:", err);
-                alert("Unable to verify your profile. Please try again later.");
-              }
-            }}
+            onClick={handleCreateGroupClick}
             className="w-[230px] bg-[#3A6953] text-white px-4 py-2 rounded-full shadow-md flex items-center justify-center space-x-2 hover:bg-[#6A8C73] transition"
           >
             <FiPlus className="text-white text-lg" />
@@ -178,8 +197,6 @@ const PaluwaganGroups = () => {
           </button>
         </div>
       </div>
-
-
 
       {/* Create Group Modal */}
       {showModal && (
@@ -201,6 +218,40 @@ const PaluwaganGroups = () => {
         }}
         onCancel={() => setShowProfileModal(false)}
       />
+
+      {/* Plan Limit Modal */}
+      {showPlanLimitModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm z-[60]">
+          <div className="bg-white p-8 rounded-lg shadow-lg w-[400px] border border-gray-300 text-center">
+            <div className="mb-4">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto">
+                <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-[#3A6953] mb-2">Plan Limit Reached</h3>
+            <p className="text-gray-600 mb-6">{planLimitMessage}</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setShowPlanLimitModal(false)}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowPlanLimitModal(false);
+                  navigate("/purchase/subscription");
+                }}
+                className="px-6 py-2 bg-[#6A8C73] text-white rounded-lg shadow-md hover:bg-[#3A6953]"
+              >
+                Upgrade Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Groups Grid */}
       <div className="flex flex-wrap justify-center gap-[20px] mr-[30px]">
