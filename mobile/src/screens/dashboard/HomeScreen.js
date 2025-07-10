@@ -10,7 +10,7 @@ import {
   Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import {Dimensions} from 'react-native';
@@ -28,35 +28,49 @@ const HomeScreen = () => {
   const [userName, setUserName] = useState('');
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [user, setUser] = useState(null);
+  const [hasUnread, setHasUnread] = useState(false);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
-
-  const fetchDashboardData = async () => {
+  const fetchBalance = async (userId) => {
     try {
-      const storedUser = await AsyncStorage.getItem('user');
-      const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-      if (!parsedUser || !parsedUser._id) {
-        console.warn('User ID not found in AsyncStorage');
-        return;
+      const balanceRes = await axios.get(`${API_BASE_URL}/api/wallet/balance`, {
+        params: {userId},
+      });
+
+      if (balanceRes.data && typeof balanceRes.data.balance === 'number') {
+        setBalance(balanceRes.data.balance);
+      } else {
+        console.warn('No balance field in response.');
+        setBalance(0);
       }
+    } catch (error) {
+      console.error('❌ Error fetching balance:', error.message);
+    }
+  };
 
-      setUser(parsedUser);
-      const firstName = parsedUser.name?.split(' ')[0] || 'User';
-      setUserName(firstName);
+  const checkUnreadMessages = async (userId) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/messages/unread-count/${userId}`);
+      if (res.data.total > 0) setHasUnread(true);
+      else setHasUnread(false);
+    } catch (err) {
+      console.error("❌ Failed to check unread messages:", err.message);
+    }
+  };
 
-      const requiredFields = ['dateofBirth', 'country', 'mobile', 'address'];
-      const isIncomplete = requiredFields.some(field => !parsedUser[field]);
-      if (isIncomplete) {
-        setShowIncompleteModal(true);
-      }
+  const checkUnreadNotifications = async (userId) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/member-notifications/${userId}`);
+      const hasUnread = res.data.some(notification => !notification.read);
+      setHasUnreadNotifications(hasUnread);
+    } catch (err) {
+      console.error("❌ Failed to check unread notifications:", err.message);
+    }
+  };
 
-      const contributionsRes = await axios.get(
-        `${API_BASE_URL}/api/member-notifications/${parsedUser._id}`,
-        {
-          params: {
-            type: 'contribution_reminder',
-          },
-        },
-      );const groupsRes = await axios.get(`${API_BASE_URL}/api/groups/member/${parsedUser._id}`);
+  const fetchContributions = async (userId) => {
+    try {
+      const groupsRes = await axios.get(`${API_BASE_URL}/api/groups/member/${userId}`);
       const groupList = groupsRes.data || [];
       console.log('📦 Raw groups:', groupList);
       
@@ -103,18 +117,38 @@ const HomeScreen = () => {
         })
         .filter(item => item !== null);
       
-      setUpcomingContributions(contributions);      
+      setUpcomingContributions(contributions);
+    } catch (error) {
+      console.error('❌ Error fetching contributions:', error.message);
+    }
+  };
 
-      const balanceRes = await axios.get(`${API_BASE_URL}/api/wallet/balance`, {
-        params: {userId: parsedUser._id},
-      });
-
-      if (balanceRes.data && typeof balanceRes.data.balance === 'number') {
-        setBalance(balanceRes.data.balance);
-      } else {
-        console.warn('No balance field in response.');
-        setBalance(0);
+  const fetchDashboardData = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem('user');
+      const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+      if (!parsedUser || !parsedUser._id) {
+        console.warn('User ID not found in AsyncStorage');
+        return;
       }
+
+      setUser(parsedUser);
+      const firstName = parsedUser.name?.split(' ')[0] || 'User';
+      setUserName(firstName);
+
+      const requiredFields = ['dateofBirth', 'country', 'mobile', 'address'];
+      const isIncomplete = requiredFields.some(field => !parsedUser[field]);
+      if (isIncomplete) {
+        setShowIncompleteModal(true);
+      }
+
+      await Promise.all([
+        fetchBalance(parsedUser._id),
+        fetchContributions(parsedUser._id),
+        checkUnreadMessages(parsedUser._id),
+        checkUnreadNotifications(parsedUser._id)
+      ]);
+
     } catch (error) {
       console.error('❌ Error fetching dashboard data:', error.message);
     } finally {
@@ -125,6 +159,19 @@ const HomeScreen = () => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user?._id) {
+        Promise.all([
+          fetchBalance(user._id),
+          fetchContributions(user._id),
+          checkUnreadMessages(user._id),
+          checkUnreadNotifications(user._id)
+        ]);
+      }
+    }, [user])
+  );
 
   if (loading) {
     return (
@@ -139,15 +186,36 @@ const HomeScreen = () => {
       {/* Header Icons */}
       <View style={styles.header}>
         <View style={styles.iconRow}>
-        <TouchableOpacity onPress={() => navigation.navigate('SearchScreen')}>
-          <Icon name="search" size={26} color="#3A6953" />
-        </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('GroupChats')}>
-            <Icon name="chatbubbles" size={26} color="#3A6953" />
+          <TouchableOpacity onPress={() => navigation.navigate('SearchScreen')}>
+            <Icon name="search" size={26} color="#3A6953" />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Notifications')}>
+          <TouchableOpacity onPress={() => navigation.navigate('GroupChats')} style={{ position: 'relative' }}>
+            <Icon name="chatbubbles" size={26} color="#3A6953" />
+            {hasUnread && (
+              <View style={{
+                position: 'absolute',
+                top: -2,
+                right: -2,
+                width: 10,
+                height: 10,
+                backgroundColor: 'red',
+                borderRadius: 5,
+              }} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ position: 'relative' }}>
             <Icon name="notifications" size={26} color="#3A6953" />
+            {hasUnreadNotifications && (
+              <View style={{
+                position: 'absolute',
+                top: -2,
+                right: -2,
+                width: 10,
+                height: 10,
+                backgroundColor: 'red',
+                borderRadius: 5,
+              }} />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -159,7 +227,7 @@ const HomeScreen = () => {
 
       {/* Balance */}
       <View style={styles.balanceSection}>
-        <Text style={styles.subtitle}>Here’s Your Balance</Text>
+        <Text style={styles.subtitle}>Here's Your Balance</Text>
         <Text style={styles.balance}>
           ₱{balance.toLocaleString(undefined, {minimumFractionDigits: 2})}
         </Text>
@@ -246,7 +314,7 @@ const HomeScreen = () => {
             <TouchableOpacity
               onPress={() => {
                 setShowIncompleteModal(false);
-                navigation.navigate('MainApp', {
+                navigation.navigate('Main', {
                   screen: 'Profile', 
                 });              }}
               style={{
@@ -285,7 +353,7 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   greetingContainer: {
-    marginTop: 20,
+    marginTop: 22,
     marginHorizontal: 15,
     marginBottom: 5,
   },

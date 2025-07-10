@@ -37,7 +37,7 @@ const Transactions = () => {
 
   const currentYear = new Date().getFullYear();
   const years = [""]; // blank option first
-  for (let year = 2020; year <= currentYear; year++) {
+  for (let year = 2021; year <= currentYear; year++) {
     years.push(year.toString());
   }
 
@@ -88,7 +88,7 @@ const Transactions = () => {
         Transaction History
       </h1>
       <p className="text-[#6A8C73] font-normal mb-6">
-        Here’s your transaction of your Paluwagan today.
+        Here's your transaction of your Paluwagan today.
       </p>
 
       <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -150,12 +150,13 @@ const Transactions = () => {
                 <th className="p-3 text-left">Time</th>
                 <th className="p-3 text-left">Amount</th>
                 <th className="p-3 text-left">Status</th>
+                <th className="p-3 text-left">Group Details</th>
               </tr>
             </thead>
             <tbody>
               {filteredTransactions.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="text-center text-gray-400 py-4">
+                  <td colSpan="7" className="text-center text-gray-400 py-4">
                     No transactions found.
                   </td>
                 </tr>
@@ -191,6 +192,13 @@ const Transactions = () => {
                       >
                         {txn.type.charAt(0).toUpperCase() + txn.type.slice(1)}
                       </span>
+                    </td>
+                    <td className="p-3">
+                      {txn.type === "payout_share" && txn.metadata?.groupName ? (
+                        <span className="text-[#3A6953]">{txn.metadata.groupName}</span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                   </tr>
                 );

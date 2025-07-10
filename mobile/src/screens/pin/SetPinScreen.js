@@ -62,7 +62,7 @@ const SetPinScreen = ({ route }) => {
               // ✅ Navigate to Home inside MainApp
               navigation.reset({
                 index: 0,
-                routes: [{ name: 'MainApp', params: { screen: 'Home' } }],
+                routes: [{ name: 'Main', params: { screen: 'Home' } }],
               });
             } catch (err) {
               Alert.alert('Error', err.message);

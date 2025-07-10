@@ -69,44 +69,13 @@ const LoginScreen = ({ navigation }) => {
         throw new Error("Only members can log in here.");
       }
   
-      await AsyncStorage.setItem("token", data.token);
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
-      console.log("💾 Token and user saved to AsyncStorage");
+      // Navigate to OTP verification screen
+      navigation.navigate("OTPVerificationScreen", {
+        mode: 'login',
+        email: email,
+        userData: data.user
+      });
   
-      const fcmToken = await getMessaging(getApp()).getToken();
-      console.log("📲 FCM Token:", fcmToken);
-  
-      if (fcmToken) {
-        const res = await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: data.user._id, fcmToken }),
-        });
-   
-        const fcmResult = await res.json();
-        console.log("📥 FCM save response:", fcmResult);
-  
-        if (!res.ok) throw new Error("FCM token failed to save");
-  
-        await fetch(`${API_BASE_URL}/api/users/last-active/${data.user._id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" }
-        });
-                console.log("✅ FCM token saved successfully");
-      } else {
-        console.warn("⚠️ No FCM token received");
-      }
-  
-      Alert.alert("Success", "Login successful!", [
-        {
-          text: "OK",
-          onPress: () =>
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "Main", params: { screen: "Home" } }],
-            }),
-        },
-      ]);
     } catch (error) {
       console.error("❌ Login Error:", error.message);
       Alert.alert("Login Error", error.message);
@@ -126,43 +95,30 @@ const handleGoogleLogin = async () => {
     const userInfo = await GoogleSignin.signIn();
     console.log("✅ Google Sign-In Success:", JSON.stringify(userInfo, null, 2));
 
-    const { idToken, user } = userInfo.data; // ✅ Make sure it's `.data`
+    const { idToken, user } = userInfo.data;
 
     if (!idToken) {
       console.warn("⚠️ No idToken received, but user info available.");
-
-      if (user) {
-        await AsyncStorage.setItem("user", JSON.stringify(user));
-        console.log("💾 Saved Google user info (without Firebase).");
-      } else {
-        console.warn("❌ No user info found too.");
-      }
-
       return;
     }
 
     console.log("🔑 idToken received:", idToken);
 
-    // ✅ Proceed with Firebase authentication
+    // Proceed with Firebase authentication
     const googleCredential = auth.GoogleAuthProvider.credential(idToken);
     const userCredential = await auth().signInWithCredential(googleCredential);
     console.log("✅ Firebase Auth Success:", JSON.stringify(userCredential.user, null, 2));
 
-    const firebaseToken = await userCredential.user.getIdToken();
-    await AsyncStorage.setItem("token", firebaseToken);
-    await AsyncStorage.setItem("user", JSON.stringify(userCredential.user));
-    console.log("💾 Firebase token and user saved to AsyncStorage");
-
-    // ✅ NOW POST to your backend to register/login member
+    // Post to backend to register/login member
     const response = await fetch(`${API_BASE_URL}/api/auth/google-login-member`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        name: user.name || user.displayName || "Unnamed User", // ✅ fallback safe
+        name: user.name || user.displayName || "Unnamed User",
         email: user.email,
-        profileImage: user.photo || null, // ✅ fallback safe
+        profileImage: user.photo || null,
       }),
     });
 
@@ -176,46 +132,17 @@ const handleGoogleLogin = async () => {
 
     console.log("✅ Backend member login/register success:", result.user);
 
-    await fetch(`${API_BASE_URL}/api/users/last-active/${result.user._id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" }
-    });
-
-    await AsyncStorage.setItem("user", JSON.stringify(result.user));
-    console.log("💾 Updated user saved from backend.");
-
-    // ✅ Save FCM Token after Google login
-    const fcmToken = await getMessaging(getApp()).getToken();
-    console.log("📲 FCM Token:", fcmToken);
-
-    if (fcmToken) {
-      const res = await fetch(`${API_BASE_URL}/api/users/save-fcm-token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: result.user._id, fcmToken }),
-      });
-
-      const fcmResult = await res.json();
-      console.log("📥 FCM save response:", fcmResult);
-
-      if (!res.ok) throw new Error("FCM token failed to save");
-
-      console.log("✅ FCM token saved successfully");
-    } else {
-      console.warn("⚠️ No FCM token received");
-    }
-
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Main", params: { screen: "Home" }}],
+    // Navigate to OTP verification screen
+    navigation.navigate("OTPVerificationScreen", {
+      mode: 'login',
+      email: user.email,
+      userData: result.user
     });
 
   } catch (error) {
-    console.error("❌ Google Sign-In Error Details:", error);
     console.log("📛 Error Code:", error.code);
     console.log("📛 Error Message:", error.message);
-
-    Alert.alert("Google Sign-In Error", error.message || "Unknown error during Google login.");
+    Alert.alert("Error", "Google sign-in failed. Please try again.");
   }
 };
 
@@ -235,14 +162,16 @@ const handleGoogleLogin = async () => {
 
       {/* Email Input */}
       <StyledText className="text-gray-700 mb-1">Email Address</StyledText>
-      <StyledTextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="example@gmail.com"
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-4"
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+      <StyledView className="flex-row border border-gray-300 rounded-lg px-4 py-3 items-center mb-4">
+        <StyledTextInput
+          value={email}
+          onChangeText={setEmail}
+          placeholder="example@gmail.com"
+          className="flex-1"
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+      </StyledView>
 
       {/* Password Input */}
       <StyledText className="text-gray-700 mb-1">Password</StyledText>
@@ -256,7 +185,7 @@ const handleGoogleLogin = async () => {
           autoCapitalize="none"
         />
         <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
-          <Icon name={passwordVisible ? "eye-off" : "eye"} size={20} color="gray" />
+          <Icon name={passwordVisible ? "eye" : "eye-off"} size={20} color="gray" />
         </TouchableOpacity>
       </StyledView>
 

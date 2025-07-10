@@ -1,95 +1,219 @@
-"use client";
-
-import { useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { HiArrowLeft } from "react-icons/hi";
+import { useParams, useNavigate } from "react-router-dom";
 
 const MessageUser = () => {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const [file, setFile] = useState(null);
+  const [userDetails, setUserDetails] = useState(null);
+  const user = JSON.parse(localStorage.getItem("user"));
+  const chatRef = useRef(null);
 
-  const organizerId = localStorage.getItem('userId');
-  const handleSend = async () => {
-    if (!message.trim()) return;
-  
+  const scrollToBottom = () => {
+    chatRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(scrollToBottom, [messages]);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(`http://localhost:5050/api/messages/conversation/${userId}`);
+        const data = await res.json();
+        setMessages(data);
+      } catch (err) {
+        console.error("❌ Error fetching messages:", err.message);
+      }
+    };
+
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(`http://localhost:5050/api/users/${userId}`);
+        const data = await res.json();
+        setUserDetails(data);
+      } catch (err) {
+        console.error("❌ Error fetching user info:", err.message);
+      }
+    };
+
+    if (userId) {
+      fetchMessages();
+      fetchUser();
+    }
+  }, [userId]);
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const sendMessage = async () => {
+    if (!message.trim() && !file) return;
+
     try {
-      const res = await fetch("http://localhost:5050/api/messages/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          toUserId: userId,
-          fromUserId: organizerId,   // 🔥 pass it here
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadRes = await fetch("http://localhost:5050/api/upload-chat-file", {
+          method: "POST",
+          body: formData,
+        });
+
+        const uploadData = await uploadRes.json();
+
+        if (uploadData.url) {
+          const res = await fetch("http://localhost:5050/api/messages/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toUserId: userId,
+              fromUserId: user._id,
+              content: uploadData.url,
+              type: "file"
+            }),
+          });
+
+          if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+          const newMessage = {
+            content: uploadData.url,
+            from: user._id,
+            timestamp: new Date().toISOString(),
+            type: "file"
+          };
+
+          setMessages((prev) => [...prev, newMessage]);
+          setFile(null);
+        }
+      }
+
+      if (message.trim()) {
+        const res = await fetch("http://localhost:5050/api/messages/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toUserId: userId,
+            fromUserId: user._id,
+            content: message,
+            type: "text"
+          }),
+        });
+
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+        const newMessage = {
           content: message,
-        }),
-      });
-  
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-  
-      // Add immediately
-      const newMessage = {
-        content: message,
-        from: organizerId,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, newMessage]);
-      setMessage("");
+          from: user._id,
+          timestamp: new Date().toISOString(),
+          type: "text"
+        };
+
+        setMessages((prev) => [...prev, newMessage]);
+        setMessage("");
+      }
     } catch (err) {
       console.error("❌ Error sending message:", err.message);
       alert("Failed to send message.");
     }
   };
 
-  const fetchMessages = async () => {
-    try {
-      const res = await fetch(`http://localhost:5050/api/messages/conversation/${userId}`);
-      const data = await res.json();
-      setMessages(data);
-    } catch (err) {
-      console.error("❌ Error fetching messages:", err.message);
-    }
-  };
-
-  useEffect(() => {
-    fetchMessages();
-  }, [userId]);
-
   return (
-    <div className="min-h-screen flex flex-col bg-[#f7faf9]">
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="max-w-3xl mx-auto space-y-4">
-        {messages.map((msg, idx) => (
-  <div
-    key={idx}
-    className={`p-3 rounded-2xl max-w-xs ${
-      msg.from === organizerId
-        ? "bg-[#3A6953] text-white self-end ml-auto"
-        : "bg-gray-200 text-black self-start"
-    }`}
-  >
-    <p>{msg.content}</p>
-    <span className="block mt-1 text-xs text-right opacity-70">
-      {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-    </span>
-  </div>
-))}
-
-        </div>
+    <div className="fixed top-[40px] left-1/2 transform -translate-x-1/2 w-[1100px] h-[680px] bg-[#f4faf7] shadow-xl rounded-3xl flex flex-col border border-green-200 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-4 px-6 py-4 border-b border-green-200 text-2xl font-semibold text-[#3A6953] bg-gradient-to-r from-green-100 to-white shadow">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center justify-center bg-[#6A8C73] text-white px-6 py-2 rounded-2xl shadow-md hover:bg-[#285236] transition"
+        >
+          <HiArrowLeft className="text-xl" />
+        </button>
+        <span className="text-xl font-semibold text-[#3A6953]">
+          {userDetails?.name || "Direct Message"}
+        </span>
       </div>
 
-      <div className="p-4 border-t bg-white flex items-center">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 bg-[#F0F8F4] scroll-smooth">
+        {messages.map((msg, idx) => {
+          const isMe = msg.from === user._id;
+          const senderName = isMe ? user.name : userDetails?.name || "User";
+          const firstName = senderName.split(" ")[0];
+
+          return (
+            <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end`}>
+              {!isMe && (
+                <div className="flex-shrink-0 w-8 h-8 bg-green-200 rounded-full flex items-center justify-center mr-2 text-[#3A6953] font-bold shadow">
+                  {firstName[0]}
+                </div>
+              )}
+              <div className={`relative max-w-[70%] ${isMe ? 'bg-gradient-to-br from-green-200 to-green-100' : 'bg-white'} p-4 rounded-2xl shadow-md flex flex-col`}>
+              {msg.type === "file" ? (
+  msg.content.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+    <img
+      src={msg.content.startsWith("http") ? msg.content : `http://localhost:5050${msg.content}`}
+      alt="attachment"
+      className="rounded-lg max-w-xs max-h-60 object-cover"
+      onError={(e) => {
+        e.target.src = "/fallback.png"; // optional fallback
+      }}
+    />
+  ) : (
+    <a
+      href={msg.content}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-600 underline break-all"
+    >
+      📎 View Attachment
+    </a>
+  )
+) : (
+  <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
+)}
+
+                <div className={`text-xs mt-2 ${isMe ? 'text-right' : 'text-left'} text-gray-400 font-medium`}>
+                  {firstName} • {new Date(msg.timestamp).toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={chatRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="px-6 py-4 border-t border-green-200 flex gap-3 bg-white items-center rounded-b-3xl shadow-inner">
+        <label className="text-gray-400 cursor-pointer flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mr-2 hover:text-green-700 transition-colors">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7.828a4 4 0 010 5.656l-4.95 4.95a3 3 0 01-4.243-4.243l7.071-7.071a2 2 0 112.828 2.828l-7.071 7.071" />
+          </svg>
+          <input type="file" onChange={handleFileChange} className="hidden" />
+          <span className="sr-only">Choose File</span>
+        </label>
         <input
-          type="text"
-          className="flex-1 border rounded-full px-4 py-2 mr-2 focus:outline-none"
-          placeholder="Type a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-green-600 bg-[#F0F8F4] shadow-inner"
+          placeholder="Type a message..."
         />
+        {file && <span className="ml-2 text-green-600 font-medium truncate max-w-[120px]">{file.name}</span>}
         <button
-          onClick={handleSend}
-          className="bg-[#3A6953] hover:bg-[#285236] text-white px-6 py-2 rounded-full"
+          onClick={sendMessage}
+          className="w-12 h-12 flex items-center justify-center rounded-full bg-[#3A6953] text-white font-semibold hover:bg-green-800 transition-all shadow-lg text-xl"
         >
-          Send
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21l16.5-9-16.5-9v7.5l13.5 1.5-13.5 1.5V21z" />
+          </svg>
         </button>
       </div>
     </div>

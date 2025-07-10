@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   Alert,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
@@ -15,11 +15,18 @@ const PinCodeScreen = ({ navigation, route }) => {
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleVerifyPin = async () => {
-    if (pin.length !== 6) {
-      Alert.alert('Invalid', 'PIN must be 6 digits');
-      return;
+  const handleDigitPress = (digit) => {
+    if (pin.length < 6) {
+      setPin((prev) => prev + digit);
     }
+  };
+
+  const handleBackspace = () => {
+    setPin((prev) => prev.slice(0, -1));
+  };
+
+  const handleVerifyPin = async () => {
+    if (pin.length !== 6) return;
 
     setLoading(true);
     try {
@@ -35,39 +42,91 @@ const PinCodeScreen = ({ navigation, route }) => {
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('user', JSON.stringify(data.user));
 
-      // ✅ Call the success callback passed from App.js
       if (typeof onSuccess === 'function') {
-        onSuccess(); // This sets showPinScreen = false and isAuthenticated = true
+        onSuccess();
       } else {
         navigation.reset({ index: 0, routes: [{ name: 'MainApp' }] });
       }
     } catch (err) {
       Alert.alert('Error', err.message);
+      setTimeout(() => setPin(''), 500); // Reset after short delay
     } finally {
       setLoading(false);
     }
   };
 
+  const renderCircles = () => {
+    return (
+      <View style={styles.circles}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.circle,
+              i < pin.length ? styles.filledCircle : styles.emptyCircle,
+            ]}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  const renderKeypad = () => {
+    const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    return (
+      <View style={styles.keypad}>
+        {digits.map((digit) => (
+          <TouchableOpacity
+            key={digit}
+            style={styles.digitButton}
+            onPress={() => handleDigitPress(digit)}
+          >
+            <Text style={styles.digitText}>{digit}</Text>
+          </TouchableOpacity>
+        ))}
+
+        {/* Spacer */}
+        <View style={styles.digitButton} />
+
+        {/* 0 */}
+        <TouchableOpacity
+          style={styles.digitButton}
+          onPress={() => handleDigitPress('0')}
+        >
+          <Text style={styles.digitText}>0</Text>
+        </TouchableOpacity>
+
+        {/* Backspace */}
+        <TouchableOpacity style={styles.digitButton} onPress={handleBackspace}>
+          <Text style={[styles.digitText, { fontSize: 20 }]}>⌫</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Enter PIN</Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="numeric"
-        secureTextEntry
-        maxLength={6}
-        value={pin}
-        onChangeText={setPin}
-        placeholder="Enter your 6-digit PIN"
-      />
+      <Text style={styles.title}>Please enter your</Text>
+      <Text style={styles.subtitle}>Pin Code</Text>
+      <Text style={styles.setLabel}>Pin Code (6-digit)</Text>
+
+      {renderCircles()}
+      {renderKeypad()}
+
       <TouchableOpacity
+        style={[
+          styles.loginButton,
+          pin.length === 6 ? styles.loginEnabled : styles.loginDisabled,
+        ]}
         onPress={handleVerifyPin}
-        style={styles.button}
-        disabled={loading}
+        disabled={loading || pin.length < 6}
       >
-        <Text style={styles.buttonText}>
-          {loading ? 'Verifying...' : 'Unlock'}
-        </Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.loginText}>Log In</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -78,24 +137,83 @@ export default PinCodeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#f7faf9',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    paddingTop: 70,
+    paddingHorizontal: 30,
   },
-  title: { fontSize: 22, marginBottom: 20, color: '#3A6953' },
-  input: {
-    width: '80%',
-    borderBottomWidth: 2,
-    borderBottomColor: '#3A6953',
-    fontSize: 20,
-    textAlign: 'center',
+  title: {
+    fontSize: 18,
+    color: '#3A6953',
+    fontWeight: '800',
+  },
+  subtitle: {
+    fontSize: 18,
+    color: '#888',
+    marginBottom: 20,
+  },
+  setLabel: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 16,
+  },
+  circles: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
     marginBottom: 30,
   },
-  button: {
-    backgroundColor: '#3A6953',
-    paddingHorizontal: 40,
-    paddingVertical: 12,
-    borderRadius: 8,
+  circle: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#e0e0e0',
   },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  filledCircle: {
+    backgroundColor: '#3A6953',
+  },
+  emptyCircle: {
+    backgroundColor: '#e0e0e0',
+  },
+  keypad: {
+    width: '90%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 15,
+    columnGap: 15,
+    marginBottom: 50,
+  },
+  digitButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 1,
+    borderColor: '#3A6953',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  digitText: {
+    fontSize: 22,
+    color: '#3A6953',
+    fontWeight: 'bold',
+  },
+  loginButton: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginEnabled: {
+    backgroundColor: '#3A6953',
+  },
+  loginDisabled: {
+    backgroundColor: '#A3B8AB',
+  },
+  loginText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

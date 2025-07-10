@@ -90,7 +90,7 @@ const WalletScreen = () => {
       {/* Notification */}
       <View style={styles.notificationWrapper}>
         <TouchableOpacity style={styles.notificationIcon} onPress={() => navigation.navigate('Notifications')}>
-          <Ionicons name="notifications-outline" size={25} color="#3A6953" />
+          <Ionicons name="notifications" size={25} color="#3A6953" />
         </TouchableOpacity>
       </View>
 
@@ -132,7 +132,7 @@ const WalletScreen = () => {
             </View>
             <View style={styles.summaryBox}>
               <Feather name="trending-up" size={20} color="#3A6953" />
-              <Text style={styles.summaryLabel}>Contribution</Text>
+              <Text style={styles.summaryLabel}>Transfer</Text>
               <Text style={styles.summaryValue}>₱{contribution.toLocaleString()}</Text>
             </View>
           </View>
@@ -142,7 +142,7 @@ const WalletScreen = () => {
             <Text style={styles.chartTitle}>Monthly Income</Text>
             <LineChart
               data={{
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                labels: ['Jn', 'Fb', 'Mr', 'Ar', 'My', 'Jn', 'Jl', 'Ag', 'Sp', 'Ot', 'Nv', 'Dc'],
                 datasets: [{ data: monthlyIncome }]
               }}
               width={Dimensions.get('window').width - 90}
@@ -170,17 +170,17 @@ const WalletScreen = () => {
                   <Text style={styles.contributionText}>
                     {item.type === 'deposit' && 'Deposited'}
                     {item.type === 'receive' && 'Received'}
-                    {item.type === 'transfer' && 'Contributed'}
-                    {' '}
-                    {item.metadata?.to ? `to ${item.metadata.to}` : ''}
-                    {item.metadata?.from ? `from ${item.metadata.from}` : ''}
+                    {item.type === 'transfer' && 'Transfer'}
+                    {item.type === 'refund' && 'Refund'}
+                    {item.type === 'payout' && 'Payout'}
+                    {item.type === 'payout_share' && 'Payout Share'}
                   </Text>
                   <Text style={styles.contributionDate}>
                     {new Date(item.timestamp || item.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
                 <Text style={styles.contributionAmount}>
-                  {item.type === 'deposit' || item.type === 'receive' ? '+' : '-'} ₱{(item.amount || 0).toLocaleString()}
+                  {(item.type === 'deposit' || item.type === 'receive' || item.type === 'refund' || item.type === 'payout' || item.type === 'payout_share') ? '+' : '-'} ₱{(item.amount || 0).toLocaleString()}
                 </Text>
               </View>
             ))
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
-    paddingTop: 50,
+    paddingTop: 20,
     paddingHorizontal: 0,
   },
   notificationWrapper: {
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 45,
     color: '#3A6953',
-    fontWeight: 'bold',
+    fontWeight: '800',
     marginTop: -5,
   },
   actionWrapper: {
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   },
   chartWrapper: {
     backgroundColor: '#6A8C73',
-    padding: 20,
+    padding: 15,
     borderRadius: 20,
   },
   chartTitle: {

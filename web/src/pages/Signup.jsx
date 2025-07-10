@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate } from "react-router-dom";
+import TermsAndConditionsModal from "../components/TermsAndConditionsModal";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -17,6 +18,7 @@ const Signup = () => {
   const [resendDisabled, setResendDisabled] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [verificationClicked, setVerificationClicked] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const handleSignup = async () => {
     setError(null);
@@ -138,7 +140,7 @@ const Signup = () => {
         {/* Left Section - Signup Form */}
         <div className="w-3/5 flex flex-col justify-center p-12">
           <h2 className="text-3xl font-bold text-green-900 mb-6">
-            Let’s Get Started
+            Let's Get Started
           </h2>
 
           {/* Success Message */}
@@ -175,13 +177,16 @@ const Signup = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)} // Allow free typing
+              onChange={(e) => setEmail(e.target.value)} // Update email state
               onBlur={() => {
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation regex
-                if (!emailRegex.test(email)) {
-                  alert("Please enter a valid email address."); // Optional: Show feedback
+                if (email && !emailRegex.test(email)) {
+                  setError("Please enter a valid email address."); // Show feedback only if invalid
+                } else {
+                  setError(null); // Clear error if valid
                 }
               }}
+              maxLength={50} // Set maximum of 50 characters
               className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
               required
             />
@@ -213,12 +218,12 @@ const Signup = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                {showPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
               </button>
             </div>
           </div>
 
-          {/* Confirm Password Input */}
+          {/* Confirm Password Input with Toggle */}
           <div className="mb-6">
             <label className="block text-gray-500 text-sm font-semibold mb-2">
               Confirm Password
@@ -233,21 +238,17 @@ const Signup = () => {
                     alert("Passwords do not match.");
                   }
                 }}
-                maxLength={30} // Enforce max length of 30 characters
+                maxLength={30}
                 className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600">
                 {showConfirmPassword ? (
-                  <FaEyeSlash size={18} />
+                  <FaEye size={18} onClick={() => setShowConfirmPassword(false)} />
                 ) : (
-                  <FaEye size={18} />
+                  <FaEyeSlash size={18} onClick={() => setShowConfirmPassword(true)} />
                 )}
-              </button>
+              </div>
             </div>
           </div>
 
@@ -261,12 +262,12 @@ const Signup = () => {
             />
             <span className="text-sm text-gray-600">
               I agree with the{" "}
-              <a
-                href="#"
+              <button
+                onClick={() => setShowTermsModal(true)}
                 className="text-green-700 font-semibold hover:underline"
               >
                 Terms and Conditions
-              </a>
+              </button>
             </span>
           </div>
 
@@ -318,6 +319,12 @@ const Signup = () => {
           <div className="absolute top-0 left-0 w-full h-full bg-green-800 opacity-10"></div>
         </div>
       </div>
+
+      {/* Terms and Conditions Modal */}
+      <TermsAndConditionsModal 
+        isOpen={showTermsModal} 
+        onClose={() => setShowTermsModal(false)} 
+      />
     </div>
   );
 };

@@ -2,6 +2,7 @@ const GroupChatRoom = require('../models/GroupChatRoom');
 const ChatMessage = require('../models/ChatMessage');
 const Group = require('../models/Group');
 const User = require('../models/User');
+const { sendPushToUser } = require('../services/pushService');
 
 exports.getMessages = async (req, res) => {
   const { groupId } = req.params;
@@ -21,8 +22,8 @@ exports.getMessages = async (req, res) => {
 };
 
 exports.sendMessage = async (req, res) => {
-  const groupId = req.params.groupId; // ✅ get from params, not body
-  const { sender, type, content } = req.body;
+  const groupId = req.params.groupId;
+  const { sender, type, content, senderName, groupName } = req.body;
 
   try {
     const group = await Group.findById(groupId);
@@ -39,7 +40,6 @@ exports.sendMessage = async (req, res) => {
     let room = await GroupChatRoom.findOne({ groupId });
 
     if (!room) {
-      // Automatically add all current group members + organizer to chat
       const memberIds = group.members.map(m => m.userId.toString());
       if (!memberIds.includes(group.handler.toString())) {
         memberIds.push(group.handler.toString());
@@ -52,7 +52,6 @@ exports.sendMessage = async (req, res) => {
     
       console.log(`🛠️ Created GroupChatRoom for group ${groupId} with members:`, memberIds);
     }
-    
 
     let message = await ChatMessage.create({
       roomId: room._id,
@@ -61,9 +60,25 @@ exports.sendMessage = async (req, res) => {
       content
     });
     
-    // 🔥 Populate sender name immediately
     message = await message.populate('sender', 'name');
-    
+
+    // Send push notifications to all group members except sender
+    const notificationTitle = groupName || 'Group Message';
+    const notificationBody = type === 'text' ? content : 'Sent a file';
+
+    // Get all group members
+    const groupMembers = await User.find({
+      _id: { 
+        $in: room.members.filter(id => id.toString() !== sender)
+      }
+    });
+
+    // Send push to each member
+    for (const member of groupMembers) {
+      if (member.fcmToken) {
+        await sendPushToUser(member._id, notificationTitle, notificationBody);
+      }
+    }
 
     req.app.get('io').in(groupId).emit('new-message', message);
     res.status(201).json(message);

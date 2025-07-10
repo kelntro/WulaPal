@@ -8,12 +8,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  Modal,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native'; // ✅ Auto-refresh on screen focus
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { API_BASE_URL } from '@env';
 
 const socket = io(API_BASE_URL);
@@ -25,6 +27,8 @@ const GroupsScreen = () => {
   const [selectedTab, setSelectedTab] = useState('your');
   const [searchText, setSearchText] = useState('');
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const navigation = useNavigation();
 
   const fetchGroups = async () => {
@@ -111,57 +115,142 @@ const GroupsScreen = () => {
     };
   }, []);
 
-  // Filter groups based on search text
+  // Filter groups based on search text and status
   const filteredGroups =
     selectedTab === 'your'
-      ? userGroups.filter(group =>
-          group.name.toLowerCase().includes(searchText.toLowerCase()),
-        )
+      ? userGroups
+          .filter(group => {
+            const matchesSearch = group.name.toLowerCase().includes(searchText.toLowerCase());
+            const matchesStatus = statusFilter === 'all' || group.status === statusFilter;
+            return matchesSearch && matchesStatus;
+          })
+          .sort((a, b) => {
+            const statusOrder = { active: 0, open: 1, completed: 2 };
+            return statusOrder[a.status] - statusOrder[b.status];
+          })
       : availableGroups.filter(group =>
           group.name.toLowerCase().includes(searchText.toLowerCase()),
         );
 
   return (
     <View style={styles.container}>
-      {/* Toggle Between "Your Groups" and "Join Groups" */}
+      {/* Header */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <Text style={{ fontSize: 22, fontWeight: '900', color: '#3A6953' }}>
+          Paluwagan
+        </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('JoinRequestStatus')}>
+          <Icon name="account-check" size={28} color="#3A6953" />
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.toggleContainer}>
         <TouchableOpacity
           style={[
-            styles.toggleButton,
-            selectedTab === 'your' && styles.activeTab,
+            styles.toggleBtn,
+            selectedTab === 'your' && styles.toggleActive,
           ]}
-          onPress={() => setSelectedTab('your')}>
+          onPress={() => setSelectedTab('your')}
+        >
+          <MaterialIcons
+            name="group"
+            size={20}
+            color={selectedTab === 'your' ? '#fff' : '#3A6953'}
+            style={{ marginRight: 6 }}
+          />
           <Text
             style={[
               styles.toggleText,
-              selectedTab === 'your' && styles.activeText,
-            ]}>
-            👥 Your Groups
+              selectedTab === 'your' && styles.toggleTextActive,
+            ]}
+          >
+            My Groups
           </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={[
-            styles.toggleButton,
-            selectedTab === 'join' && styles.activeTab,
+            styles.toggleBtn,
+            selectedTab === 'join' && styles.toggleActive,
           ]}
-          onPress={() => setSelectedTab('join')}>
+          onPress={() => setSelectedTab('join')}
+        >
+          <MaterialIcons
+            name="person-search"
+            size={20}
+            color={selectedTab === 'join' ? '#fff' : '#3A6953'}
+            style={{ marginRight: 6 }}
+          />
           <Text
             style={[
               styles.toggleText,
-              selectedTab === 'join' && styles.activeText,
-            ]}>
-            🤝 Join
+              selectedTab === 'join' && styles.toggleTextActive,
+            ]}
+          >
+            Join Groups
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
-      <TextInput
-        style={styles.searchInput}
-        placeholder="🔍 Search groups..."
-        value={searchText}
-        onChangeText={setSearchText}
-      />
+
+      {/* Search Bar and Filter */}
+      <View style={styles.searchFilterContainer}>
+        <TextInput
+          style={[styles.searchInput, { flex: 1 }]}
+          placeholder=" Search groups..."
+          placeholderTextColor="#999999"  // ← sets placeholder to black
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+        {selectedTab === 'your' && (
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => setShowFilterModal(true)}
+          >
+            <MaterialIcons name="filter-list" size={22} color="#3A6953" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Filter Modal */}
+      <Modal
+        visible={showFilterModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity 
+              style={styles.closeIcon}
+              onPress={() => setShowFilterModal(false)}
+            >
+              <MaterialIcons name="close" size={24} color="#3A6953" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Filter by Status</Text>
+            {['all', 'open', 'active', 'completed'].map((status) => (
+              <TouchableOpacity
+                key={status}
+                style={[
+                  styles.filterOption,
+                  statusFilter === status && styles.selectedFilter
+                ]}
+                onPress={() => {
+                  setStatusFilter(status);
+                  setShowFilterModal(false);
+                }}
+              >
+                <Text style={[
+                  styles.filterOptionText,
+                  statusFilter === status && styles.selectedFilterText
+                ]}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
 
       {loading ? (
         <ActivityIndicator size="large" color="#285236" />
@@ -171,8 +260,12 @@ const GroupsScreen = () => {
             <FlatList
               data={filteredGroups}
               keyExtractor={item => item._id}
-              renderItem={({item}) => <GroupCard group={item} />}
+              renderItem={({ item }) => (
+                <GroupCard group={item} currentUserId={currentUserId} />
+              )}
+              ListFooterComponent={<View style={{ height: 80 }} />} // 👈 Add space here
             />
+
           ) : (
             <Text style={styles.noGroupsText}>
               {selectedTab === 'your'
@@ -187,7 +280,7 @@ const GroupsScreen = () => {
 };
 
 // ✅ Group Card Component
-const GroupCard = ({group}) => {
+const GroupCard = ({ group, currentUserId }) => {
   const navigation = useNavigation();
 // Normalize API_BASE_URL to avoid trailing slashes
 const baseUrl = API_BASE_URL.replace(/\/$/, '');
@@ -195,7 +288,7 @@ const baseUrl = API_BASE_URL.replace(/\/$/, '');
 // Build imageUrl
 const imageUrl = group.image
   ? (group.image.startsWith('http')
-      ? group.image.replace(/^http:\/\/[^\/]+/, baseUrl) // 👈 Replace any base IP:PORT to your env base
+      ? group.image.replace(/^http:\/\/[^\/]+/, baseUrl)
       : `${baseUrl}/${group.image.replace(/\\/g, '/')}`)
   : 'https://via.placeholder.com/150';
 
@@ -205,8 +298,22 @@ console.log('🌐 Final Image URL:', imageUrl);
   const handlerName = group.handler?.name || 'Unknown';
   const isJoined = group.members?.some(member => {
     const id = typeof member === 'string' ? member : member.userId;
-    return id === group.currentUserId;
-  });
+    return id.toString() === currentUserId;
+  });  
+
+  // Get status color based on group status
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'open':
+        return '#4CAF50'; // Green
+      case 'active':
+        return '#2196F3'; // Blue
+      case 'completed':
+        return '#9E9E9E'; // Grey
+      default:
+        return '#9E9E9E';
+    }
+  };
 
   return (
     <View style={styles.card}>
@@ -215,7 +322,9 @@ console.log('🌐 Final Image URL:', imageUrl);
             onLoad={() => console.log('✅ Image loaded successfully:', imageUrl)}
             />
       <View style={styles.cardContent}>
-        <Text style={styles.groupTitle}>{group.name}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.groupTitle}>{group.name}</Text>
+        </View>
         <View style={styles.infoRow}>
           <Ionicons
             name="people-outline"
@@ -224,9 +333,9 @@ console.log('🌐 Final Image URL:', imageUrl);
             style={styles.infoIcon}
           />
 
-<Text style={styles.infoText}>
-  {group.slots - group.members.length} / {group.slots} Slots Available
-</Text>
+          <Text style={styles.infoText}>
+            {group.slots - group.members.length} / {group.slots} Slots Available
+          </Text>
         </View>
         <View style={styles.infoRow}>
           <Ionicons
@@ -243,6 +352,18 @@ console.log('🌐 Final Image URL:', imageUrl);
 
         <View style={styles.infoRow}>
           <Ionicons
+            name="time-outline"
+            size={16}
+            color="#285236"
+            style={styles.infoIcon}
+          />
+          <Text style={styles.infoText}>
+            Status: <Text style={{color: getStatusColor(group.status)}}>{group.status.charAt(0).toUpperCase() + group.status.slice(1)}</Text>
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Ionicons
             name="person-outline"
             size={16}
             color="#285236"
@@ -252,11 +373,6 @@ console.log('🌐 Final Image URL:', imageUrl);
             Handler: <Text style={{color: '#3A6953'}}>{handlerName}</Text>
           </Text>
         </View>
-        <View style={styles.descriptionWrapper}>
-  <Text style={styles.descriptionText} numberOfLines={2} ellipsizeMode="tail">
-    {group.description}
-  </Text>
-</View>
 
 
         <View style={styles.avatars}>
@@ -297,41 +413,52 @@ console.log('🌐 Final Image URL:', imageUrl);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F8F7',
+    backgroundColor: '#ffffff',
     padding: 16,
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#E0E0E0',
-    borderRadius: 25,
-    padding: 5,
-    marginBottom: 10,
+    backgroundColor: '#F0F4F3',
+    borderRadius: 30,
+    padding: 4,
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 20,
   },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 10,
+  toggleBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 25,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 30,
+    borderRadius: 30,
   },
-  activeTab: {
-    backgroundColor: '#285236',
+  toggleActive: {
+    backgroundColor: '#6A8C73',
   },
   toggleText: {
-    fontSize: 16,
-    color: '#285236',
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3A6953',
   },
-  activeText: {
-    color: 'white',
+  toggleTextActive: {
+    color: '#ffffff',
+  },
+
+  searchFilterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
   },
   searchInput: {
     backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 10,
+    padding: 12,
+    borderRadius: 35,
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#CCC',
+    flex: 1,
   },
   noGroupsText: {
     fontSize: 16,
@@ -444,7 +571,79 @@ const styles = StyleSheet.create({
     color: '#555',
     fontStyle: 'italic',
   },
-  
+  filterButton: {
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#CCC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 45,
+    width: 35,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    width: '80%',
+    maxWidth: 400,
+    position: 'relative',
+  },
+  closeIcon: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
+    padding: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#3A6953',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  filterOption: {
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    backgroundColor: '#F4F8F7',
+  },
+  selectedFilter: {
+    backgroundColor: '#3A6953',
+  },
+  filterOptionText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+  },
+  selectedFilterText: {
+    color: '#fff',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  statusText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
 });
 
 export default GroupsScreen;

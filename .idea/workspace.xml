@@ -5,10 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="72ed7d27-63e3-4bfc-9e29-cafd36c20ba5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/backend/routes/authRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/routes/authRoutes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/routes/userRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/routes/userRoutes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/jobs/tasks.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/jobs/tasks.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/models/Transaction.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/models/Transaction.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/server.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/src/pages/Login.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/pages/Login.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/screens/dashboard/HomeScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/dashboard/HomeScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/screens/groups/GroupDetailsScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/groups/GroupDetailsScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/screens/groups/GroupsScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/groups/GroupsScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/screens/notifications/NotificationScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/notifications/NotificationScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/src/screens/pin/SetPinScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/src/screens/pin/SetPinScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/pages/manage-group/Paluwagan-groups.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/pages/manage-group/Paluwagan-groups.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

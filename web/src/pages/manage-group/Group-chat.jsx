@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
-import { useParams } from "react-router-dom";
+import { HiArrowLeft } from "react-icons/hi";
+import { useParams, useNavigate } from "react-router-dom";
 
 const socket = io("http://localhost:5050");
 
 const GroupChat = () => {
   const { groupId } = useParams();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [file, setFile] = useState(null);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [groupDetails, setGroupDetails] = useState(null);
   const user = JSON.parse(localStorage.getItem("user"));
   const chatRef = useRef(null);
 
@@ -23,6 +26,12 @@ const GroupChat = () => {
 
   useEffect(() => {
     if (!groupId || !user?._id) return;
+
+    // Fetch group details
+    fetch(`http://localhost:5050/api/groups/${groupId}`)
+      .then((res) => res.json())
+      .then(setGroupDetails)
+      .catch(err => console.error("Error fetching group details:", err));
 
     fetch(`http://localhost:5050/api/chat/group/${groupId}`)
       .then((res) => res.json())
@@ -103,76 +112,109 @@ const GroupChat = () => {
   };
 
   return (
-    <div className="fixed top-[100px] left-1/2 transform -translate-x-1/2 w-[800px] h-[600px] bg-white shadow-xl rounded-3xl flex flex-col border border-green-200 overflow-hidden">
-  {/* Header */}
-  <div className="px-6 py-4 border-b border-green-200 text-2xl font-semibold text-[#3A6953]">
-    Group Chat
-  </div>
+    <div className="fixed top-[40px] left-1/2 transform -translate-x-1/2 w-[1100px] h-[680px] bg-[#f4faf7] shadow-xl rounded-3xl flex flex-col border border-green-200 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-4 px-6 py-4 border-b border-green-200 text-2xl font-semibold text-[#3A6953] bg-gradient-to-r from-green-100 to-white shadow">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center justify-center bg-[#6A8C73] text-white px-6 py-2 rounded-2xl shadow-md hover:bg-[#285236] transition"
+        >
+          <HiArrowLeft className="text-xl" />
+        </button>
 
-  {/* Messages Area */}
-  <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-[#F0F8F4] scroll-smooth">
-    {messages.map((msg) => (
-      <div
-        key={msg._id}
-        className={`p-3 rounded-xl text-sm max-w-[70%] break-words whitespace-pre-wrap ${
-          msg.sender === user._id || msg.sender?._id === user._id
-            ? "bg-[#C9EDD7] ml-auto text-right"
-            : "bg-white border border-gray-200"
-        }`}
-      >
-        {msg.type === "file" ? (
-          <a
-            href={msg.content}
-            target="_blank"
-            rel="noreferrer"
-            className="text-blue-600 underline"
-          >
-            📎 View Attachment
-          </a>
-        ) : (
-          <span className="text-gray-800">{msg.content}</span>
-        )}
+        {/* Group Name */}
+        <span className="text-xl font-semibold text-[#3A6953]">
+          {groupDetails?.name || "Group Chat"}
+        </span>
       </div>
-    ))}
-    <div ref={chatRef} />
-  </div>
 
-  {/* Typing Indicator */}
-  {typingUsers.length > 0 && (
-    <div className="text-sm text-gray-500 px-6 py-1">
-      {typingUsers.join(", ")} {typingUsers.length > 1 ? "are" : "is"} typing...
-    </div>
-  )}
-
-  {/* Input Area */}
-  <div className="px-6 py-4 border-t border-green-200 flex gap-3 bg-white items-center">
-    <input
-      value={input}
-      onChange={(e) => {
-        setInput(e.target.value);
-        handleTyping();
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 bg-[#F0F8F4] scroll-smooth">
+        {messages.map((msg) => {
+          const isMe = msg.sender === user._id || msg.sender?._id === user._id;
+          const firstName = msg.sender?.name?.split(' ')[0] || 'Unknown';
+          return (
+            <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end`}>
+              {!isMe && (
+                <div className="flex-shrink-0 w-8 h-8 bg-green-200 rounded-full flex items-center justify-center mr-2 text-[#3A6953] font-bold shadow">
+                  {firstName[0]}
+                </div>
+              )}
+              <div className={`relative max-w-[70%] ${isMe ? 'bg-gradient-to-br from-green-200 to-green-100' : 'bg-white'} p-4 rounded-2xl shadow-md flex flex-col`}>
+              {msg.type === "file" ? (
+  /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content) ? (
+    <img
+      src={msg.content.startsWith("http") ? msg.content : `http://localhost:5050${msg.content}`}
+      alt="attachment"
+      className="rounded-lg max-w-xs max-h-60 object-cover"
+      onError={(e) => {
+        e.target.src = "/fallback.png"; // optional fallback image
       }}
-      onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-      className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-green-600"
-      placeholder="Type a message..."
     />
+  ) : (
+    <a href={msg.content} target="_blank" rel="noreferrer" className="text-blue-600 underline break-all">
+      📎 View Attachment
+    </a>
+  )
+) : (
+  <span className="text-gray-800 break-words whitespace-pre-wrap">{msg.content}</span>
+)}
 
-    <label className="text-sm text-gray-700 cursor-pointer">
-      <input type="file" onChange={handleFileChange} className="hidden" />
-      <span className="px-3 py-1 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200">
-        Choose File
-      </span>
-      {file && <span className="ml-2 text-green-600 font-medium">{file.name}</span>}
-    </label>
+                <div className={`text-xs mt-2 ${isMe ? 'text-right' : 'text-left'} text-gray-400 font-medium`}>
+                  {firstName} • {new Date(msg.timestamp).toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={chatRef} />
+      </div>
 
-    <button
-      onClick={sendMessage}
-      className="px-6 py-2 rounded-full bg-[#3A6953] text-white font-semibold hover:bg-green-800 transition-all"
-    >
-      Send
-    </button>
-  </div>
-</div>
+      {/* Typing Indicator */}
+      {typingUsers.length > 0 && (
+        <div className="text-sm text-gray-500 px-6 py-1 flex items-center gap-2">
+          <span className="animate-pulse">💬</span>
+          <span>{typingUsers.join(", ")} {typingUsers.length > 1 ? "are" : "is"} typing...</span>
+        </div>
+      )}
+
+      {/* Input Area */}
+      <div className="px-6 py-4 border-t border-green-200 flex gap-3 bg-white items-center rounded-b-3xl shadow-inner">
+        <label className="text-gray-400 cursor-pointer flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mr-2 hover:text-green-700 transition-colors">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7.828a4 4 0 010 5.656l-4.95 4.95a3 3 0 01-4.243-4.243l7.071-7.071a2 2 0 112.828 2.828l-7.071 7.071" />
+          </svg>
+          <input type="file" onChange={handleFileChange} className="hidden" />
+          <span className="sr-only">Choose File</span>
+        </label>
+        <input
+          value={input}
+          onChange={(e) => {
+            setInput(e.target.value);
+            handleTyping();
+          }}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-green-600 bg-[#F0F8F4] shadow-inner"
+          placeholder="Type a message..."
+        />
+        {file && <span className="ml-2 text-green-600 font-medium truncate max-w-[120px]">{file.name}</span>}
+        <button
+          onClick={sendMessage}
+          className="w-12 h-12 flex items-center justify-center rounded-full bg-[#3A6953] text-white font-semibold hover:bg-green-800 transition-all shadow-lg text-xl"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21l16.5-9-16.5-9v7.5l13.5 1.5-13.5 1.5V21z" />
+          </svg>
+        </button>
+      </div>
+    </div>
   );
 };
 

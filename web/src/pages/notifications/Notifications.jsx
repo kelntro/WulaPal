@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import axios from "axios";
-import { FiTrash2 } from "react-icons/fi";
+import { PiTrashSimpleFill } from "react-icons/pi";
 
-const SERVER_URL = "http://192.168.56.1:5050";
+const SERVER_URL = "http://localhost:5050";
 const socket = io(SERVER_URL);
 
 const Notifications = () => {
@@ -167,7 +167,7 @@ const Notifications = () => {
                     className="text-red-500 hover:text-red-700 text-lg"
                     title="Delete notification"
                   >
-                    <FiTrash2 />
+                    <PiTrashSimpleFill />
                   </button>
                 </div>
               </div>

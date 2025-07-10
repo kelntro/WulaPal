@@ -16,9 +16,11 @@ const Login = () => {
   const [resendDisabled, setResendDisabled] = useState(false);
   const [resendMessage, setResendMessage] = useState(null);
   const [countdown, setCountdown] = useState(60);
+  const [validationErrors, setValidationErrors] = useState({ email: "", password: "" });
   const navigate = useNavigate();
   const { login } = useAuth();
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   useEffect(() => {
     let timer;
@@ -37,13 +39,30 @@ const Login = () => {
     return () => clearInterval(timer);
   }, [resendDisabled]);
 
+  const validateForm = () => {
+    const errors = { email: "", password: "" };
+    let isValid = true;
+
+    if (!emailRegex.test(email)) {
+      errors.email = "Please enter a valid email address.";
+      isValid = false;
+    }
+
+    if (!passwordRegex.test(password)) {
+      errors.password = "Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, and one number.";
+      isValid = false;
+    }
+
+    setValidationErrors(errors);
+    return isValid;
+  };
+
   const handleLogin = async () => {
     setError(null);
     setResendMessage(null);
     setLoading(true);
 
-    if (!email || !password) {
-      setError("Please enter both email and password.");
+    if (!validateForm()) {
       setLoading(false);
       return;
     }
@@ -57,7 +76,6 @@ const Login = () => {
         body: JSON.stringify({ email, password, role }),
       });
       
-
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Login failed");
@@ -67,7 +85,7 @@ const Login = () => {
       if (data.otpSent) {
         navigate("/otp", { state: { email } });
       } else {
-        // ✅ Add this to support direct dashboard access (superadmin or verified organizer)
+        // Direct login for superadmin
         login(data.token, data.user);
         localStorage.setItem("userId", data.user._id);
       
@@ -78,17 +96,6 @@ const Login = () => {
       
         navigate("/dashboard");
       }
-      
-      // ✅ Update lastActive
-      if (data?.user?._id) {
-        localStorage.setItem("userId", data.user._id); // ✅ Save it for Dashboard use
-      
-        await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" }
-        });
-      }
-      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -153,14 +160,19 @@ const Login = () => {
         console.error("❌ Google login failed:", data);
         throw new Error(data.error || "Google sign-in failed");
       }
-  
-      login(data.token, data.user);
-      localStorage.setItem("userId", data.user._id); // ✅ Add this line
-      await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" }
-      });
-      navigate("/dashboard");
+
+      // If OTP has been sent, navigate to OTP verification page
+      if (data.otpSent) {
+        navigate("/otp", { state: { email } });
+      } else {
+        login(data.token, data.user);
+        localStorage.setItem("userId", data.user._id);
+        await fetch(`http://localhost:5050/api/users/last-active/${data.user._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" }
+        });
+        navigate("/dashboard");
+      }
     } catch (err) {
       console.error("Google Sign-In Error:", err.message);
       setError("Google Sign-In failed. Please try again.");
@@ -185,16 +197,15 @@ const Login = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)} // Allow free typing
-              onBlur={() => {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation regex
-                if (!emailRegex.test(email)) {
-                  alert("Please enter a valid email address."); // Optional: Show feedback
-                }
-              }}
-              className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
+              onChange={(e) => setEmail(e.target.value)}
+              className={`w-full px-2 pb-2 border-b ${
+                validationErrors.email ? "border-red-500" : "border-gray-300"
+              } focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg`}
               required
             />
+            {validationErrors.email && (
+              <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+            )}
           </div>
 
           {/* Password Input with Toggle */}
@@ -209,17 +220,12 @@ const Login = () => {
                 onChange={(e) => {
                   const newPassword = e.target.value;
                   if (newPassword.length <= 30) {
-                    setPassword(newPassword); // Update password only if within max length
+                    setPassword(newPassword);
                   }
                 }}
-                onBlur={() => {
-                  if (!passwordRegex.test(password)) {
-                    alert(
-                      "Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, and one number."
-                    );
-                  }
-                }}
-                className="w-full px-2 pb-2 border-b border-gray-300 focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg"
+                className={`w-full px-2 pb-2 border-b ${
+                  validationErrors.password ? "border-red-500" : "border-gray-300"
+                } focus:border-[#3A6953] focus:outline-none text-gray-700 text-lg`}
                 required
               />
               <button
@@ -227,9 +233,12 @@ const Login = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                {showPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
               </button>
             </div>
+            {validationErrors.password && (
+              <p className="text-red-500 text-sm mt-1">{validationErrors.password}</p>
+            )}
           </div>
 
           {/* Login Button */}
@@ -287,7 +296,7 @@ const Login = () => {
 
           {/* Sign Up Link */}
           <p className="mt-6 text-sm text-gray-600 text-center">
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <Link
               to="/signup"
               className="text-green-700 font-semibold hover:underline"

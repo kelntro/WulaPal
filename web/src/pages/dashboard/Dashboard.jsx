@@ -48,7 +48,7 @@ const AccountBalanceCard = () => {
     <div className="w-[375px] bg-white rounded-[20px] shadow-md p-6">
       <h2 className="text-[#3a6953] text-[22px] font-bold">Account Balance</h2>
       <p className="text-[#6A8C73] text-sm mt-2">
-        Here’s your remaining balance
+        Here's your remaining balance
       </p>
 
       <div className="w-full h-[150px] mt-4 rounded-[20px] bg-gradient-to-b from-[#99c6a9] to-[#6a8c73] flex flex-col justify-center p-6">
@@ -263,7 +263,7 @@ const AnalyticsChart = () => {
         if (txn.type === "transfer") {
           monthlyData[month].transfer += txn.amount;
         }
-        if (txn.type === "receive") {
+        if (txn.type === "receive" || txn.type === "payout_share") {
           monthlyData[month].receive += txn.amount;
         }
       });
@@ -303,7 +303,7 @@ const AnalyticsChart = () => {
         if (txn.type === "transfer") {
           yearlyDataMap[year].transfer += txn.amount;
         }
-        if (txn.type === "receive") {
+        if (txn.type === "receive" || txn.type === "payout_share") {
           yearlyDataMap[year].receive += txn.amount;
         }
       });
@@ -453,6 +453,7 @@ const RecentTransactions = () => {
               <th className="pb-3">Date</th>
               <th className="pb-3">Amount</th>
               <th className="pb-3">Status</th>
+              <th className="pb-3">Details</th>
             </tr>
           </thead>
           <tbody>
@@ -463,19 +464,30 @@ const RecentTransactions = () => {
                   {txn.type === "withdraw" && "Wallet Withdrawal"}
                   {txn.type === "transfer" && "Fund Transfer"}
                   {txn.type === "receive" && "Fund Received"}
+                  {txn.type === "payout_share" && "Group Payout Share"}
                 </td>
-                <td className="py-3">{formatDate(txn.timestamp)}</td>
+                <td className="py-3">
+                  {new Date(txn.timestamp).toLocaleDateString()}{" "}
+                  {new Date(txn.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </td>
                 <td className="py-3">₱{Number(txn.amount).toLocaleString()}</td>
                 <td className="py-3">
                   <span className="bg-[#EAE8C3] text-[#85830F] px-3 py-1 rounded-full text-sm">
                     {txn.status.charAt(0).toUpperCase() + txn.status.slice(1)}
                   </span>
                 </td>
+                <td className="py-3">
+                  {txn.type === "payout_share" && txn.metadata?.groupName ? (
+                    <span className="text-[#3A6953]">{txn.metadata.groupName}</span>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </td>
               </tr>
             ))}
             {transactions.length === 0 && (
               <tr>
-                <td colSpan="4" className="text-center py-5 text-gray-400">
+                <td colSpan="5" className="text-center py-5 text-gray-400">
                   No transactions yet.
                 </td>
               </tr>
@@ -595,7 +607,7 @@ const Dashboard = () => {
             Welcome Back, {user?.name?.split(" ")[0] || "Organizer"}
           </h1>
           <p className="text-[#6A8C73] font-normal mb-6">
-            Here’s what’s happening with your Paluwagan today.
+            Here's what's happening with your Paluwagan today.
           </p>
 
           <div className="grid grid-cols-3 gap-6">
@@ -656,9 +668,8 @@ const Dashboard = () => {
           <RecentTransactions />
         </div>
 
-        {/* Sidebar */}
-        {/* Sidebar */}
-        <div className="mt-6 flex flex-col items-center">
+        {/* Search box*/}
+        <div className="mt-[97px] flex flex-col items-center">
           {/* Search Box at the Top of Sidebar */}
           <div className="relative w-[375px]">
             {/* Search Icon */}

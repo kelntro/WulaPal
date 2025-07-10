@@ -2,6 +2,8 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { HiArrowLeft } from "react-icons/hi";
+import SideMessageModal from "./SideMessageModal";
 
 const getLastActiveLabel = (timestamp) => {
   if (!timestamp) return "Offline";
@@ -25,6 +27,7 @@ const UserProfile = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showMessage, setShowMessage] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const [rating, setRating] = useState(0);
@@ -32,15 +35,19 @@ const UserProfile = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    console.log("📌 useParams userId:", userId);
     fetchUser();
     fetchReviews();
   }, []);
 
   const fetchUser = async () => {
+    console.log("🔍 Fetching user data...");
     try {
       const res = await fetch(`http://localhost:5050/api/users/${userId}`);
+      console.log("📥 Response status:", res.status);
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
+      console.log("✅ User data received:", data);
       setUser(data);
     } catch (err) {
       console.error("❌ Error fetching user:", err.message);
@@ -54,6 +61,7 @@ const UserProfile = () => {
     try {
       const res = await fetch(`http://localhost:5050/api/reviews/${userId}`);
       const data = await res.json();
+      console.log("✅ Reviews loaded:", data);
       setReviews(data);
     } catch (err) {
       console.error("❌ Error fetching reviews:", err.message);
@@ -61,35 +69,7 @@ const UserProfile = () => {
   };
 
   const handleMessageClick = () => {
-    navigate(`/message/${userId}`);
-  };
-
-  const submitReview = async (e) => {
-    e.preventDefault();
-    if (!currentUser || currentUser._id === userId) return;
-
-    setSubmitting(true);
-    try {
-      const res = await fetch("http://localhost:5050/api/reviews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reviewer: currentUser._id,
-          reviewedUser: userId,
-          rating,
-          comment,
-        }),
-      });
-
-      if (!res.ok) throw new Error("Failed to submit review");
-      setRating(0);
-      setComment("");
-      fetchReviews();
-    } catch (err) {
-      console.error("❌ Submit review error:", err.message);
-    } finally {
-      setSubmitting(false);
-    }
+    setShowMessage(true);
   };
 
   const renderAddress = (address) => {
@@ -100,6 +80,8 @@ const UserProfile = () => {
     } catch {
       return null;
     }
+
+    console.log("📍 Parsed address:", parsed);
 
     return (
       <>
@@ -112,9 +94,46 @@ const UserProfile = () => {
     );
   };
 
+  const submitReview = async (e) => {
+    e.preventDefault();
+    if (!currentUser || currentUser._id === userId) return;
+
+    setSubmitting(true);
+    try {
+      console.log("📝 Submitting review:", { rating, comment });
+      const res = await fetch("http://localhost:5050/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reviewer: currentUser._id,
+          reviewedUser: userId,
+          rating,
+          comment,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to submit review");
+      console.log("✅ Review submitted");
+      setRating(0);
+      setComment("");
+      fetchReviews();
+    } catch (err) {
+      console.error("❌ Submit review error:", err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#f7faf9] p-10">
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
+    <div className="min-h-screen bg-[#D4E8DB] p-10">
+      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg relative z-10">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center justify-center bg-[#6A8C73] text-white px-6 py-2 rounded-2xl shadow-md hover:bg-[#285236] transition"
+        >
+          <HiArrowLeft className="text-xl" />
+        </button>
+
         {loading ? (
           <div className="text-gray-600 animate-pulse">Loading user...</div>
         ) : error ? (
@@ -122,23 +141,21 @@ const UserProfile = () => {
         ) : (
           <>
             <div className="flex flex-col items-center mb-6">
-            <img
-              src={
-                user.profileImage && user.profileImage !== "null" && user.profileImage !== ""
-                  ? user.profileImage
-                  : "/assets/Profile.jpg"
-              }
-              onError={(e) => {
-                console.warn("❌ Failed to load user profile image:", user.profileImage);
-                e.target.onerror = null;
-                e.target.src = "/assets/Profile.jpg";
-              }}
-              referrerPolicy="no-referrer"
-              alt="Profile"
-              className="w-32 h-32 rounded-full border border-gray-300 mb-3 object-cover"
-            />
-
-
+              <img
+                src={
+                  user.profileImage && user.profileImage !== "null" && user.profileImage !== ""
+                    ? user.profileImage
+                    : "/assets/Profile.jpg"
+                }
+                onError={(e) => {
+                  console.warn("⚠️ Failed to load profile image:", user?.profileImage);
+                  e.target.onerror = null;
+                  e.target.src = "/assets/Profile.jpg";
+                }}
+                referrerPolicy="no-referrer"
+                alt="Profile"
+                className="w-32 h-32 rounded-full border border-gray-300 mb-3 object-cover"
+              />
               <h1 className="text-3xl font-bold text-[#285236] mb-1">{user.name}</h1>
               <p className="text-gray-500 italic mb-1">{getLastActiveLabel(user.lastActive)}</p>
               <p className="text-sm text-gray-600">{user.email}</p>
@@ -160,7 +177,6 @@ const UserProfile = () => {
               Message
             </button>
 
-            {/* REVIEW FORM */}
             {currentUser && currentUser._id !== userId && (
               <form onSubmit={submitReview} className="border-t pt-6 mt-6 mb-10">
                 <h2 className="text-xl font-semibold mb-2">Leave a Review</h2>
@@ -171,9 +187,7 @@ const UserProfile = () => {
                       <span
                         key={star}
                         onClick={() => setRating(star)}
-                        className={`text-3xl cursor-pointer ${
-                          star <= rating ? "text-yellow-400" : "text-gray-300"
-                        }`}
+                        className={`text-3xl cursor-pointer ${star <= rating ? "text-yellow-400" : "text-gray-300"}`}
                       >
                         ★
                       </span>
@@ -200,7 +214,6 @@ const UserProfile = () => {
               </form>
             )}
 
-            {/* REVIEWS LIST */}
             <div className="border-t pt-6 mt-6">
               <h2 className="text-xl font-semibold mb-4">User Reviews</h2>
               {reviews.length === 0 ? (
@@ -220,6 +233,13 @@ const UserProfile = () => {
           </>
         )}
       </div>
+
+      <SideMessageModal
+        isOpen={showMessage}
+        onClose={() => setShowMessage(false)}
+        recipientId={userId}
+        recipientName={user?.name}
+      />
     </div>
   );
 };

@@ -55,7 +55,38 @@ const ProfileInformation = () => {
   }, []);
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Add validation for mobile numbers
+    if (field === 'mobile' || field === 'emergencyContact.mobile') {
+      // Allow only numbers
+      if (!/^\d*$/.test(value)) {
+        return;
+      }
+      // Limit to 10-11 digits for mobile numbers
+      if (value.length > 11) {
+        return;
+      }
+    }
+
+    // Add validation for zip code
+    if (field === 'address.zipCode') {
+      // Allow only numbers and limit to 4 digits for Philippines
+      if (!/^\d*$/.test(value) || value.length > 4) {
+        return;
+      }
+    }
+
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      setFormData((prev) => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleSave = async () => {
@@ -63,9 +94,9 @@ const ProfileInformation = () => {
       return alert("Please enter a valid email address.");
     }
 
-    if (formData.mobile && !/^\+?\d*$/.test(formData.mobile)) {
+    if (formData.mobile && !/^\d{10,11}$/.test(formData.mobile)) {
       return alert(
-        "Mobile number should only contain numbers and an optional '+' sign."
+        "Please enter a valid mobile number (10-11 digits)."
       );
     }
 
@@ -152,7 +183,7 @@ const ProfileInformation = () => {
   return (
     <div className="p-2 min-h-screen flex flex-col items-start ml-[115px]">
       <h1 className="text-4xl font-bold text-[#285236]">Profile Information</h1>
-      <p className="text-[#6A8C73] mb-4">Here’s your profile information.</p>
+      <p className="text-[#6A8C73] mb-4">Here's your profile information.</p>
 
       {showSuccessModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
@@ -271,31 +302,31 @@ const ProfileInformation = () => {
               Personal Information
             </h3>
             {/* GENDER DROPDOWN */}
-<div className="flex justify-between items-center bg-[#F4F4F4] p-3 rounded-2xl border border-[#6a8c73] text-[#285236]">
-  <span>Gender</span>
-  {isEditing ? (
-    <select
-      value={formData.gender || ""}
-      onChange={(e) => handleChange("gender", e.target.value)}
-      className="bg-transparent text-right outline-none"
-    >
-      <option value="">Select</option>
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-      <option value="Prefer not to say">Prefer not to say</option>
-    </select>
-  ) : (
-    <span className="text-[#285236] opacity-60 text-right">
-      {user.gender || "—"}
-    </span>
-  )}
-</div>
+            <div className="flex justify-between items-center bg-[#F4F4F4] p-3 rounded-2xl border border-[#6a8c73] text-[#285236]">
+              <span>Gender</span>
+              {isEditing ? (
+                <select
+                  value={formData.gender || ""}
+                  onChange={(e) => handleChange("gender", e.target.value)}
+                  className="bg-transparent text-center outline-none"
+                >
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+              ) : (
+                <span className="text-[#285236] opacity-60 text-right">
+                  {user.gender || "—"}
+                </span>
+              )}
+            </div>
             <div className="mt-2 space-y-3">
               {[
                 { label: "Date of Birth", key: "dateofBirth", type: "date" },
                 { label: "Country", key: "country", type: "text" },
                 { label: "Mobile", key: "mobile", type: "tel" },
-                { label: "Email", key: "email", type: "email" },
+                { label: "Email", key: "email", type: "email", disabled: true },
                 { label: "Occupation", key: "occupation", type: "text" },
                 {
                   label: "Source of Funds",
@@ -317,7 +348,8 @@ const ProfileInformation = () => {
                           : formData[item.key] || ""
                       }
                       onChange={(e) => handleChange(item.key, e.target.value)}
-                      className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60"
+                      className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60 w-[200px]"
+                      disabled={item.key === "email"}
                     />
                   ) : (
                     <span className="text-[#285236] opacity-60 text-right">
@@ -342,15 +374,12 @@ const ProfileInformation = () => {
                       type={field === "mobile" ? "tel" : "text"}
                       value={formData.emergencyContact?.[field] || ""}
                       onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          emergencyContact: {
-                            ...prev.emergencyContact,
-                            [field]: e.target.value,
-                          },
-                        }))
+                        handleChange(
+                          `emergencyContact.${field}`,
+                          e.target.value
+                        )
                       }
-                      className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60"
+                      className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60 w-[200px]"
                     />
                   ) : (
                     <span className="text-[#285236] opacity-60 text-right">
@@ -375,15 +404,12 @@ const ProfileInformation = () => {
                           type="text"
                           value={formData.address?.[field] || ""}
                           onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              address: {
-                                ...prev.address,
-                                [field]: e.target.value,
-                              },
-                            }))
+                            handleChange(
+                              `address.${field}`,
+                              e.target.value
+                            )
                           }
-                          className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60"
+                          className="text-right bg-transparent border-none outline-none text-[#285236] opacity-60 w-[200px]"
                         />
                       ) : (
                         <span className="text-[#285236] opacity-60 text-right">
@@ -406,7 +432,7 @@ const ProfileInformation = () => {
                     <select
                       value={formData.idType || ""}
                       onChange={(e) => handleChange("idType", e.target.value)}
-                      className="bg-transparent text-right outline-none"
+                      className="bg-transparent text-center outline-none"
                     >
                       <option value="">Select</option>
                       {idTypes.map((type) => (

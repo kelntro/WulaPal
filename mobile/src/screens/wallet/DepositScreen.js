@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Linking, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Linking, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const DepositScreen = () => {
   const navigation = useNavigation();
@@ -92,28 +93,174 @@ const DepositScreen = () => {
   
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Deposit Funds</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter amount in PHP"
-        keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
-      />
-      <TouchableOpacity style={styles.button} onPress={handleDeposit} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Proceed to Payment</Text>}
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoid}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <Icon name="account-balance-wallet" size={40} color="#3A6953" />
+              <Text style={styles.title}>Deposit Funds</Text>
+              <Text style={styles.subtitle}>Add money to your wallet securely</Text>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Amount (PHP)</Text>
+              <View style={styles.amountInputWrapper}>
+                <Text style={styles.currencySymbol}>₱</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="0.00"
+                  keyboardType="numeric"
+                  value={amount}
+                  onChangeText={setAmount}
+                  placeholderTextColor="#999"
+                />
+              </View>
+              <Text style={styles.helperText}>Enter the amount you wish to deposit</Text>
+            </View>
+
+            <View style={styles.infoContainer}>
+              <View style={styles.infoItem}>
+                <Icon name="security" size={24} color="#6A8C73" />
+                <Text style={styles.infoText}>Secure Payment Processing</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Icon name="access-time" size={24} color="#6A8C73" />
+                <Text style={styles.infoText}>Instant Credit After Payment</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.button, loading && styles.buttonDisabled]} 
+              onPress={handleDeposit} 
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Proceed to Payment</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center', backgroundColor: '#F4F8F7' },
-  title: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  input: { backgroundColor: '#fff', padding: 15, borderRadius: 8, fontSize: 16, marginBottom: 20 },
-  button: { backgroundColor: '#2E7D32', padding: 15, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F4F8F7',
+  },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    marginTop: -150,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 26,
+    justifyContent: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#3A6953',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  inputContainer: {
+    marginBottom: 32,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3A6953',
+    marginBottom: 8,
+  },
+  amountInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#6A8C73',
+    paddingHorizontal: 16,
+  },
+  currencySymbol: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#3A6953',
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 20,
+    paddingVertical: 16,
+    color: '#3A6953',
+  },
+  helperText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 8,
+  },
+  infoContainer: {
+    marginBottom: 32,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 12,
+  },
+  button: {
+    backgroundColor: '#3A6953',
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  buttonIcon: {
+    marginLeft: 8,
+  },
 });
 
 export default DepositScreen;

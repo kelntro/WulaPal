@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Linking,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DocumentPicker from 'react-native-document-picker';
@@ -27,6 +28,7 @@ const MemberGroupChat = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [typingUsers, setTypingUsers] = useState([]);
+  const [groupName, setGroupName] = useState('');
   const chatRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +37,11 @@ const MemberGroupChat = () => {
       if (!storedUser) return;
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
+
+      // Fetch group details
+      const groupRes = await fetch(`${API_BASE_URL}/api/groups/${groupId}`);
+      const groupData = await groupRes.json();
+      setGroupName(groupData.name);
 
       fetch(`${API_BASE_URL}/api/chat/group/${groupId}`)
         .then(res => res.json())
@@ -93,6 +100,8 @@ const MemberGroupChat = () => {
         sender: user._id,
         type: 'text',
         content: input,
+        senderName: user.name,
+        groupName: groupName
       }),
     });
 
@@ -101,24 +110,37 @@ const MemberGroupChat = () => {
 
   const pickAndSendFile = async () => {
     try {
+      console.log("📁 Starting file pick...");
       const res = await DocumentPicker.pickSingle({ type: DocumentPicker.types.allFiles });
+      console.log("📁 File picked:", res);
 
       const formData = new FormData();
-      formData.append('file', {
-        uri: res.uri,
-        type: res.type,
+      const fileToUpload = {
+        uri: Platform.OS === 'ios' ? res.uri.replace('file://', '') : res.uri,
+        type: res.type || 'application/octet-stream',
         name: res.name,
-      });
+      };
+      console.log("📁 Preparing file for upload:", fileToUpload);
+      
+      formData.append('file', fileToUpload);
 
+      console.log("📤 Uploading file to:", `${API_BASE_URL}/api/upload-chat-file`);
       const upload = await fetch(`${API_BASE_URL}/api/upload-chat-file`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json',
+        },
         body: formData,
       });
 
+      console.log("📤 Upload response status:", upload.status);
       const data = await upload.json();
+      console.log("📤 Upload response data:", data);
 
       if (data.url) {
-        await fetch(`${API_BASE_URL}/api/chat/group/${groupId}/send`, {
+        console.log("📤 Sending message with file URL:", data.url);
+        const messageRes = await fetch(`${API_BASE_URL}/api/chat/group/${groupId}/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -128,16 +150,23 @@ const MemberGroupChat = () => {
             content: data.url,
           }),
         });
+        console.log("📤 Message send response status:", messageRes.status);
       }
     } catch (err) {
       if (!DocumentPicker.isCancel(err)) {
-        console.error("❌ File Upload Error:", err);
+        console.error("❌ File Upload Error Details:", {
+          message: err.message,
+          stack: err.stack,
+          name: err.name
+        });
+        alert("Failed to upload file. Please try again.");
       }
     }
   };
 
   const renderItem = ({ item }) => {
     const isSender = item.sender._id === user._id;
+    const firstName = item.sender?.name?.split(' ')[0] || 'Unknown';
   
     return (
       <View style={[styles.messageWrapper, isSender ? styles.alignRight : styles.alignLeft]}>
@@ -146,16 +175,50 @@ const MemberGroupChat = () => {
             {item.sender.name || 'Unknown'}
           </Text>
         )}
+        
         <View style={[styles.message, isSender && styles.sender]}>
+          
           {item.type === 'file' ? (
-            <TouchableOpacity onPress={() => Linking.openURL(item.content)}>
-              <Text style={[styles.fileLink, isSender && styles.senderText]}>📎 View File</Text>
-            </TouchableOpacity>
+            item.content.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+              
+              <Image
+                source={{
+                  uri: item.content.startsWith('http')
+                    ? item.content.replace('http://localhost:5050', API_BASE_URL)
+                    : `${API_BASE_URL}${item.content.startsWith('/') ? '' : '/'}${item.content}`,
+                  cache: 'reload'
+                }}
+                style={styles.messageImage}
+                resizeMode="cover"
+                onError={(error) => {
+                  console.error("❌ Image loading error:", error.nativeEvent);
+                  console.log("🔍 Attempted URL:", item.content);
+                }}
+                onLoad={() => console.log("✅ Image loaded successfully:", item.content)}
+              />
+            ) : (
+              <TouchableOpacity onPress={() => {
+                const fileUrl = item.content.startsWith('http') ? item.content : `${API_BASE_URL}${item.content}`;
+                console.log("🔗 Opening file URL:", fileUrl);
+                Linking.openURL(fileUrl);
+              }}>
+                <Text style={[styles.fileLink, isSender && styles.senderText]}>📎 View File</Text>
+              </TouchableOpacity>
+            )
           ) : (
             <Text style={[styles.messageText, isSender && styles.senderText]}>
               {item.content}
             </Text>
           )}
+          <Text style={[styles.timestamp, isSender && styles.senderTimestamp]}>
+            {firstName} • {new Date(item.timestamp).toLocaleString(undefined, {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </Text>
         </View>
       </View>
     );
@@ -175,6 +238,9 @@ const MemberGroupChat = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
     >
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{groupName}</Text>
+      </View>
       <FlatList
         ref={chatRef}
         data={messages}
@@ -218,6 +284,19 @@ const MemberGroupChat = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F8F7' },
+  header: {
+    backgroundColor: '#3A6953',
+    padding: 15,
+    paddingTop: Platform.OS === 'ios' ? 50 : 15,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2E7D32',
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   message: {
     backgroundColor: '#fff',
     padding: 10,
@@ -281,7 +360,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     marginLeft: 5,
   },
-  
+  timestamp: {
+    fontSize: 10,
+    color: '#666',
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
+  senderTimestamp: {
+    color: '#2E7D32',
+    alignSelf: 'flex-end',
+  },
+  messageImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 4,
+  },
 });
 
 export default MemberGroupChat;

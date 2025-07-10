@@ -103,9 +103,6 @@ const TransactionsScreen = () => {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.sortButton}>
-          <Ionicons name="filter" size={22} color="#3A6953" />
-        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -146,10 +143,10 @@ const TransactionsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffffff', paddingHorizontal: 20, paddingTop: 60 },
+  container: { flex: 1, backgroundColor: '#ffffff', paddingHorizontal: 20, paddingTop: 20 },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: '#3A6953',
     textAlign: 'center',
     marginBottom: 20,
@@ -167,7 +164,7 @@ const styles = StyleSheet.create({
   filterText: { fontSize: 14, fontWeight: '600', color: '#3A6953' },
   activeFilterText: { color: '#ffffff' },
   sortButton: {
-    marginLeft: 60,
+    marginLeft: 85,
     backgroundColor: '#ffffff',
     padding: 8,
     borderRadius: 12,

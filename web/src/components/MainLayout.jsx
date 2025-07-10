@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import React, { useState, useContext } from "react";
+import { Routes, Route, useLocation, matchPath } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Layout from "./Layout";
 
@@ -21,7 +21,6 @@ import PrivacyPolicy from "../pages/settings/Privacy-policy.jsx";
 import Transactions from "../pages/transactions/Transactions.jsx";
 import Wallet from "../pages/wallet/Wulapal.jsx";
 import ProfileInformation from "../pages/profile/Profile-information.jsx";
-import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext.jsx";
 
 const MainLayout = () => {
@@ -29,23 +28,32 @@ const MainLayout = () => {
   const location = useLocation();
   const { user } = useContext(AuthContext);
 
-  const noSidebarRoutes = ["/", "/login", "/signup"];
-  const shouldShowSidebar = !noSidebarRoutes.includes(location.pathname);
+  // Define static paths to hide the sidebar
+  const hiddenSidebarRoutes = ["/", "/login", "/signup", "/manage-group/members"];
+
+  // Check for exact matches or dynamic pattern matches
+  const isSidebarHidden =
+    hiddenSidebarRoutes.includes(location.pathname) ||
+    matchPath("/manage-group/chat/:groupId", location.pathname) ||
+    matchPath("/manage-group/transactions/:groupId", location.pathname);
 
   return (
     <div className="flex">
-      {shouldShowSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
+      {!isSidebarHidden && (
+        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      )}
 
       <div
         className={`flex-1 transition-all duration-500 ${
-          shouldShowSidebar ? (isSidebarOpen ? "ml-[200px]" : "ml-[20px]") : "ml-0"
+          !isSidebarHidden ? (isSidebarOpen ? "ml-[200px]" : "ml-[20px]") : "ml-0"
         } p-0`}
       >
         <Routes>
           <Route element={<Layout />}>
-            {/* Shared route */}
+            {/* Shared routes */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/wallet" element={<Wallet />} />
+            <Route path="/transactions" element={<Transactions />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile/profile-information" element={<ProfileInformation />} />
 
@@ -62,7 +70,6 @@ const MainLayout = () => {
                 <Route path="/manage-group/transactions/:groupId" element={<GroupTransactions />} />
                 <Route path="/manage-group/paluwagan-groups" element={<PaluwaganGroups />} />
                 <Route path="/notifications" element={<Notifications />} />
-                <Route path="/transactions" element={<Transactions />} />
                 <Route path="/terms-and-conditions" element={<TermsandConditions />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               </>

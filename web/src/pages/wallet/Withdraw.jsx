@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { MdPayment } from "react-icons/md";
 import { BsInfoCircle } from "react-icons/bs";
 import { IoIosLock } from "react-icons/io";
+import { FaTimes } from "react-icons/fa";
 
 export default function PaymentOption() {
   const navigate = useNavigate();
@@ -12,9 +13,16 @@ export default function PaymentOption() {
   const [depositFee, setDepositFee] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalType, setModalType] = useState("error");
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [withdrawalDetails, setWithdrawalDetails] = useState(null);
 
   const handleDepositChange = (e) => {
     const amount = e.target.value;
+    // Only allow numbers and decimal point
+    if (!/^\d*\.?\d*$/.test(amount)) return;
     setDepositAmount(amount);
 
     if (!amount) {
@@ -24,17 +32,65 @@ export default function PaymentOption() {
     }
 
     const numericAmount = parseFloat(amount) || 0;
-    const fee = numericAmount * 0.02 < 5 ? 5 : numericAmount * 0.02;
+    const fee = numericAmount * 0.00 < 0 ? 0 : numericAmount * 0.00;
     setDepositFee(fee);
     setTotal(numericAmount + fee);
   };
 
-  const handleWithdraw = async () => {
+  const handleMobileNumberChange = (e) => {
+    const number = e.target.value;
+    // Only allow numbers
+    if (!/^\d*$/.test(number)) return;
+    // Limit to 10 digits (excluding +63)
+    if (number.length > 10) return;
+    setMobileNumber(number);
+  };
+
+  const validateInputs = () => {
     const userId = localStorage.getItem("userId");
 
-    if (!userId) return alert("User ID missing. Please login again.");
-    if (!mobileNumber || mobileNumber.length < 10) return alert("Enter a valid mobile number.");
-    if (!depositAmount || isNaN(depositAmount) || depositAmount <= 0) return alert("Enter a valid amount.");
+    if (!userId) {
+      setModalMessage("User ID missing. Please login again.");
+      setModalType("error");
+      setShowModal(true);
+      return false;
+    }
+
+    if (!mobileNumber) {
+      setModalMessage("Please enter your GCash mobile number.");
+      setModalType("error");
+      setShowModal(true);
+      return false;
+    }
+
+    if (mobileNumber.length !== 10) {
+      setModalMessage("GCash mobile number must be 10 digits.");
+      setModalType("error");
+      setShowModal(true);
+      return false;
+    }
+
+    if (!depositAmount || isNaN(depositAmount) || depositAmount <= 0) {
+      setModalMessage("Please enter a valid amount.");
+      setModalType("error");
+      setShowModal(true);
+      return false;
+    }
+
+    if (parseFloat(depositAmount) < 10) {
+      setModalMessage("Minimum withdrawal amount is ₱10.00");
+      setModalType("error");
+      setShowModal(true);
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleWithdraw = async () => {
+    if (!validateInputs()) {
+      return;
+    }
 
     try {
       setLoading(true);
@@ -44,7 +100,7 @@ export default function PaymentOption() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: parseFloat(depositAmount),
-          userId,
+          userId: localStorage.getItem("userId"),
           mobileNumber: mobileNumber,
           channel: "GCASH"
         }),
@@ -52,11 +108,33 @@ export default function PaymentOption() {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message || "Withdrawal failed");
+      if (!res.ok) {
+        throw new Error(data.message || "Withdrawal failed");
+      }
 
-      navigate("/wallet/success-withdraw");
+      // Set withdrawal details for receipt
+      setWithdrawalDetails({
+        amount: parseFloat(depositAmount),
+        mobileNumber: `+63${mobileNumber}`,
+        timestamp: new Date().toISOString(),
+        referenceId: data.referenceId || `withdraw-${Date.now()}`,
+        channel: "GCash"
+      });
+
+      setModalMessage("Withdrawal successful!");
+      setModalType("success");
+      setShowModal(true);
+      
+      // Show receipt after a short delay
+      setTimeout(() => {
+        setShowModal(false);
+        setShowReceipt(true);
+      }, 1500);
+
     } catch (error) {
-      alert("Withdrawal failed: " + error.message);
+      setModalMessage("Withdrawal failed: " + error.message);
+      setModalType("error");
+      setShowModal(true);
       console.error("Withdrawal error:", error);
     } finally {
       setLoading(false);
@@ -97,9 +175,10 @@ export default function PaymentOption() {
               <input
                 type="text"
                 className="w-full p-1 outline-none"
-                placeholder="905 838 5274"
+                placeholder="Enter 10-digit mobile number"
                 value={mobileNumber}
-                onChange={(e) => setMobileNumber(e.target.value)}
+                onChange={handleMobileNumberChange}
+                maxLength={10}
               />
             </div>
           </div>
@@ -111,7 +190,7 @@ export default function PaymentOption() {
             <input 
               type="text" 
               className="w-full p-2 border rounded-md mt-1" 
-              placeholder="Enter amount" 
+              placeholder="Enter amount (minimum ₱10.00)" 
               value={depositAmount}
               onChange={handleDepositChange}
             />
@@ -161,6 +240,119 @@ export default function PaymentOption() {
           </p>
         </div>
       </div>
+
+      {/* Receipt Modal */}
+      {showReceipt && withdrawalDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 relative">
+            <button
+              onClick={() => {
+                setShowReceipt(false);
+                navigate("/wallet");
+              }}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="text-2xl text-[#3A6953] font-bold mb-2">Withdrawal Receipt</div>
+              <div className="text-sm text-gray-500">Transaction Successful</div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">Amount</span>
+                <span className="text-[#3A6953] font-semibold">₱{withdrawalDetails.amount.toLocaleString()}</span>
+              </div>
+              
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">GCash Number</span>
+                <span className="text-[#3A6953] font-semibold">{withdrawalDetails.mobileNumber}</span>
+              </div>
+
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">Date & Time</span>
+                <span className="text-[#3A6953] font-semibold">
+                  {new Date(withdrawalDetails.timestamp).toLocaleString()}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">Reference ID</span>
+                <span className="text-[#3A6953] font-semibold text-sm">
+                  {withdrawalDetails.referenceId}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">Channel</span>
+                <span className="text-[#3A6953] font-semibold">{withdrawalDetails.channel}</span>
+              </div>
+
+              <div className="flex justify-between items-center border-b pb-3">
+                <span className="text-gray-600">Status</span>
+                <span className="text-green-600 font-semibold">Completed</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <button
+                onClick={() => {
+                  setShowReceipt(false);
+                  navigate("/wallet");
+                }}
+                className="bg-[#3A6953] text-white px-6 py-2 rounded-md hover:bg-[#2d5342] transition-colors"
+              >
+                Done
+              </button>
+            </div>
+
+            <div className="mt-6 text-center">
+              <div className="text-gray-500 text-sm flex items-center justify-center">
+                <IoIosLock className="mr-1" />
+                Secure Transaction
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Existing Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 relative">
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes />
+            </button>
+            
+            <p className="text-gray-700 mb-6">{modalMessage}</p>
+            
+            <div className="flex justify-end space-x-4">
+              {modalType === "info" && (
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                onClick={() => setShowModal(false)}
+                className={`px-4 py-2 rounded-md ${
+                  modalType === "error" ? "bg-red-500 hover:bg-red-600" :
+                  "bg-[#3A6953] hover:bg-[#2d5342]"
+                } text-white`}                
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

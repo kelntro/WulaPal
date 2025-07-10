@@ -1,4 +1,7 @@
 import axios from 'axios';
+import Wallet from "../models/Wallet.js";
+import User from "../models/User.js";
+import Transaction from "../models/Transaction.js";
 
 const XENDIT_API_KEY = process.env.XENDIT_SECRET_KEY; // ✅ Make sure it's correct
 
@@ -18,6 +21,10 @@ export const createPlanPurchase = async (req, res) => {
             return res.status(400).json({ message: "Missing required fields." });
         }
 
+        // Set expiration date to 1 year from now
+        const expirationDate = new Date();
+        expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+
         console.log("[PLAN PURCHASE] Creating Xendit invoice...");
         const ref = `plan-${userId}-${Date.now()}`;
 
@@ -28,6 +35,11 @@ export const createPlanPurchase = async (req, res) => {
             amount: Number(amount),
             currency: "PHP",
             success_redirect_url: successRedirectURL, // ✅ Important! after payment go back to success page
+            metadata: {
+                userId,
+                plan,
+                expirationDate: expirationDate.toISOString()
+            }
         };
 
         const response = await axios.post("https://api.xendit.co/v2/invoices", invoicePayload, {
@@ -58,3 +70,57 @@ export const createPlanPurchase = async (req, res) => {
         });
     }
 };
+
+export const creditSuperadminWallet = async (req, res) => {
+    try {
+      const { amount, fromUserId, referenceId } = req.body;
+  
+      console.log("📥 [CREDIT] Incoming request → fromUserId:", fromUserId, ", amount:", amount, ", ref:", referenceId);
+  
+      if (!amount || !fromUserId || !referenceId) {
+        return res.status(400).json({ message: "Amount, fromUserId, and referenceId are required" });
+      }
+  
+      const superadmin = await User.findOne({ role: "superadmin" });
+      if (!superadmin) return res.status(404).json({ message: "Superadmin not found" });
+  
+      const superWallet = await Wallet.findOne({ userId: superadmin._id });
+      if (!superWallet) return res.status(404).json({ message: "Superadmin wallet not found" });
+  
+      const existing = await Transaction.findOne({ referenceId });
+  
+      if (existing) {
+        console.warn("⚠️ Duplicate transaction detected. Ref:", referenceId);
+        return res.status(200).json({ success: true, message: "Already credited" });
+      }
+  
+      // Save transaction
+      const txn = await Transaction.create({
+        userId: superadmin._id,
+        type: "receive",
+        amount,
+        referenceId,
+        status: "confirmed",
+        metadata: {
+          from: `User: ${fromUserId}`,
+          type: "plan_purchase",
+        }
+      });
+  
+      superWallet.balance += Number(amount);
+      await superWallet.save();
+  
+      console.log("✅ [CREDIT] Transaction created:", txn._id, "→ New Balance:", superWallet.balance);
+  
+      return res.json({
+        success: true,
+        message: "Superadmin wallet credited",
+        newBalance: superWallet.balance
+      });
+  
+    } catch (error) {
+      console.error("❌ Error in creditSuperadminWallet:", error.message);
+      return res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
+  
